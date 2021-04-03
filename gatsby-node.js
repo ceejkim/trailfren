@@ -5,34 +5,36 @@ exports.createPages = ({ graphql, actions }) => {
   const { createPage } = actions
 
   return new Promise((resolve, reject) => {
-    const blogPost = path.resolve('./src/templates/blog-post.js')
+    const landingPageTemplate = path.resolve('./src/templates/landing-page.js')
     resolve(
       graphql(
         `
           {
-            allContentfulBlogPost {
+            allContentfulAffiliate {
               edges {
                 node {
-                  title
-                  slug
+                  affiliateName
+                  landingPagePath
                 }
               }
             }
           }
         `
-      ).then(result => {
+      ).then((result) => {
         if (result.errors) {
           console.log(result.errors)
           reject(result.errors)
         }
 
-        const posts = result.data.allContentfulBlogPost.edges
-        posts.forEach(post => {
+        console.log(result)
+
+        const affiliatePages = result.data.allContentfulAffiliate.edges
+        affiliatePages.forEach((page) => {
           createPage({
-            path: `/blog/${post.node.slug}/`,
-            component: blogPost,
+            path: `/${page.node.landingPagePath}/`,
+            component: landingPageTemplate,
             context: {
-              slug: post.node.slug,
+              landingPagePath: page.node.landingPagePath,
             },
           })
         })

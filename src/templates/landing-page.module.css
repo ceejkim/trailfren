@@ -1,0 +1,124 @@
+.background {
+  max-width: 500px;
+  margin: auto;
+}
+
+.banner {
+  color: #df7c6d;
+  text-align: center;
+  padding: 0.5rem;
+}
+
+.logo {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.logoImage {
+  max-height: 150px;
+}
+
+.aboutSection {
+  color: darkgrey;
+  padding: 1rem;
+  margin-top: 2rem;
+}
+
+.selectAmountSection {
+  max-width: 500px;
+  margin: 2rem auto 1rem auto;
+  border: solid #df7c6d 1px;
+}
+
+.selectAmountHeader {
+  background-color: #df7c6d;
+  color: white;
+  display: block;
+  width: 100%;
+  text-align: center;
+  padding: 0.5rem;
+}
+
+.selectAmountButtons {
+  display: flex;
+  padding: 1rem;
+  justify-content: space-evenly;
+}
+
+.selectAmountButton {
+  border: dashed #df7c6d 1px;
+  color: #df7c6d;
+  background-color: white;
+  font-weight: bold;
+  border-radius: 10px;
+  padding: 1rem;
+  box-shadow: 2px 2px #d6d6d6;
+}
+
+.selectAmountButton:hover {
+  border: solid #df7c6d 1px;
+  background: #df7c6d;
+  color: white;
+  cursor: pointer;
+  -webkit-transition: all 0.3s ease-in-out;
+  -moz-transition: all 0.3s ease-in-out;
+  transition: all 0.3s ease-in-out;
+}
+
+.buttonSelected {
+  border: solid #df7c6d 1px;
+  color: white;
+  background-color: #df7c6d;
+  font-weight: bold;
+  border-radius: 10px;
+  padding: 1rem;
+  box-shadow: 2px 2px #d6d6d6;
+}
+
+.buttonSelected:hover {
+  cursor: pointer;
+  border: dashed #df7c6d 1px;
+  color: #df7c6d;
+  background-color: white;
+  -webkit-transition: all 0.3s ease-in-out;
+  -moz-transition: all 0.3s ease-in-out;
+  transition: all 0.3s ease-in-out;
+}
+
+.goToPayment {
+  -webkit-transition: all 0.3s ease-in-out;
+  -moz-transition: all 0.3s ease-in-out;
+  transition: all 0.3s ease-in-out;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  border-bottom: solid #df7c6d 1px;
+  padding-bottom: 1rem;
+}
+
+.applePayButton {
+  background-color: black;
+  color: white;
+  text-align: center;
+  border: none;
+  border-radius: 10px;
+  padding: 0.5rem 1rem;
+  margin: 1rem;
+}
+
+.otherPayButton {
+  background-color: blue;
+  color: white;
+  text-align: center;
+  border: none;
+  border-radius: 10px;
+  padding: 0.5rem 1rem;
+  margin: 1rem;
+
+}
+
+.divider {
+  margin: 2rem 0;
+  border-bottom: solid #df7c6d 1px;
+}
