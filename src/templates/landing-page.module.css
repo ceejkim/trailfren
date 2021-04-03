@@ -41,11 +41,13 @@
 
 .selectAmountButtons {
   display: flex;
+  flex-wrap: wrap;
   padding: 1rem;
   justify-content: space-evenly;
 }
 
 .selectAmountButton {
+  width: 50px;
   border: dashed #df7c6d 1px;
   color: #df7c6d;
   background-color: white;
@@ -53,6 +55,7 @@
   border-radius: 10px;
   padding: 1rem;
   box-shadow: 2px 2px #d6d6d6;
+  margin: 0.5rem;
 }
 
 .selectAmountButton:hover {
@@ -66,6 +69,7 @@
 }
 
 .buttonSelected {
+  width: 50px;
   border: solid #df7c6d 1px;
   color: white;
   background-color: #df7c6d;
@@ -73,6 +77,7 @@
   border-radius: 10px;
   padding: 1rem;
   box-shadow: 2px 2px #d6d6d6;
+  margin: 0.5rem;
 }
 
 .goToPayment {

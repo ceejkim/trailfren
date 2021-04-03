@@ -11,14 +11,14 @@ class LandingPageTemplate extends React.Component {
   constructor(props){
     super(props)
     this.state = {
-      selectedAmount: ``,
-      donationOptions: [2,5,10]
+      selectedAmount: ``
     }
   }
 
   render() {
     const affiliateData = get(this.props, "data.contentfulAffiliate")
 
+    console.log(affiliateData)
     return (
       <div className={styles.background}>
         <Helmet title={`${affiliateData.affiliateName}`} />
@@ -33,7 +33,7 @@ class LandingPageTemplate extends React.Component {
         <div className={styles.selectAmountSection}>
           <div className={styles.selectAmountHeader}>Choose an amount to contribute</div>
           <div className={styles.selectAmountButtons}>
-            {this.state.donationOptions.map((donationAmount) => (
+            {affiliateData.donationAmounts.sort((a,b) => Number(a) > Number(b)).map((donationAmount) => (
               <button
                 key={donationAmount}
                 className={
@@ -83,6 +83,7 @@ export const pageQuery = graphql`
     contentfulAffiliate(landingPagePath: { eq: $landingPagePath }) {
       affiliateName
       affiliateWebsiteLink
+      donationAmounts
       aboutUs {
         aboutUs
       }
