@@ -17,8 +17,6 @@ class LandingPageTemplate extends React.Component {
 
   render() {
     const affiliateData = get(this.props, "data.contentfulAffiliate")
-
-    console.log(affiliateData)
     return (
       <div className={styles.background}>
         <Helmet title={`${affiliateData.affiliateName}`} />
