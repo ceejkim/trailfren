@@ -26,8 +26,6 @@ exports.createPages = ({ graphql, actions }) => {
           reject(result.errors)
         }
 
-        console.log(result)
-
         const affiliatePages = result.data.allContentfulAffiliate.edges
         affiliatePages.forEach((page) => {
           createPage({
