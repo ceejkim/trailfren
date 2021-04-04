@@ -18,6 +18,8 @@ const CARD_ELEMENT_OPTIONS = {
       "::placeholder": {
         color: "#aab7c4",
       },
+      borderColor: "EEE",
+      borderRadius: "5px"
     },
     invalid: {
       color: "#fa755a",

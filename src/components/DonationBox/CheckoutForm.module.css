@@ -9,6 +9,7 @@
 .cardSection {
   padding: 0.5rem 0;
   width: 100%;
+  border-color: solid lightgrey 1px;
 }
 
 .buttonSection {
