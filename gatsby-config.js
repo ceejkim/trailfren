@@ -47,13 +47,6 @@ module.exports = {
     {
       resolve: "gatsby-source-contentful",
       options: contentfulConfig,
-    },
-    {
-      resolve: `gatsby-plugin-netlify-functions`,
-      options: {
-        functionsSrc: `${__dirname}/src/functions`,
-        functionsOutput: `${__dirname}/functions`,
-      },
-    },
+    }
   ],
 }

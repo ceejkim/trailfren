@@ -1,0 +1,49 @@
+.enterPaymentForm {
+  padding: 1rem 0;
+}
+
+.paymentButtonSection {
+  text-align: center;
+}
+
+.cardSection {
+  padding: 0.5rem 0;
+  width: 100%;
+}
+
+.buttonSection {
+  margin-top: 0.5rem;
+
+  display: flex;
+  justify-content: center;
+}
+
+.submitButton {
+  width: 80%;
+  text-align: center;
+  border: solid #111 1px;
+  color: #111;
+  background-color: white;
+  border-radius: 10px;
+  padding: 0.5rem 0;
+  box-shadow: 2px 2px #d6d6d6;
+  margin: auto;
+}
+
+.submitButton:hover {
+  cursor: pointer;
+  background-color: #EEE;
+}
+
+.submitButton:disabled {
+  box-shadow: none;
+}
+
+.userMessage {
+  text-align: center;
+}
+
+.processingMessage {
+  text-align: center;
+  font-style: italic;
+}

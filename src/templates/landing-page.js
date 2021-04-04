@@ -1,8 +1,10 @@
 import React from "react"
-import { graphql } from "gatsby"
+import { graphql, Link } from "gatsby"
 import { Helmet } from "react-helmet"
 import get from "lodash/get"
 import Img from "gatsby-image"
+
+import DonationBox from "../components/DonationBox/DonationBox";
 
 import * as styles from "./landing-page.module.css"
 
@@ -28,30 +30,7 @@ class LandingPageTemplate extends React.Component {
             fixed={affiliateData.logo.fixed}
           />
         </div>
-        <div className={styles.selectAmountSection}>
-          <div className={styles.selectAmountHeader}>Choose an amount to contribute</div>
-          <div className={styles.selectAmountButtons}>
-            {affiliateData.donationAmounts.sort((a,b) => Number(a) > Number(b)).map((donationAmount) => (
-              <button
-                key={donationAmount}
-                className={
-                  this.state.selectedAmount === donationAmount
-                    ? styles.buttonSelected
-                    : styles.selectAmountButton
-                }
-                onClick={() => this.setState({ selectedAmount: donationAmount })}
-              >
-                ${donationAmount}
-              </button>
-            ))}
-          </div>
-        </div>
-        {this.state.selectedAmount && (
-          <div className={styles.goToPayment}>
-            <button className={styles.applePayButton}>Apple Pay</button>
-            <button className={styles.otherPayButton}>Credit Card</button>
-          </div>
-        )}
+        <DonationBox donationAmounts={affiliateData.donationAmounts.map(num => Number(num))} />
         <div className={styles.aboutSection}>
           {affiliateData.contributionDeets && (
             <div>
@@ -68,6 +47,9 @@ class LandingPageTemplate extends React.Component {
               our website
             </a>
           </p>
+        </div>
+        <div className={styles.footer}>
+          <p>Powered by <Link to="/">Frensies</Link></p>
         </div>
       </div>
     )
