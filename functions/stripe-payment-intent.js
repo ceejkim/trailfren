@@ -17,6 +17,7 @@ exports.handler = async (event, context) => {
 
 
   const amount = postBody.amount
+  const accountId = postBody.accountId
 
   if (!amount || amount < 0) {
     console.error("Amount must be a positive integer.")
@@ -32,18 +33,17 @@ exports.handler = async (event, context) => {
 
   // Stripe payment processing begins here
   try {
+    const paymentIntent = await stripe.paymentIntents.create(
+      {
+        currency: "usd",
+        amount: amount,
+        application_fee_amount: Math.round(0.05 * amount),
+      },
+      {
+        stripeAccount: accountId,
+      }
+    )
 
-    // Create a PaymentIntent on Stripe
-    // A PaymentIntent represents your customer's intent to pay
-    // and needs to be confirmed on the client to finalize the payment
-    const paymentIntent = await stripe.paymentIntents.create({
-      currency: "usd",
-      amount: amount
-    })
-
-    // Send the client_secret to the client
-    // The client secret has a limited set of permissions that
-    // let you finalize the payment and update some details from the client
     return {
       statusCode: 200,
       headers,

@@ -26,9 +26,10 @@
   background-color: white;
   font-weight: bold;
   border-radius: 10px;
-  padding: 1rem;
+  padding: 1rem 0;
   box-shadow: 2px 2px #d6d6d6;
   margin: 0.5rem;
+  text-align: center;
 }
 
 .selectAmountButton:hover {
@@ -48,9 +49,10 @@
   background-color: #df7c6d;
   font-weight: bold;
   border-radius: 10px;
-  padding: 1rem;
+  padding: 1rem 0;
   box-shadow: 2px 2px #d6d6d6;
   margin: 0.5rem;
+  text-align: center;
 }
 
 .goToPayment {

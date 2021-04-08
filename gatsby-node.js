@@ -10,10 +10,10 @@ exports.createPages = ({ graphql, actions }) => {
       graphql(
         `
           {
-            allContentfulAffiliate {
+            allContentfulFren {
               edges {
                 node {
-                  affiliateName
+                  name
                   landingPagePath
                 }
               }
@@ -26,8 +26,8 @@ exports.createPages = ({ graphql, actions }) => {
           reject(result.errors)
         }
 
-        const affiliatePages = result.data.allContentfulAffiliate.edges
-        affiliatePages.forEach((page) => {
+        const frenPages = result.data.allContentfulFren.edges
+        frenPages.forEach((page) => {
           createPage({
             path: `/${page.node.landingPagePath}/`,
             component: landingPageTemplate,

@@ -8,7 +8,7 @@ import * as styles from "./DonationBox.module.css"
 const stripePromise = loadStripe(process.env.GATSBY_STRIPE_PUBLIC_KEY)
 
 
-const DonationBox = ({ donationAmounts }) => {
+const DonationBox = ({ donationAmounts, accountId }) => {
   const [selectedAmount, updateSelectedAmount] = useState('')
   const [message, updateMessage] = useState('')
 
@@ -39,7 +39,9 @@ const DonationBox = ({ donationAmounts }) => {
             ))}
         </div>
       </div>
-      {selectedAmount && <CheckoutForm donationAmount={selectedAmount} finalizedPayment={finalizedPayment}/>}
+      {selectedAmount && <CheckoutForm donationAmount={selectedAmount} 
+                                       finalizedPayment={finalizedPayment}
+                                       accountId={accountId}/>}
       {!selectedAmount && <p className={styles.confirmPayment}>{message}</p>}
     </Elements>
   )

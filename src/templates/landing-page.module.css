@@ -31,3 +31,10 @@
   border-top: solid lightgray 1px;
   font-style: italic;
 }
+
+.noPaymentSetup {
+  color: #df7c6d;
+  padding: 1rem;
+  font-size: 1.5rem;
+  text-align: center;
+}

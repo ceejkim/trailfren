@@ -9,7 +9,8 @@
 .cardSection {
   padding: 0.5rem 0;
   width: 100%;
-  border-color: solid lightgrey 1px;
+  border-top: solid lightgrey 1px;
+  border-bottom: solid lightgrey 1px;
 }
 
 .buttonSection {
@@ -22,8 +23,8 @@
 .submitButton {
   width: 80%;
   text-align: center;
-  border: solid #111 1px;
-  color: #111;
+  border: solid grey 1px;
+  color: grey;
   background-color: white;
   border-radius: 10px;
   padding: 0.5rem 0;

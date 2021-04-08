@@ -18,38 +18,46 @@ class LandingPageTemplate extends React.Component {
   }
 
   render() {
-    const affiliateData = get(this.props, "data.contentfulAffiliate")
+    const pageData = get(this.props, "data.contentfulFren")
     return (
       <div className={styles.background}>
-        <Helmet title={`${affiliateData.affiliateName}`} />
+        <Helmet title={`Donate to ${pageData.name}`} />
         <h1 className={styles.banner}>Thank you for contributing!</h1>
         <div className={styles.logo}>
           <Img
             className={styles.logoImage}
-            alt={affiliateData.affiliateName}
-            fixed={affiliateData.logo.fixed}
+            alt={pageData.affiliateName}
+            fixed={pageData.logo.fixed}
           />
         </div>
-        <DonationBox donationAmounts={affiliateData.donationAmounts.map(num => Number(num))} />
+        {pageData.stripeAccountId ? 
+          <DonationBox donationAmounts={pageData.donationAmounts.map((num) => Number(num))} 
+                       accountId={pageData.stripeAccountId}
+                       /> :
+          <div className={styles.noPaymentSetup}>{pageData.name} has not yet set up their account to receive payments, please check back in later</div>
+        
+        }
         <div className={styles.aboutSection}>
-          {affiliateData.contributionDeets && (
+          {pageData.contributionDeets && (
             <div>
               <h4>How we will use your contribution</h4>
-              <p>{affiliateData.contributionDeets.contributionDeets}</p>
+              <p>{pageData.contributionDeets.contributionDeets}</p>
             </div>
           )}
 
           <h4>About us</h4>
-          <p>{affiliateData.aboutUs.aboutUs}</p>
+          <p>{pageData.aboutUs.aboutUs}</p>
           <p>
             Find out more by visiting{" "}
-            <a href={affiliateData.affiliateWebsiteLink} target="_blank" rel="noopener noreferrer">
+            <a href={pageData.websiteUrl} target="_blank" rel="noopener noreferrer">
               our website
             </a>
           </p>
         </div>
         <div className={styles.footer}>
-          <p>Powered by <Link to="/">Frensies</Link></p>
+          <p>
+            Powered by <Link to="/">Frensies</Link>
+          </p>
         </div>
       </div>
     )
@@ -60,9 +68,9 @@ export default LandingPageTemplate
 
 export const pageQuery = graphql`
   query AffiliatePageQuery($landingPagePath: String!) {
-    contentfulAffiliate(landingPagePath: { eq: $landingPagePath }) {
-      affiliateName
-      affiliateWebsiteLink
+    contentfulFren(landingPagePath: { eq: $landingPagePath }) {
+      name
+      websiteUrl
       donationAmounts
       aboutUs {
         aboutUs
@@ -75,6 +83,7 @@ export const pageQuery = graphql`
           ...GatsbyContentfulFixed_tracedSVG
         }
       }
+      stripeAccountId
     }
   }
 `
