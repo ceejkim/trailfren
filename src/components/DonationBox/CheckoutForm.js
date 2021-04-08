@@ -65,7 +65,8 @@ export default function CheckoutForm({ donationAmount, finalizedPayment, account
   }, [donationAmount, accountId])
 
   useEffect(() => {
-    if (stripe && donationAmount) {
+    if (stripe && donationAmount && !paymentRequest) {
+      console.log("updating payment request amount")
       const pr = stripe.paymentRequest({
         country: "US",
         currency: "usd",
@@ -99,8 +100,15 @@ export default function CheckoutForm({ donationAmount, finalizedPayment, account
           setPaymentRequest(pr)
         }
       })
+    } else if (stripe && donationAmount && paymentRequest) {
+      paymentRequest.update({
+        total: {
+          label: "Donation",
+          amount: Number(donationAmount * 100),
+        },
+      })
     }
-  }, [stripe, donationAmount, paymentIntentClientSecret])
+  }, [stripe, donationAmount, paymentIntentClientSecret, paymentRequest])
 
   const handleSubmit = async (event) => {
     event.preventDefault()
@@ -136,7 +144,7 @@ export default function CheckoutForm({ donationAmount, finalizedPayment, account
         <form onSubmit={handleSubmit} className={styles.enterPaymentForm}>
           {paymentRequest && (
             <div className={styles.paymentButtonSection}>
-              <PaymentRequestButtonElement options={{ paymentRequest }} />
+              <PaymentRequestButtonElement options={{paymentRequest}} />
               <p>or, pay by card</p>
             </div>
           )}
