@@ -37,12 +37,14 @@ exports.handler = async (event, context) => {
       {
         currency: "usd",
         amount: amount,
-        application_fee_amount: Math.round(0.05 * amount),
+        application_fee_amount: Math.round(0.10 * amount),
       },
       {
         stripeAccount: accountId,
       }
     )
+
+    console.log(`Generated payment intent: ${paymentIntent.id}`)
 
     return {
       statusCode: 200,

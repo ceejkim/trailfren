@@ -5,10 +5,13 @@ import CheckoutForm from "./CheckoutForm"
 
 import * as styles from "./DonationBox.module.css"
 
-const stripePromise = loadStripe(process.env.GATSBY_STRIPE_PUBLIC_KEY)
 
 
 const DonationBox = ({ donationAmounts, accountId }) => {
+  const stripePromise = loadStripe(process.env.GATSBY_STRIPE_PUBLIC_KEY, {
+    stripeAccount: accountId,
+  })
+
   const [selectedAmount, updateSelectedAmount] = useState('')
   const [message, updateMessage] = useState('')
 
