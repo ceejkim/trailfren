@@ -9,7 +9,7 @@ class RootIndex extends React.Component {
     return (
         <div style={{ background: '#fff' }}>
           <Helmet title={siteTitle} />
-          <h1>Nothing to see here!</h1>
+          <h1>Frensies main site is in progress!</h1>
         </div>
     )
   }

@@ -47,6 +47,17 @@ module.exports = {
     {
       resolve: "gatsby-source-contentful",
       options: contentfulConfig,
-    }
+    },
+    {
+      resolve: `gatsby-plugin-manifest`,
+      options: {
+        name: `Frensies`,
+        start_url: `/`,
+        background_color: `#000000`,
+        theme_color: `#df7c6d`,
+        display: `standalone`,
+        icon: "static/favicon.ico",
+      },
+    },
   ],
 }

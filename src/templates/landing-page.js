@@ -22,7 +22,6 @@ class LandingPageTemplate extends React.Component {
     return (
       <div className={styles.background}>
         <Helmet title={`Donate to ${pageData.name}`} />
-        <h1 className={styles.banner}>Thank you for contributing!</h1>
         <div className={styles.logo}>
           <Img
             className={styles.logoImage}

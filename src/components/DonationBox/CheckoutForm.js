@@ -57,7 +57,6 @@ export default function CheckoutForm({ donationAmount, finalizedPayment, account
 
   useEffect(() => {
     if (stripe && donationAmount && !paymentRequest) {
-      console.log("updating payment request amount")
       const pr = stripe.paymentRequest({
         country: "US",
         currency: "usd",
@@ -66,6 +65,7 @@ export default function CheckoutForm({ donationAmount, finalizedPayment, account
           amount: donationAmount * 100,
         },
       })
+      console.log(pr)
       pr.canMakePayment().then((result) => {
         if (result) {
           pr.on("paymentMethod", async (event) => {

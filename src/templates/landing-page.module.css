@@ -1,6 +1,6 @@
 .background {
   max-width: 500px;
-  margin: auto;
+  margin: 50px auto;
 }
 
 .banner {
@@ -20,7 +20,7 @@
 }
 
 .aboutSection {
-  color: darkgrey;
+  color: rgb(95, 95, 95);
   padding: 1rem;
   margin-top: 2rem;
 }
@@ -28,8 +28,12 @@
 .footer {
   color: grey;
   text-align: center;
-  border-top: solid lightgray 1px;
+  border-top: solid grey 1px;
   font-style: italic;
+}
+
+.footer a {
+  color: #df7c6d;
 }
 
 .noPaymentSetup {
