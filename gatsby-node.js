@@ -30,9 +30,9 @@ exports.createPages = async ({ graphql, actions }) => {
 
   const frens = result.data.allContentfulFren.edges
   frens.forEach(({ node }) => {
-    const frenId = node.id
+    if (!node.landingPages || !node.landingPages.length) return
 
-    if(!node.landingPages || !node.landingPages.length) return
+    const frenId = node.id
 
     node.landingPages.forEach(({ id, landingPagePath }) => {
       createPage({
