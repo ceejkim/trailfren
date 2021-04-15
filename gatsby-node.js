@@ -6,44 +6,41 @@ exports.createPages = async ({ graphql, actions }) => {
 
   const landingPageTemplate = path.resolve("./src/templates/landing-page.js")
 
-  if (process.env.NODE_ENV === "production") {
-    const result = await graphql(
-      `
-        {
-          allContentfulFren {
-            edges {
-              node {
-                name
+  const result = await graphql(
+    `
+      {
+        allContentfulFren {
+          edges {
+            node {
+              id
+              landingPages {
+                id
                 landingPagePath
               }
             }
           }
         }
-      `
-    )
+      }
+    `
+  )
 
-    if (result.errors) {
-      throw new Error(result.errors)
-    }
+  if (result.errors) {
+    throw new Error(result.errors)
+  }
 
-    const frenPages = result.data.allContentfulFren.edges
-    frenPages.forEach((page) => {
+  const frens = result.data.allContentfulFren.edges
+  frens.forEach(({ node }) => {
+    const frenId = node.id
+
+    node.landingPages.forEach(({ id, landingPagePath }) => {
       createPage({
-        path: `/${page.node.landingPagePath}/`,
+        path: `/${landingPagePath}/`,
         component: landingPageTemplate,
         context: {
-          landingPagePath: page.node.landingPagePath,
+          frenId,
+          landingPageId: id,
         },
       })
     })
-  } else {
-    createPage({
-      path: "/demo/",
-      component: landingPageTemplate,
-      context: {
-        landingPagePath: "demo",
-        testStripeAccountId: "acct_1IC4oRI0MvyIqA12",
-      },
-    })
-  }
+  })
 }

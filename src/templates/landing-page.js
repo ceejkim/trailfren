@@ -18,24 +18,25 @@ class LandingPageTemplate extends React.Component {
   }
 
   render() {
-    const pageData = get(this.props, "data.contentfulFren")
+    const frenData = get(this.props, "data.contentfulFren")
+    const pageData = get(this.props, "data.contentfulLandingPage")
     return (
       <div className={styles.background}>
-        <Helmet title={`Donate to ${pageData.name}`} />
+        <Helmet title={`Donate to ${frenData.name}`} />
         <div className={styles.logo}>
-          <Img
-            className={styles.logoImage}
-            alt={pageData.affiliateName}
-            fixed={pageData.logo.fixed}
-          />
+          <Img className={styles.logoImage} alt={frenData.name} fixed={frenData.logo.fixed} />
         </div>
-        {pageData.stripeAccountId ? 
-          <DonationBox donationAmounts={pageData.donationAmounts.map((num) => Number(num))} 
-                       accountId={pageData.stripeAccountId}
-                       /> :
-          <div className={styles.noPaymentSetup}>{pageData.name} has not yet set up their account to receive payments, please check back in later</div>
-        
-        }
+        {frenData.stripeAccountId ? (
+          <DonationBox
+            donationAmounts={pageData.donationAmounts.map((num) => Number(num))}
+            accountId={frenData.stripeAccountId}
+          />
+        ) : (
+          <div className={styles.noPaymentSetup}>
+            {frenData.name} has not yet set up their account to receive payments, please check back
+            in later
+          </div>
+        )}
         <div className={styles.aboutSection}>
           {pageData.contributionDeets && (
             <div>
@@ -45,10 +46,10 @@ class LandingPageTemplate extends React.Component {
           )}
 
           <h4>About us</h4>
-          <p>{pageData.aboutUs.aboutUs}</p>
+          <p>{frenData.aboutUs.aboutUs}</p>
           <p>
             Find out more by visiting{" "}
-            <a href={pageData.websiteUrl} target="_blank" rel="noopener noreferrer">
+            <a href={frenData.websiteUrl} target="_blank" rel="noopener noreferrer">
               our website
             </a>
           </p>
@@ -66,16 +67,12 @@ class LandingPageTemplate extends React.Component {
 export default LandingPageTemplate
 
 export const pageQuery = graphql`
-  query AffiliatePageQuery($landingPagePath: String!) {
-    contentfulFren(landingPagePath: { eq: $landingPagePath }) {
+  query FrenPageQuery($frenId: String!, $landingPageId: String!) {
+    contentfulFren(id: { eq: $frenId }) {
       name
       websiteUrl
-      donationAmounts
       aboutUs {
         aboutUs
-      }
-      contributionDeets {
-        contributionDeets
       }
       logo {
         fixed(height: 150) {
@@ -83,6 +80,12 @@ export const pageQuery = graphql`
         }
       }
       stripeAccountId
+    }
+    contentfulLandingPage(id: { eq: $landingPageId }) {
+      contributionDeets {
+        contributionDeets
+      }
+      donationAmounts
     }
   }
 `
