@@ -1,12 +1,13 @@
-import React, { useState, useEffect, useCallback } from "react"
+import React, { useState, useCallback } from "react"
 import {
   useStripe,
   useElements,
-  CardElement,
-  PaymentRequestButtonElement,
+  CardElement
 } from "@stripe/react-stripe-js"
 
 import * as styles from "./CheckoutForm.module.css"
+
+import PaymentRequest from "../PaymentRequest/PaymentRequest"
 
 const CARD_ELEMENT_OPTIONS = {
   style: {
@@ -32,7 +33,6 @@ export default function CheckoutForm({ donationAmount, finalizedPayment, account
 
   const [message, updateMessage] = useState("")
   const [processing, updateProcessing] = useState(false)
-  const [paymentRequest, setPaymentRequest] = useState(null)
 
   const generatePaymentIntentToken = useCallback(async () => {
     const response = await fetch("/.netlify/functions/stripe-payment-intent", {
@@ -54,58 +54,6 @@ export default function CheckoutForm({ donationAmount, finalizedPayment, account
       }
     }
   }, [donationAmount, accountId])
-
-  useEffect(() => {
-    if (stripe && donationAmount && !paymentRequest) {
-      const pr = stripe.paymentRequest({
-        country: "US",
-        currency: "usd",
-        total: {
-          label: "Donation",
-          amount: donationAmount * 100,
-        },
-      })
-      console.log(pr)
-      pr.canMakePayment().then((result) => {
-        if (result) {
-          pr.on("paymentMethod", async (event) => {
-            const { clientSecret, error } = await generatePaymentIntentToken()
-            if (error) {
-              updateMessage("Sorry, an error occurred")
-            } else {
-              console.log("Payment token generated")
-              const { paymentIntent, error: confirmError } = await stripe.confirmCardPayment(
-                clientSecret,
-                { paymentMethod: event.paymentMethod.id },
-                { handleActions: false }
-              )
-
-              if (confirmError) {
-                event.complete("fail")
-              } else {
-                event.complete("success")
-                if (paymentIntent.status === "requires_action") {
-                  const { error } = await stripe.confirmCardPayment(clientSecret)
-                  if (error) {
-                    updateMessage("Sorry, an issue with this payment occurred")
-                    console.log(error)
-                  }
-                }
-              }
-            }
-          })
-          setPaymentRequest(pr)
-        }
-      })
-    } else if (stripe && donationAmount && paymentRequest) {
-      paymentRequest.update({
-        total: {
-          label: "Donation",
-          amount: Number(donationAmount * 100),
-        },
-      })
-    }
-  }, [stripe, donationAmount, paymentRequest, generatePaymentIntentToken])
 
   const handleSubmit = async (event) => {
     event.preventDefault()
@@ -136,12 +84,10 @@ export default function CheckoutForm({ donationAmount, finalizedPayment, account
   return (
     <div>
       <form onSubmit={handleSubmit} className={styles.enterPaymentForm}>
-        {paymentRequest && (
-          <div className={styles.paymentButtonSection}>
-            <PaymentRequestButtonElement options={{ paymentRequest }} />
-            <p>or, pay by card</p>
-          </div>
-        )}
+        <PaymentRequest donationAmount={donationAmount}
+                        finalizedPayment={finalizedPayment}
+                        updateMessage={updateMessage}
+                        generatePaymentIntentToken={generatePaymentIntentToken} />
         <div className={styles.cardSection}>
           <CardElement options={CARD_ELEMENT_OPTIONS} />
           <div className={styles.buttonSection}>

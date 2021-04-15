@@ -9,13 +9,6 @@ import DonationBox from "../components/DonationBox/DonationBox";
 import * as styles from "./landing-page.module.css"
 
 class LandingPageTemplate extends React.Component {
-  
-  constructor(props){
-    super(props)
-    this.state = {
-      selectedAmount: ``
-    }
-  }
 
   render() {
     const frenData = get(this.props, "data.contentfulFren")

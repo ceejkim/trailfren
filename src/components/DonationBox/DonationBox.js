@@ -1,16 +1,20 @@
 import React, {useState} from "react"
 import { Elements } from "@stripe/react-stripe-js"
 import { loadStripe } from "@stripe/stripe-js"
-import CheckoutForm from "./CheckoutForm"
+import CheckoutForm from "../CheckoutForm/CheckoutForm"
 
 import * as styles from "./DonationBox.module.css"
 
 
 
 const DonationBox = ({ donationAmounts, accountId }) => {
-  const stripePromise = loadStripe(process.env.GATSBY_STRIPE_PUBLIC_KEY, {
-    stripeAccount: accountId,
-  })
+  const [stripePromise] = useState(() =>
+    loadStripe(process.env.GATSBY_STRIPE_PUBLIC_KEY, {
+      stripeAccount: accountId,
+    })
+  )
+  
+  
 
   const [selectedAmount, updateSelectedAmount] = useState('')
   const [confirmationMessage, updateConfirmationMessage] = useState('')
