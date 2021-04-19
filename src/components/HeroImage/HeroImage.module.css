@@ -1,0 +1,31 @@
+.hero {
+  max-height: 100%;
+  position: relative;
+  text-align: center;
+  color: white;
+}
+
+.image {
+  position: relative;
+}
+
+.textContainer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  background-color: rgba(71, 38, 0, 0.259);
+}
+
+.text {
+  position: absolute;
+  width: 100%;
+  margin: auto;
+  padding: 1rem;
+  top: 50%;
+  transform: translate(0, -50%);
+  font-size: 60px;
+  font-weight: 900;
+  line-height: 1.25;
+}

@@ -1,0 +1,38 @@
+.navbar {
+  width: 100%;
+  padding: 2em;
+  display: flex;
+  flex-basis: space-between;
+  
+}
+
+.logo, .logo:hover {
+  color: #df7c6d;
+  font-size: 40px;
+  text-decoration: none;
+}
+
+.navbarToggleIcon {
+  color: #df7c6d;
+  font-size: 30px;
+}
+
+.linkSection {
+  align-self: flex-end;
+  display: flex;
+  justify-content: right;
+  list-style-type: none;
+}
+
+.navLink {
+  color: #df7c6d !important;
+  text-decoration: none;
+  width: auto;
+  font-size: 25px;
+  margin: 0.5rem;
+}
+
+
+.active {
+  text-decoration: underline;
+}

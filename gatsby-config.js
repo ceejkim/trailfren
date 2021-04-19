@@ -35,10 +35,10 @@ if (!spaceId || !accessToken) {
 
 module.exports = {
   siteMetadata: {
-    title: "Gatsby Contentful starter",
+    title: "Trailfren",
   },
-  pathPrefix: "/gatsby-contentful-starter",
   plugins: [
+    "gatsby-plugin-image",
     "gatsby-transformer-remark",
     "gatsby-transformer-sharp",
     "gatsby-plugin-react-helmet",
