@@ -72,7 +72,7 @@ export const indexPageQuery = graphql`
     image4: contentfulAsset(title: { eq: "snowy-trail-in-woods" }) {
       gatsbyImageData(aspectRatio: 1.5)
     }
-    image5: contentfulAsset(title: { eq: "walking-on-log" }) {
+    image5: contentfulAsset(title: { eq: "biking-taking-pick" }) {
       gatsbyImageData(aspectRatio: 1.5)
     }
     image6: contentfulAsset(title: { eq: "fishing-in-pine-forest" }) {
