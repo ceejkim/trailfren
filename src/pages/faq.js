@@ -13,9 +13,8 @@ const PartnerPage = (props) => (
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
-        padding: "150px 50px",
         maxWidth: "800px",
-        margin: "auto",
+        margin: "100px auto",
       }}
     >
       <h4 style={{ margin: "2rem", fontWeight: 600 }}>Where does my money go?</h4>

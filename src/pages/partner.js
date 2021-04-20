@@ -16,7 +16,8 @@ const PartnerPage = (props) => (
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
-        padding: "150px 50px",
+        maxWidth: "600px",
+        margin: "200px auto",
       }}
     >
       <h1 style={{ margin: "2rem" }}>

@@ -27,18 +27,18 @@ const Navbar = () => {
         id="navbarSupportedContent"
         style={{ justifyContent: "flex-end" }}
       >
-        <ul className={styles.linkSection}>
-          <li className="">
+        <ul className={`navbar-nav ${styles.linkSection}`}>
+          <li className="nav-item">
             <Link to="/partner" className={styles.navLink}>
               Become a Partner
             </Link>
           </li>
-          <li className="">
+          <li className="nav-item">
             <Link to="/faq" className={styles.navLink}>
               FAQ
             </Link>
           </li>
-          <li className="">
+          <li className="nav-item">
             <Link to="/contact" className={styles.navLink}>
               Contact
             </Link>

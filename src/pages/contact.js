@@ -8,11 +8,11 @@ const ContactPage = (props) => (
     <Hero imageData={props.data.heroImage.gatsbyImageData}>
       <h1>dont leave frens hanging</h1>
     </Hero>
-    <div className="row" style={{ padding: "4rem" }}>
-      <div class="col col-lg-6">
+    <div className="row" style={{ padding: "4rem 2rem" }}>
+      <div class="col-md-5">
         <h1>We'll wait</h1>
       </div>
-      <div className="col col-lg-6">
+      <div className="col-md-7">
         <form name="contact" method="POST" data-netlify="true">
           <div className="row">
             <div className="form-group py-3 col">
