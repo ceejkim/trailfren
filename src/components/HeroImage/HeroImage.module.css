@@ -18,14 +18,14 @@
   background-color: rgba(71, 38, 0, 0.259);
 }
 
-.text {
+.text > h1, text > h2 {
   position: absolute;
   width: 100%;
   margin: auto;
   padding: 1rem;
   top: 50%;
   transform: translate(0, -50%);
-  font-size: 60px;
+  font-size: 5rem;
   font-weight: 900;
-  line-height: 1.25;
+  line-height: 8rem;
 }

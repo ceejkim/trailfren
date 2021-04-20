@@ -3,10 +3,10 @@ import {Link} from 'gatsby'
 
 import * as styles from "./Navbar.module.css"
 
-export default function(){
+const Navbar = () => {
   return (
     <nav className={`navbar navbar-expand-md ${styles.navbar}`}>
-      <div className={styles.logoSection}>
+      <div>
         <Link to="/" className={`${styles.logo}`}>
           trailfren
         </Link>
@@ -48,3 +48,5 @@ export default function(){
     </nav>
   )
 }
+
+export default Navbar

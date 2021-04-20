@@ -49,7 +49,7 @@ class LandingPageTemplate extends React.Component {
         </div>
         <div className={styles.footer}>
           <p>
-            Powered by <Link to="/">Frensies</Link>
+            Powered by <Link to="/">Trailfren</Link>
           </p>
         </div>
       </div>
