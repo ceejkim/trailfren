@@ -25,22 +25,22 @@ const IndexPage = (props) => (
     <div style={{ display: "flex" }}>
       <div className="row p-5">
         <div className="col col-md-6 col-xl-4 p-3">
-          <GatsbyImage image={getImage(props.data.image1.gatsbyImageData)} />
+          <GatsbyImage image={getImage(props.data.image1.gatsbyImageData)} alt=""/>
         </div>
         <div className="col col-md-6 col-xl-4 p-3">
-          <GatsbyImage image={getImage(props.data.image2.gatsbyImageData)} />
+          <GatsbyImage image={getImage(props.data.image2.gatsbyImageData)} alt=""/>
         </div>
         <div className="col col-md-6 col-xl-4 p-3">
-          <GatsbyImage image={getImage(props.data.image3.gatsbyImageData)} />
+          <GatsbyImage image={getImage(props.data.image3.gatsbyImageData)} alt=""/>
         </div>
         <div className="col col-md-6 col-xl-4 p-3">
-          <GatsbyImage image={getImage(props.data.image4.gatsbyImageData)} />
+          <GatsbyImage image={getImage(props.data.image4.gatsbyImageData)} alt=""/>
         </div>
         <div className="col col-md-6 col-xl-4 p-3">
-          <GatsbyImage image={getImage(props.data.image5.gatsbyImageData)} />
+          <GatsbyImage image={getImage(props.data.image5.gatsbyImageData)} alt=""/>
         </div>
         <div className="col col-md-6 col-xl-4 p-3">
-          <GatsbyImage image={getImage(props.data.image6.gatsbyImageData)} />
+          <GatsbyImage image={getImage(props.data.image6.gatsbyImageData)} alt=""/>
         </div>
       </div>
     </div>
