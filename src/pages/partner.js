@@ -7,7 +7,7 @@ const PartnerPage = (props) => (
   <Layout>
     <Hero imageData={props.data.heroImage.gatsbyImageData}>
       <h1>
-        get. in. touch. with. us <br /> WE WANT MORE FRENS <br /> WE HAVE NO FRENS
+        Partner with us
       </h1>
     </Hero>
     <div
@@ -21,12 +21,8 @@ const PartnerPage = (props) => (
       }}
     >
       <h1 style={{ margin: "2rem" }}>
-        Are you an organization the facilitates the fun zone? Do you want funds so you can create
-        more fun? Do you want funds from your frens?{" "}
-      </h1>
-      <h1 style={{ margin: "2rem" }}>
-        We will make you QR codes, bank accounts, landing pages, and designs. All you have to do is
-        print out our fun signs and place them at your trail head.{" "}
+        We create your QR codes, bank accounts, landing pages, and sign designs. All you have to do
+        is post our recognizable trailfren signs at your trailheads to receive contributions.
       </h1>
     </div>
   </Layout>

@@ -17,28 +17,27 @@ const PartnerPage = (props) => (
         margin: "100px auto",
       }}
     >
+      <h4 style={{ margin: "2rem", fontWeight: 600 }}>What is trailfren? </h4>
+      <h4 style={{ margin: "2rem", fontWeight: "lighter" }}>
+        Trailfren is an organization that uses basic QR code technology in the outdoors. Our signs
+        allow people to donate to the organizations that make their outdoor activity possible
+        through trail maintenance and conservation. Contributions as little as $2 per bike ride make
+        a big difference for the spaces you enjoy.
+      </h4>
+      <div style={{ height: "50px" }} />
       <h4 style={{ margin: "2rem", fontWeight: 600 }}>Where does my money go?</h4>
       <h4 style={{ margin: "2rem", fontWeight: "lighter" }}>
-        To your frens! Your money will go to the organization that maintains the exact trail you are
-        using. The organization will be listed in our signage at the trailhead. After you scan the
-        QR code you will be taken to a landing page which will also provide a description of the
+        The organization receiving your contribution will be shown in our signage. After you scan
+        the QR code you will be taken to a landing page which will also provide a description of the
         organization and provide an option to contribute.
       </h4>
       <div style={{ height: "50px" }} />
       <h4 style={{ margin: "2rem", fontWeight: 600 }}>
-        How do I know this money is going to protect the trails?
+        Can anyone join trailfren and receive money?
       </h4>
       <h4 style={{ margin: "2rem", fontWeight: "lighter" }}>
-        Trailfren vets every organization to make sure that there is appropriate governance that
-        allows for public input. If an organization does not meet our requirements, we will not
-        partner with them.{" "}
-      </h4>
-      <div style={{ height: "50px" }} />
-      <h4 style={{ margin: "2rem", fontWeight: 600 }}>
-        If I am a representative of an organization that maintains trails, how do I sign up?
-      </h4>
-      <h4 style={{ margin: "2rem", fontWeight: "lighter" }}>
-        Please contact us! We want more frens.
+        Yes! If you are an organization that provides for the public you can become a trailfren
+        organization.
       </h4>
     </div>
   </Layout>
