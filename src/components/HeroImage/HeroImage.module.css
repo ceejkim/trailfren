@@ -1,5 +1,6 @@
 .hero {
-  max-height: 100%;
+  height: 500px;
+  width: 100vw;
   position: relative;
   text-align: center;
   color: white;
@@ -25,7 +26,5 @@
   padding: 1rem;
   top: 50%;
   transform: translate(0, -50%);
-  font-size: 5rem;
   font-weight: 900;
-  line-height: 8rem;
 }

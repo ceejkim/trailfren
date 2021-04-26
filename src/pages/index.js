@@ -15,7 +15,8 @@ const IndexPage = (props) => (
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
-        padding: "150px 50px",
+        maxWidth: "600px",
+        margin: "200px auto",
       }}
     >
       <h1 style={{ margin: "2rem" }}>Step 1: Scan QR Code</h1>
@@ -24,23 +25,23 @@ const IndexPage = (props) => (
     </div>
     <div style={{ display: "flex" }}>
       <div className="row p-5">
-        <div className="col col-md-6 col-xl-4 p-3">
-          <GatsbyImage image={getImage(props.data.image1.gatsbyImageData)} />
+        <div className="col-md-6 col-xl-4 p-3">
+          <GatsbyImage image={getImage(props.data.image1.gatsbyImageData)} alt=""/>
         </div>
-        <div className="col col-md-6 col-xl-4 p-3">
-          <GatsbyImage image={getImage(props.data.image2.gatsbyImageData)} />
+        <div className="col-md-6 col-xl-4 p-3">
+          <GatsbyImage image={getImage(props.data.image2.gatsbyImageData)} alt=""/>
         </div>
-        <div className="col col-md-6 col-xl-4 p-3">
-          <GatsbyImage image={getImage(props.data.image3.gatsbyImageData)} />
+        <div className="col-md-6 col-xl-4 p-3">
+          <GatsbyImage image={getImage(props.data.image3.gatsbyImageData)} alt=""/>
         </div>
-        <div className="col col-md-6 col-xl-4 p-3">
-          <GatsbyImage image={getImage(props.data.image4.gatsbyImageData)} />
+        <div className="col-md-6 col-xl-4 p-3">
+          <GatsbyImage image={getImage(props.data.image4.gatsbyImageData)} alt=""/>
         </div>
-        <div className="col col-md-6 col-xl-4 p-3">
-          <GatsbyImage image={getImage(props.data.image5.gatsbyImageData)} />
+        <div className="col-md-6 col-xl-4 p-3">
+          <GatsbyImage image={getImage(props.data.image5.gatsbyImageData)} alt=""/>
         </div>
-        <div className="col col-md-6 col-xl-4 p-3">
-          <GatsbyImage image={getImage(props.data.image6.gatsbyImageData)} />
+        <div className="col-md-6 col-xl-4 p-3">
+          <GatsbyImage image={getImage(props.data.image6.gatsbyImageData)} alt=""/>
         </div>
       </div>
     </div>
@@ -52,7 +53,12 @@ export default IndexPage
 export const indexPageQuery = graphql`
   query {
     heroImage: contentfulAsset(title: { eq: "hammock-hero-image" }) {
-      gatsbyImageData(placeholder: BLURRED, layout: FULL_WIDTH)
+      gatsbyImageData(
+        placeholder: BLURRED, 
+        layout: FULL_WIDTH,
+        cropFocus: CENTER,
+        formats: [AUTO,WEBP]
+      )
     }
     image1: contentfulAsset(title: { eq: "walking-on-log" }) {
       gatsbyImageData(aspectRatio: 1.5)
@@ -66,7 +72,7 @@ export const indexPageQuery = graphql`
     image4: contentfulAsset(title: { eq: "snowy-trail-in-woods" }) {
       gatsbyImageData(aspectRatio: 1.5)
     }
-    image5: contentfulAsset(title: { eq: "walking-on-log" }) {
+    image5: contentfulAsset(title: { eq: "biking-taking-pick" }) {
       gatsbyImageData(aspectRatio: 1.5)
     }
     image6: contentfulAsset(title: { eq: "fishing-in-pine-forest" }) {
