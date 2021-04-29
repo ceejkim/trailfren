@@ -5,7 +5,7 @@ import Hero from "../components/HeroImage/HeroImage"
 import { GatsbyImage, getImage } from "gatsby-plugin-image"
 
 const IndexPage = (props) => (
-  <Layout>
+  <Layout page="index">
     <Hero imageData={props.data.heroImage.gatsbyImageData}>
       <h1>SUPPORT WHAT YOU LOVE</h1>
     </Hero>

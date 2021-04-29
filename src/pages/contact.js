@@ -33,7 +33,7 @@ const ContactPage = (props) => {
     }
 
   return (
-    <Layout>
+    <Layout page="contact">
       <Hero imageData={props.data.heroImage.gatsbyImageData}>
         <h1>dont leave frens hanging</h1>
       </Hero>
