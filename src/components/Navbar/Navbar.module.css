@@ -28,11 +28,13 @@
   color: #df7c6d !important;
   text-decoration: none;
   width: auto;
-  font-size: 25px;
+  font-size: 20px;
   margin: 0.5rem;
+  font-weight: lighter;
 }
 
 
-.active {
-  text-decoration: underline;
+.navLinkActive {
+  composes: navLink;
+  border-bottom: solid #df7c6d 1px;
 }

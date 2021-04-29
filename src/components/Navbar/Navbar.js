@@ -3,7 +3,7 @@ import {Link} from 'gatsby'
 
 import * as styles from "./Navbar.module.css"
 
-const Navbar = () => {
+const Navbar = ({page}) => {
   return (
     <nav className={`navbar navbar-expand-md ${styles.navbar}`}>
       <div>
@@ -29,17 +29,23 @@ const Navbar = () => {
       >
         <ul className={`navbar-nav ${styles.linkSection}`}>
           <li className="nav-item">
-            <Link to="/partner" className={styles.navLink}>
+            <Link
+              to="/partner"
+              className={page === "partner" ? styles.navLinkActive : styles.navLink}
+            >
               Become a Partner
             </Link>
           </li>
           <li className="nav-item">
-            <Link to="/faq" className={styles.navLink}>
+            <Link to="/faq" className={page === "faq" ? styles.navLinkActive : styles.navLink}>
               FAQ
             </Link>
           </li>
           <li className="nav-item">
-            <Link to="/contact" className={styles.navLink}>
+            <Link
+              to="/contact"
+              className={page === "contact" ? styles.navLinkActive : styles.navLink}
+            >
               Contact
             </Link>
           </li>

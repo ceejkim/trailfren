@@ -4,9 +4,9 @@ import Layout from "../components/Layout/Layout"
 import Hero from "../components/HeroImage/HeroImage"
 
 const PartnerPage = (props) => (
-  <Layout>
+  <Layout page="faq">
     <Hero imageData={props.data.heroImage.gatsbyImageData}>
-      <h1>Frens Asking Questions</h1>
+      <h1>Frequently Asked Questions</h1>
     </Hero>
     <div
       style={{
@@ -18,27 +18,27 @@ const PartnerPage = (props) => (
       }}
     >
       <h4 style={{ margin: "2rem", fontWeight: 600 }}>What is trailfren? </h4>
-      <h4 style={{ margin: "2rem", fontWeight: "lighter" }}>
+      <p style={{ margin: "2rem", lineHeight: 1.8, fontWeight: 300, fontStyle: "normal" }}>
         Trailfren is an organization that uses basic QR code technology in the outdoors. Our signs
         allow people to donate to the organizations that make their outdoor activity possible
         through trail maintenance and conservation. Contributions as little as $2 per bike ride make
         a big difference for the spaces you enjoy.
-      </h4>
+      </p>
       <div style={{ height: "50px" }} />
       <h4 style={{ margin: "2rem", fontWeight: 600 }}>Where does my money go?</h4>
-      <h4 style={{ margin: "2rem", fontWeight: "lighter" }}>
+      <p style={{ margin: "2rem", lineHeight: 1.8, fontWeight: 300, fontStyle: "normal" }}>
         The organization receiving your contribution will be shown in our signage. After you scan
         the QR code you will be taken to a landing page which will also provide a description of the
         organization and provide an option to contribute.
-      </h4>
+      </p>
       <div style={{ height: "50px" }} />
       <h4 style={{ margin: "2rem", fontWeight: 600 }}>
         Can anyone join trailfren and receive money?
       </h4>
-      <h4 style={{ margin: "2rem", fontWeight: "lighter" }}>
+      <p style={{ margin: "2rem", lineHeight: 1.8, fontWeight: 300, fontStyle: "normal" }}>
         Yes! If you are an organization that provides for the public you can become a trailfren
         organization.
-      </h4>
+      </p>
     </div>
   </Layout>
 )
