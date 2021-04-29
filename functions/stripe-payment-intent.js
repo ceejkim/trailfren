@@ -16,7 +16,7 @@ exports.handler = async (event, context) => {
   const postBody = JSON.parse(event.body)
 
 
-  const amount = postBody.amount
+  const amount = Number(postBody.amount)
   const accountId = postBody.accountId
 
   if (!amount || amount < 0) {
@@ -33,11 +33,15 @@ exports.handler = async (event, context) => {
 
   // Stripe payment processing begins here
   try {
+
+    const stripeFee = amount * 0.029 + 30
+    const feeTaken = Math.round((amount - stripeFee) * 0.1)
+
     const paymentIntent = await stripe.paymentIntents.create(
       {
         currency: "usd",
         amount: amount,
-        application_fee_amount: Math.round(0.10 * amount),
+        application_fee_amount: feeTaken,
       },
       {
         stripeAccount: accountId,
