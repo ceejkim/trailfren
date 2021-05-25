@@ -67,3 +67,10 @@ public
 .contentful.json
 # Local Netlify folder
 .netlify
+
+
+
+# stupid stuff
+.DS_Store
+src/.DS_Store
+src/components/.DS_Store
