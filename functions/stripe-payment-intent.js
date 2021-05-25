@@ -34,8 +34,7 @@ exports.handler = async (event, context) => {
   // Stripe payment processing begins here
   try {
 
-    const stripeFee = amount * 0.029 + 30
-    const feeTaken = Math.round((amount - stripeFee) * 0.1)
+    const feeTaken = 0.02 * amount
 
     const paymentIntent = await stripe.paymentIntents.create(
       {
