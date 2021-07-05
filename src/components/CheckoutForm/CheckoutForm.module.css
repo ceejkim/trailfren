@@ -49,3 +49,19 @@
   text-align: center;
   font-style: italic;
 }
+
+.includeTipMessage {
+  text-align: center;
+  font-style: italic;
+  color: lightslategray;
+  margin-top: 2rem;
+  font-size: 0.8rem;
+}
+
+.removeTip {
+  color: lightblue;
+}
+
+.removeTip:hover {
+  cursor: pointer;
+}

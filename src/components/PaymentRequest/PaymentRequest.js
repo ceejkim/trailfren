@@ -56,7 +56,7 @@ export default function PaymentRequestButton({
       currency: "usd",
       total: {
         label: "Donation",
-        amount: donationAmount * 100,
+        amount: Math.round(donationAmount) * 100,
       },
     })
     pr.canMakePayment().then((result) => {

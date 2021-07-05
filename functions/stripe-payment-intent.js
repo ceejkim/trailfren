@@ -4,6 +4,8 @@ const headers = {
   "Access-Control-Allow-Headers": "Content-Type",
 }
 
+const feeTaken = 10
+
 exports.handler = async (event, context) => {
   // CORS
   if (event.httpMethod === "OPTIONS") {
@@ -17,6 +19,7 @@ exports.handler = async (event, context) => {
 
 
   const amount = Number(postBody.amount)
+  const includeTip = postBody.includeTip
   const accountId = postBody.accountId
 
   if (!amount || amount < 0) {
@@ -34,13 +37,11 @@ exports.handler = async (event, context) => {
   // Stripe payment processing begins here
   try {
 
-    const feeTaken = 0.02 * amount
-
     const paymentIntent = await stripe.paymentIntents.create(
       {
         currency: "usd",
-        amount: amount,
-        application_fee_amount: feeTaken,
+        amount: Math.round(amount + (includeTip && feeTaken)),
+        application_fee_amount: feeTaken
       },
       {
         stripeAccount: accountId,

@@ -33,12 +33,14 @@ export default function CheckoutForm({ donationAmount, finalizedPayment, account
 
   const [message, updateMessage] = useState("")
   const [processing, updateProcessing] = useState(false)
+  const [includeTip, updateIncludeTip] = useState(true)
 
   const generatePaymentIntentToken = useCallback(async () => {
     const response = await fetch("/.netlify/functions/stripe-payment-intent", {
       method: "POST",
       body: JSON.stringify({
         amount: donationAmount * 100,
+        includeTip,
         accountId,
       }),
     }).then((result) => result.json())
@@ -53,7 +55,7 @@ export default function CheckoutForm({ donationAmount, finalizedPayment, account
         return { error: "Sorry, an error occurred" }
       }
     }
-  }, [donationAmount, accountId])
+  }, [donationAmount, accountId, includeTip])
 
   const handleSubmit = async (event) => {
     event.preventDefault()
@@ -84,7 +86,7 @@ export default function CheckoutForm({ donationAmount, finalizedPayment, account
   return (
     <div>
       <form onSubmit={handleSubmit} className={styles.enterPaymentForm}>
-        <PaymentRequest donationAmount={donationAmount}
+        <PaymentRequest donationAmount={donationAmount + (includeTip && 0.1)}
                         finalizedPayment={finalizedPayment}
                         updateMessage={updateMessage}
                         generatePaymentIntentToken={generatePaymentIntentToken} />
@@ -92,11 +94,17 @@ export default function CheckoutForm({ donationAmount, finalizedPayment, account
           <CardElement options={CARD_ELEMENT_OPTIONS} />
           <div className={styles.buttonSection}>
             <button className={styles.submitButton} disabled={!stripe || processing}>
-              Donate ${donationAmount}
+              Donate ${donationAmount + (includeTip && 0.1)}
             </button>
           </div>
+
           {processing && <p className={styles.processingMessage}>Processing payment</p>}
         </div>
+        {includeTip && <p className={styles.includeTipMessage}>
+            Includes a $0.1 tip for Trailfren -{" "}
+            <span onClick={() => updateIncludeTip(false)} className={styles.removeTip}>click to remove</span>
+          </p>}
+
       </form>
       <p className={styles.userMessage}>{message}</p>
     </div>
