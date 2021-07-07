@@ -65,7 +65,7 @@ export default function PaymentRequestButton({
       if (result) {
         pr.on("paymentmethod", handlePaymentMethodReceived)
         pr.on("cancel", () => {
-          paymentRequest.off("paymentmethod")
+          pr.off("paymentmethod")
         })
         setPaymentRequest(pr)
       }
