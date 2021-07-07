@@ -11,6 +11,7 @@ export default function PaymentRequestButton({
   updateMessage,
   tipAmount
 }) {
+  console.log(tipAmount)
   const stripe = useStripe()
   const [paymentRequest, setPaymentRequest] = useState(null)
 

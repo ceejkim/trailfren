@@ -88,7 +88,7 @@ export default function CheckoutForm({ donationAmount, finalizedPayment, account
     <div>
       <form onSubmit={handleSubmit} className={styles.enterPaymentForm}>
         <PaymentRequest donationAmount={Math.round(donationAmount)}
-                        tipAmount={includeTip && 0.1}
+                        tipAmount={includeTip ? 0.1 : 0}
                         finalizedPayment={finalizedPayment}
                         updateMessage={updateMessage}
                         generatePaymentIntentToken={generatePaymentIntentToken} />
