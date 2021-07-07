@@ -27,7 +27,7 @@ const CARD_ELEMENT_OPTIONS = {
   },
 }
 
-export default function CheckoutForm({ donationAmount, finalizedPayment, accountId }) {
+export default function CheckoutForm({ donationAmount, finalizedPayment, accountId, landingPagePath }) {
   const stripe = useStripe()
   const elements = useElements()
 
@@ -39,9 +39,10 @@ export default function CheckoutForm({ donationAmount, finalizedPayment, account
     const response = await fetch("/.netlify/functions/stripe-payment-intent", {
       method: "POST",
       body: JSON.stringify({
-        amount: donationAmount * 100,
+        amount: Math.round(donationAmount * 100),
         includeTip,
         accountId,
+        landingPagePath
       }),
     }).then((result) => result.json())
     if (response.error) {
@@ -86,7 +87,8 @@ export default function CheckoutForm({ donationAmount, finalizedPayment, account
   return (
     <div>
       <form onSubmit={handleSubmit} className={styles.enterPaymentForm}>
-        <PaymentRequest donationAmount={donationAmount + (includeTip && 0.1)}
+        <PaymentRequest donationAmount={Math.round(donationAmount)}
+                        tipAmount={includeTip && 0.1}
                         finalizedPayment={finalizedPayment}
                         updateMessage={updateMessage}
                         generatePaymentIntentToken={generatePaymentIntentToken} />
@@ -94,7 +96,7 @@ export default function CheckoutForm({ donationAmount, finalizedPayment, account
           <CardElement options={CARD_ELEMENT_OPTIONS} />
           <div className={styles.buttonSection}>
             <button className={styles.submitButton} disabled={!stripe || processing}>
-              Donate ${donationAmount + (includeTip && 0.1)}
+              Donate ${Math.round(donationAmount) + (includeTip && 0.1)}
             </button>
           </div>
 

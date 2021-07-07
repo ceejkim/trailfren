@@ -5,9 +5,7 @@ import CheckoutForm from "../CheckoutForm/CheckoutForm"
 
 import * as styles from "./DonationBox.module.css"
 
-
-
-const DonationBox = ({ donationAmounts, accountId }) => {
+const DonationBox = ({ donationAmounts, accountId, landingPagePath}) => {
   const [stripePromise] = useState(() =>
     loadStripe(process.env.GATSBY_STRIPE_PUBLIC_KEY, {
       stripeAccount: accountId,
@@ -48,7 +46,7 @@ const DonationBox = ({ donationAmounts, accountId }) => {
                         ? styles.buttonSelected
                         : styles.selectAmountButton
                     }
-                    onClick={() => updateSelectedAmount(donationAmount)}
+                    onClick={() => updateSelectedAmount(Math.round(donationAmount))}
                   >
                     ${donationAmount}
                   </button>
@@ -60,6 +58,7 @@ const DonationBox = ({ donationAmounts, accountId }) => {
               donationAmount={selectedAmount}
               finalizedPayment={finalizedPayment}
               accountId={accountId}
+              landingPagePath={landingPagePath}
             />
           )}
         </div>

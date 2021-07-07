@@ -8,7 +8,8 @@ export default function PaymentRequestButton({
   donationAmount,
   finalizedPayment,
   generatePaymentIntentToken,
-  updateMessage
+  updateMessage,
+  tipAmount
 }) {
   const stripe = useStripe()
   const [paymentRequest, setPaymentRequest] = useState(null)
@@ -56,7 +57,7 @@ export default function PaymentRequestButton({
       currency: "usd",
       total: {
         label: "Donation",
-        amount: Math.round(donationAmount) * 100,
+        amount: Math.round(donationAmount + tipAmount) * 100,
       },
     })
     pr.canMakePayment().then((result) => {
@@ -74,6 +75,7 @@ export default function PaymentRequestButton({
     paymentRequest,
     generatePaymentIntentToken,
     finalizedPayment,
+    tipAmount,
     handlePaymentMethodReceived,
   ])
 
@@ -82,10 +84,10 @@ export default function PaymentRequestButton({
     paymentRequest.update({
       total: {
         label: "Donation",
-        amount: Number(donationAmount * 100),
+        amount: Math.round(donationAmount + tipAmount) * 100,
       },
     })
-  }, [paymentRequest, donationAmount])
+  }, [paymentRequest, donationAmount, tipAmount])
 
   return (
     paymentRequest && (

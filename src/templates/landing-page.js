@@ -23,6 +23,7 @@ class LandingPageTemplate extends React.Component {
           <DonationBox
             donationAmounts={pageData.donationAmounts.map((num) => Number(num))}
             accountId={frenData.stripeAccountId}
+            landingPagePath={frenData.landingPagePath}
           />
         ) : (
           <div className={styles.noPaymentSetup}>
@@ -79,6 +80,7 @@ export const pageQuery = graphql`
         contributionDeets
       }
       donationAmounts
+      landingPagePath
     }
   }
 `

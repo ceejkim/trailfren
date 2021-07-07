@@ -21,6 +21,7 @@ exports.handler = async (event, context) => {
   const amount = Number(postBody.amount)
   const includeTip = postBody.includeTip
   const accountId = postBody.accountId
+  const landingPagePath = postBody.landingPagePath
 
   if (!amount || amount < 0) {
     console.error("Amount must be a positive integer.")
@@ -41,7 +42,8 @@ exports.handler = async (event, context) => {
       {
         currency: "usd",
         amount: Math.round(amount + (includeTip && feeTaken)),
-        application_fee_amount: feeTaken
+        application_fee_amount: includeTip ? feeTaken : 0,
+        description: landingPagePath
       },
       {
         stripeAccount: accountId,
