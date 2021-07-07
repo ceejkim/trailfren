@@ -58,7 +58,7 @@ export default function PaymentRequestButton({
       currency: "usd",
       total: {
         label: "Donation",
-        amount: Math.round(donationAmount + tipAmount) * 100,
+        amount: Math.round((donationAmount + tipAmount) * 100),
       },
     })
     pr.canMakePayment().then((result) => {
@@ -85,7 +85,7 @@ export default function PaymentRequestButton({
     paymentRequest.update({
       total: {
         label: "Donation",
-        amount: Math.round(donationAmount + tipAmount) * 100,
+        amount: Math.round((donationAmount + tipAmount) * 100),
       },
     })
   }, [paymentRequest, donationAmount, tipAmount])
