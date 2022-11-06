@@ -53,6 +53,18 @@ const DonationBox = ({ donationAmounts, accountId, landingPagePath}) => {
                 ))}
             </div>
           </div>
+          <div className={styles.customAmountSection}>
+            <div className={styles.customAmountHeader}>Or enter a custom amount</div>
+            <div className={styles.customAmountInput}>
+              <input
+                type="number"
+                min="1"
+                step="1"
+                placeholder="$0"
+                onChange={(e) => updateSelectedAmount(e.target.value)}
+              />
+            </div>
+          </div>
           {selectedAmount && (
             <CheckoutForm
               donationAmount={selectedAmount}

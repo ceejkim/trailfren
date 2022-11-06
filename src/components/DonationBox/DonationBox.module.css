@@ -42,6 +42,8 @@
   transition: all 0.3s ease-in-out;
 }
 
+
+
 .buttonSelected {
   width: 70px;
   border: solid #df7c6d 1px;
@@ -91,7 +93,6 @@
 
 }
 
-
 .confirmationBox {
   max-width: 500px;
   margin: 2rem auto 1rem auto;
@@ -117,3 +118,126 @@
   border-style: solid;
 
 }
+.customAmountSection {
+  max-width: 500px;
+  margin: 2rem auto 1rem auto;
+  border: solid #df7c6d 1px;
+}
+
+.customAmountHeader {
+  background-color: #df7c6d;
+  color: white;
+  display: block;
+  text-align: center;
+  padding: 0.5rem;
+}
+
+.customAmountInput {
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.customAmountInput input {
+  width: 100%;
+  border: none;
+  border-bottom: solid #df7c6d 1px;
+  padding: 0.5rem;
+  font-size: 1.5rem;
+  text-align: center;
+}
+
+.customAmountInput input:focus {
+  outline: none;
+}
+
+.checkoutSection {
+  max-width: 500px;
+  margin: 2rem auto 1rem auto;
+  border: solid #df7c6d 1px;
+}
+
+.checkoutHeader {
+  background-color: #df7c6d;
+  color: white;
+  display: block;
+  text-align: center;
+  padding: 0.5rem;
+}
+
+.checkoutForm {
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.checkoutForm input {
+  width: 100%;
+  border: none;
+  border-bottom: solid #df7c6d 1px;
+  padding: 0.5rem;
+  font-size: 1.5rem;
+  text-align: center;
+}
+
+.checkoutForm input:focus {
+  outline: none;
+}
+
+.checkoutForm button {
+  composes: selectAmountButton;
+  display: block;
+  margin: 1rem auto;
+  padding: 1rem;
+  width: auto;
+  border-style: solid;
+}
+
+.checkoutForm button:hover {
+  background-color: #df7c6d;
+  color: white;
+  cursor: pointer;
+  -webkit-transition: all 0.3s ease-in-out;
+  -moz-transition: all 0.3s ease-in-out;
+  transition: all 0.3s ease-in-out;
+}
+
+.checkoutForm button:focus {
+  outline: none;
+}
+
+.checkoutForm button:disabled {
+  background-color: #df7c6d;
+  color: white;
+  cursor: not-allowed;
+  -webkit-transition: all 0.3s ease-in-out;
+  -moz-transition: all 0.3s ease-in-out;
+  transition: all 0.3s ease-in-out;
+}
+
+.checkoutForm button:disabled:hover {
+  background-color: #df7c6d;
+  color: white;
+  cursor: not-allowed;
+  -webkit-transition: all 0.3s ease-in-out;
+  -moz-transition: all 0.3s ease-in-out;
+  transition: all 0.3s ease-in-out;
+}
+
+.checkoutForm button:disabled:focus {
+  outline: none;
+}
+
+.checkoutForm button:disabled:active {
+  outline: none;
+}
+
+.checkoutForm button:active {
+  outline: none;
+}
+
+.checkoutForm button:focus {
+  outline: none;
+}
+
+
