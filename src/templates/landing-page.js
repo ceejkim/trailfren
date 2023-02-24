@@ -1,23 +1,29 @@
-import React from "react"
-import { graphql, Link } from "gatsby"
-import { Helmet } from "react-helmet"
-import get from "lodash/get"
-import Img from "gatsby-image"
+import React from "react";
+import { graphql, Link } from "gatsby";
+import { Helmet } from "react-helmet";
+import get from "lodash/get";
+import Img from "gatsby-image";
 
 import DonationBox from "../components/DonationBox/DonationBox";
 
-import * as styles from "./landing-page.module.css"
+import * as styles from "./landing-page.module.css";
 
 class LandingPageTemplate extends React.Component {
-
   render() {
-    const frenData = get(this.props, "data.contentfulFren")
-    const pageData = get(this.props, "data.contentfulLandingPage")
+    const frenData = get(this.props, "data.contentfulFren");
+    const pageData = get(this.props, "data.contentfulLandingPage");
+
+    console.log("frenData", frenData);
+
     return (
       <div className={styles.background}>
         <Helmet title={`Donate to ${frenData.name}`} />
         <div className={styles.logo}>
-          <Img className={styles.logoImage} alt={frenData.name} fixed={frenData.logo.fixed} />
+          <Img
+            className={styles.logoImage}
+            alt={frenData.name}
+            fixed={frenData.logo.fixed}
+          />
         </div>
         {frenData.stripeAccountId ? (
           <DonationBox
@@ -27,8 +33,8 @@ class LandingPageTemplate extends React.Component {
           />
         ) : (
           <div className={styles.noPaymentSetup}>
-            {frenData.name} has not yet set up their account to receive payments, please check back
-            in later
+            {frenData.name} has not yet set up their account to receive
+            payments, please check back in later
           </div>
         )}
         <div className={styles.aboutSection}>
@@ -43,7 +49,11 @@ class LandingPageTemplate extends React.Component {
           <p>{frenData.aboutUs.aboutUs}</p>
           <p>
             Find out more by visiting{" "}
-            <a href={frenData.websiteUrl} target="_blank" rel="noopener noreferrer">
+            <a
+              href={frenData.websiteUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               our website
             </a>
           </p>
@@ -54,11 +64,11 @@ class LandingPageTemplate extends React.Component {
           </p>
         </div>
       </div>
-    )
+    );
   }
 }
 
-export default LandingPageTemplate
+export default LandingPageTemplate;
 
 export const pageQuery = graphql`
   query FrenPageQuery($frenId: String!, $landingPageId: String!) {
@@ -83,4 +93,4 @@ export const pageQuery = graphql`
       landingPagePath
     }
   }
-`
+`;
