@@ -59,6 +59,7 @@ typings/
 
 # build folder
 public
+netlify
 
 # gatsby cache folder
 .cache

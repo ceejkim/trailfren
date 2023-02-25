@@ -13,8 +13,6 @@ class LandingPageTemplate extends React.Component {
     const frenData = get(this.props, "data.contentfulFren");
     const pageData = get(this.props, "data.contentfulLandingPage");
 
-    console.log("frenData", frenData);
-
     return (
       <div className={styles.background}>
         <Helmet title={`Donate to ${frenData.name}`} />
