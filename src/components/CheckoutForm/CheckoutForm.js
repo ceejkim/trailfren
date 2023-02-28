@@ -36,6 +36,8 @@ export default function CheckoutForm({
   const [processing, updateProcessing] = useState(false);
   const [includeTip, updateIncludeTip] = useState(true);
 
+  console.log("donationAmount", parseFloat(donationAmount));
+
   const generatePaymentIntentToken = useCallback(async () => {
     let result;
     try {
@@ -110,7 +112,7 @@ export default function CheckoutForm({
               className={styles.submitButton}
               disabled={!stripe || processing}
             >
-              Donate ${Math.round(donationAmount) + (includeTip && 0.1)}
+              Donate {(parseFloat(donationAmount) + (includeTip ? 0.99 : 0)).toFixed(2)}
             </button>
           </div>
 
@@ -120,7 +122,7 @@ export default function CheckoutForm({
         </div>
         {includeTip && (
           <p className={styles.includeTipMessage}>
-            Includes a $0.1 tip for Trailfren -{" "}
+            Includes a 99¢ tip for Trailfren -{" "}
             <span
               onClick={() => updateIncludeTip(false)}
               className={styles.removeTip}

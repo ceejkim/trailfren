@@ -1,70 +1,83 @@
 import React from "react";
 import { graphql, Link } from "gatsby";
 import { Helmet } from "react-helmet";
-import get from "lodash/get";
-import Img from "gatsby-image";
+import { indexOf, get } from "lodash";
+import { GatsbyImage } from "gatsby-plugin-image";
+import { useContentfulImage } from "gatsby-source-contentful/hooks";
 
 import DonationBox from "../components/DonationBox/DonationBox";
 
 import * as styles from "./landing-page.module.css";
 
-class LandingPageTemplate extends React.Component {
-  render() {
-    const frenData = get(this.props, "data.contentfulFren");
-    const pageData = get(this.props, "data.contentfulLandingPage");
+const LandingPageTemplate = (props) => {
+  const frenData = get(props, "data.contentfulFren");
+  const pageData = get(props, "data.contentfulLandingPage");
 
-    return (
-      <div className={styles.background}>
-        <Helmet title={`Donate to ${frenData.name}`} />
-        <div className={styles.logo}>
-          <Img
-            className={styles.logoImage}
-            alt={frenData.name}
-            fixed={frenData.logo.fixed}
-          />
+  // for some reason useContentfulImage() doesn't accept webp images or https:
+  // so I correct for this here
+  const urlOne = frenData.logo.gatsbyImageData.images.sources[0].srcSet.replace(
+    "https:",
+    ""
+  );
+  const index = indexOf(urlOne, "?");
+  const url = urlOne.slice(0, index);
+
+  const dynamicImage = useContentfulImage({
+    image: {
+      url,
+      height: 150,
+      width: 150,
+    },
+  });
+
+  return (
+    <div className={styles.background}>
+      <Helmet title={`Donate to ${frenData.name}`} />
+      <div className={styles.logo}>
+        {/* <div className={styles.logo}> */}
+        <GatsbyImage image={dynamicImage} alt="" />
+      </div>
+      {frenData.stripeAccountId ? (
+        <DonationBox
+          donationAmounts={pageData.donationAmounts.map((num) => Number(num))}
+          accountId={frenData.stripeAccountId}
+          landingPagePath={frenData.landingPagePath}
+        />
+      ) : (
+        <div className={styles.noPaymentSetup}>
+          {frenData.name} has not yet set up their account to receive payments,
+          please check back in later
         </div>
-        {frenData.stripeAccountId ? (
-          <DonationBox
-            donationAmounts={pageData.donationAmounts.map((num) => Number(num))}
-            accountId={frenData.stripeAccountId}
-            landingPagePath={frenData.landingPagePath}
-          />
-        ) : (
-          <div className={styles.noPaymentSetup}>
-            {frenData.name} has not yet set up their account to receive
-            payments, please check back in later
+      )}
+      <div className={styles.aboutSection}>
+        {pageData.contributionDeets && (
+          <div>
+            <h4>How we will use your contribution</h4>
+            <p>{pageData.contributionDeets.contributionDeets}</p>
           </div>
         )}
-        <div className={styles.aboutSection}>
-          {pageData.contributionDeets && (
-            <div>
-              <h4>How we will use your contribution</h4>
-              <p>{pageData.contributionDeets.contributionDeets}</p>
-            </div>
-          )}
 
-          <h4>About us</h4>
-          <p>{frenData.aboutUs.aboutUs}</p>
-          <p>
-            Find out more by visiting{" "}
-            <a
-              href={frenData.websiteUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              our website
-            </a>
-          </p>
-        </div>
-        <div className={styles.footer}>
-          <p>
-            Powered by <Link to="/">Trailfren</Link>
-          </p>
-        </div>
+        <h4>About us</h4>
+        <p>{frenData.aboutUs.aboutUs}</p>
+        <p>
+          Find out more by visiting{" "}
+          <a
+            href={frenData.websiteUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            our website
+          </a>
+        </p>
       </div>
-    );
-  }
-}
+      <div className={styles.footer}>
+        <p>
+          Powered by <Link to="/">Trailfren</Link>
+        </p>
+      </div>
+    </div>
+  );
+};
 
 export default LandingPageTemplate;
 
@@ -77,9 +90,7 @@ export const pageQuery = graphql`
         aboutUs
       }
       logo {
-        fixed(height: 150) {
-          ...GatsbyContentfulFixed_tracedSVG
-        }
+        gatsbyImageData(layout: FULL_WIDTH)
       }
       stripeAccountId
     }

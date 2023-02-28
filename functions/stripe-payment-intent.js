@@ -1,4 +1,6 @@
-const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+import stripeClient from "stripe";
+
+const stripe = stripeClient(process.env.STRIPE_SECRET_KEY);
 const headers = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "Content-Type",

@@ -21,6 +21,7 @@ const DonationBox = ({ donationAmounts, accountId, landingPagePath }) => {
   }
 
   function handleDonationAmountChange(e) {
+    console.log("e.target.value", e.target.value);
     updateSelectedAmount(e.target.value);
   }
 
@@ -45,35 +46,16 @@ const DonationBox = ({ donationAmounts, accountId, landingPagePath }) => {
               Choose an amount to contribute
             </div>
             <div className="form-group py-3 px-3 col">
-              <label htmlFor="donationAmount">
-              {/* <label for="donationAmount" htmlFor="donationAmount"> */}
-                Donation amount*:
-              </label>
+              <label htmlFor="donationAmount">Donation amount*:</label>
               <input
                 className="form-control form-control-lg"
                 type="number"
+                step="any"
                 name="donationAmount"
                 id="donationAmount"
                 onChange={handleDonationAmountChange}
               />
             </div>
-            {/* <div className={styles.selectAmountButtons}>
-              {donationAmounts
-                .sort((a, b) => Number(a) > Number(b))
-                .map((donationAmount) => (
-                  <button
-                    key={donationAmount}
-                    className={
-                      selectedAmount === donationAmount
-                        ? styles.buttonSelected
-                        : styles.selectAmountButton
-                    }
-                    onClick={() => updateSelectedAmount(Math.round(donationAmount))}
-                  >
-                    ${donationAmount}
-                  </button>
-                ))}
-            </div> */}
           </div>
           {selectedAmount && (
             <CheckoutForm
