@@ -9,7 +9,7 @@ import "../base.css"
 
 export default function Layout({page, children}){
   return (
-    <div className="body" style={{ maxWidth: "1600px", margin: "auto" }}>
+    <div className="body" style={{ maxWidth: "1600px", margin: "auto", backgroundColor: "black" }}>
       <Helmet title="trailfren" />
       <Navbar page={page} />
       {children}

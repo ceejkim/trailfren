@@ -1,9 +1,9 @@
-import React from 'react'
-import {Link} from 'gatsby'
+import React from "react";
+import { Link } from "gatsby";
 
-import * as styles from "./Navbar.module.css"
+import * as styles from "./Navbar.module.css";
 
-const Navbar = ({page}) => {
+const Navbar = ({ page }) => {
   return (
     <nav className={`navbar navbar-expand-md ${styles.navbar}`}>
       <div>
@@ -30,29 +30,36 @@ const Navbar = ({page}) => {
         <ul className={`navbar-nav ${styles.linkSection}`}>
           <li className="nav-item">
             <Link
-              to="/partner"
-              className={page === "partner" ? styles.navLinkActive : styles.navLink}
+              to="/"
+              className={
+                page === "index" ? styles.navLinkActive : styles.navLink
+              }
             >
-              Become a Partner
+              Home
             </Link>
           </li>
           <li className="nav-item">
-            <Link to="/faq" className={page === "faq" ? styles.navLinkActive : styles.navLink}>
+            <Link
+              to="/faq"
+              className={page === "faq" ? styles.navLinkActive : styles.navLink}
+            >
               FAQ
             </Link>
           </li>
           <li className="nav-item">
             <Link
               to="/contact"
-              className={page === "contact" ? styles.navLinkActive : styles.navLink}
+              className={
+                page === "contact" ? styles.navLinkActive : styles.navLink
+              }
             >
-              Contact
+              Login
             </Link>
           </li>
         </ul>
       </div>
     </nav>
-  )
-}
+  );
+};
 
-export default Navbar
+export default Navbar;

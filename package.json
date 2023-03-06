@@ -40,6 +40,7 @@
     "@types/lodash": "^4.14.191",
     "contentful-import": "^8.5.34",
     "dotenv": "^16.0.3",
+    "gatsby-plugin-esbuild": "^0.0.5",
     "gatsby-plugin-pnpm": "^1.2.10",
     "netlify-cli": "^13.0.0"
   },

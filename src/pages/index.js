@@ -1,63 +1,96 @@
-import React from "react"
-import { graphql } from "gatsby"
-import Layout from "../components/Layout/Layout"
-import Hero from "../components/HeroImage/HeroImage"
-import { GatsbyImage, getImage } from "gatsby-plugin-image"
+import React from "react";
+import { graphql } from "gatsby";
+import Layout from "../components/Layout/Layout";
+import { GatsbyImage, getImage } from "gatsby-plugin-image";
 
 const IndexPage = (props) => (
   <Layout page="index">
-    <Hero imageData={props.data.heroImage.gatsbyImageData}>
-      <h1>SUPPORT WHAT YOU LOVE</h1>
-    </Hero>
     <div
       style={{
-        textAlign: "center",
+        textAlign: "left",
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
-        maxWidth: "600px",
+        maxWidth: "850px",
         margin: "200px auto",
       }}
     >
-      <h1 style={{ margin: "2rem" }}>Step 1: Scan QR Code</h1>
-      <h1 style={{ margin: "2rem" }}>Step 2: Select an amount</h1>
-      <h1 style={{ margin: "2rem" }}>Step 3: Donate</h1>
+      <h1
+        style={{
+          color: "#df7c6d",
+          fontSize: 66,
+        }}
+      >
+        trailfren is easiest way to receive payments for your non-profit or
+        small business. It's also free!
+      </h1>
+      <div style={{ justifyContent: "center", display: "flex" }}>
+        <button
+          style={{
+            backgroundColor: "#df7c6d",
+            color: "white",
+            border: "none",
+            width: "143px",
+            height: "61px",
+          }}
+        >
+          Set Up Now
+        </button>
+      </div>
     </div>
     <div style={{ display: "flex" }}>
       <div className="row p-5">
         <div className="col-md-6 col-xl-4 p-3">
-          <GatsbyImage image={getImage(props.data.image1.gatsbyImageData)} alt=""/>
+          <GatsbyImage
+            image={getImage(props.data.image1.gatsbyImageData)}
+            alt=""
+          />
         </div>
         <div className="col-md-6 col-xl-4 p-3">
-          <GatsbyImage image={getImage(props.data.image2.gatsbyImageData)} alt=""/>
+          <GatsbyImage
+            image={getImage(props.data.image2.gatsbyImageData)}
+            alt=""
+          />
         </div>
         <div className="col-md-6 col-xl-4 p-3">
-          <GatsbyImage image={getImage(props.data.image3.gatsbyImageData)} alt=""/>
+          <GatsbyImage
+            image={getImage(props.data.image3.gatsbyImageData)}
+            alt=""
+          />
         </div>
         <div className="col-md-6 col-xl-4 p-3">
-          <GatsbyImage image={getImage(props.data.image4.gatsbyImageData)} alt=""/>
+          <GatsbyImage
+            image={getImage(props.data.image4.gatsbyImageData)}
+            alt=""
+          />
         </div>
         <div className="col-md-6 col-xl-4 p-3">
-          <GatsbyImage image={getImage(props.data.image5.gatsbyImageData)} alt=""/>
+          <GatsbyImage
+            image={getImage(props.data.image5.gatsbyImageData)}
+            alt=""
+          />
         </div>
         <div className="col-md-6 col-xl-4 p-3">
-          <GatsbyImage image={getImage(props.data.image6.gatsbyImageData)} alt=""/>
+          <GatsbyImage
+            image={getImage(props.data.image6.gatsbyImageData)}
+            alt=""
+          />
         </div>
       </div>
     </div>
   </Layout>
-)
+);
 
-export default IndexPage
+export default IndexPage;
 
 export const indexPageQuery = graphql`
   query {
     heroImage: contentfulAsset(title: { eq: "hammock-hero-image" }) {
       gatsbyImageData(
-        placeholder: BLURRED, 
-        layout: FULL_WIDTH,
-        cropFocus: CENTER,
-        formats: [AUTO,WEBP]
+        placeholder: BLURRED
+        layout: FULL_WIDTH
+        cropFocus: CENTER
+        formats: [AUTO, WEBP]
       )
     }
     image1: contentfulAsset(title: { eq: "walking-on-log" }) {
@@ -79,4 +112,4 @@ export const indexPageQuery = graphql`
       gatsbyImageData(aspectRatio: 1.5)
     }
   }
-`
+`;

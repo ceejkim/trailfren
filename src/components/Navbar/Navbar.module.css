@@ -1,14 +1,14 @@
 .navbar {
   width: 100%;
-  padding: 2em;
+  padding: 2.6em 4em;
   display: flex;
   flex-basis: space-between;
-  
+  background: black;
 }
 
 .logo, .logo:hover {
-  color: #df7c6d;
-  font-size: 40px;
+  color: white;
+  font-size: 34px;
   text-decoration: none;
 }
 
@@ -25,7 +25,7 @@
 }
 
 .navLink {
-  color: #df7c6d !important;
+  color: white !important;
   text-decoration: none;
   width: auto;
   font-size: 20px;
@@ -36,5 +36,5 @@
 
 .navLinkActive {
   composes: navLink;
-  border-bottom: solid #df7c6d 1px;
+  border-bottom: solid white 1px;
 }
