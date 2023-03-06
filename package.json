@@ -45,7 +45,7 @@
     "netlify-cli": "^13.0.0"
   },
   "engines": {
-    "node": ">=10.13.0"
+    "node": ">=18.0.0"
   },
   "homepage": "https://www.trailfren.com",
   "keywords": [],
