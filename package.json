@@ -56,7 +56,7 @@
     "url": "git+https://github.com/mattygh/trailfren"
   },
   "scripts": {
-    "dev": "eval $(grep '^NODE_ENV' .env) && gatsby develop",
+    "dev": "gatsby develop",
     "build": "gatsby build",
     "build-function": "rollup functions/stripe-payment-intent.js --file netlify/functions/stripe-payment-intent.js --format cjs",
     "build-function-two": "rollup functions/stripe-add-apple-domain.js --file netlify/functions/stripe-add-apple-domain.js --format cjs",

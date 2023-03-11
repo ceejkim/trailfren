@@ -38,8 +38,12 @@ export default function CheckoutForm({
 
   console.log("donationAmount", parseFloat(donationAmount));
 
+  // Generate a Stripe payment intent token for a donation
+  // Inputs: donationAmount (number), includeTip (boolean), accountId (string), landingPagePath (string)
+  // Returns: An object with a clientSecret property if the token was generated successfully,
+  //          or an object with an error property if an error occurred.
   const generatePaymentIntentToken = useCallback(async () => {
-    let result;
+    let paymentIntent;
     try {
       const response = await fetch(
         "/.netlify/functions/stripe-payment-intent",
@@ -53,45 +57,66 @@ export default function CheckoutForm({
           }),
         }
       );
-      result = await response.json();
-      // Handle the response here
-    } catch (err) {
-      console.error(err);
-      return { error: "Sorry, an error occurred" };
+      paymentIntent = await response.json();
+    } catch (networkError) {
+      console.error(
+        "Network error while generating payment intent token",
+        networkError
+      );
+      return {
+        error:
+          "Unable to connect to the server. Please check your network connection and try again.",
+      };
     }
 
-    if (result.clientSecret) return { clientSecret: result.clientSecret };
-    else {
-      console.log("error generating payment intent client secret");
-      console.log(result);
-      return { error: "Sorry, an error occurred" };
+    if (paymentIntent.clientSecret) {
+      return { clientSecret: paymentIntent.clientSecret };
+    } else {
+      console.error("Error generating payment intent token", paymentIntent);
+      return {
+        error:
+          "Unable to generate payment intent token. Please try again later.",
+      };
     }
-  }, [donationAmount, accountId, includeTip]);
+  }, [donationAmount, includeTip, accountId, landingPagePath]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     updateProcessing(true);
     updateMessage("");
+
     const { clientSecret, error } = await generatePaymentIntentToken();
     if (error) {
-      updateMessage("Sorry, an error occurred");
+      updateMessage(
+        "Unable to generate payment intent token. Please try again later."
+      );
       updateProcessing(false);
-    } else {
-      const result = await stripe.confirmCardPayment(clientSecret, {
+      return;
+    }
+
+    try {
+      const paymentResult = await stripe.confirmCardPayment(clientSecret, {
         payment_method: {
           card: elements.getElement(CardElement),
         },
       });
+
       updateProcessing(false);
 
-      if (result.error) {
-        updateMessage(result.error.message);
+      if (paymentResult.error) {
+        updateMessage(paymentResult.error.message);
       } else {
         // The payment has been processed!
-        if (result.paymentIntent.status === "succeeded") {
+        if (paymentResult.paymentIntent.status === "succeeded") {
           finalizedPayment();
         }
       }
+    } catch (stripeError) {
+      console.error("Error processing payment:", stripeError);
+      updateMessage(
+        "An error occurred while processing your payment. Please try again later."
+      );
+      updateProcessing(false);
     }
   };
 
@@ -112,7 +137,10 @@ export default function CheckoutForm({
               className={styles.submitButton}
               disabled={!stripe || processing}
             >
-              Donate {(parseFloat(donationAmount) + (includeTip ? 0.99 : 0)).toFixed(2)}
+              Donate{" "}
+              {(parseFloat(donationAmount) + (includeTip ? 0.99 : 0)).toFixed(
+                2
+              )}
             </button>
           </div>
 

@@ -1,6 +1,23 @@
 # TrailFren main site
 
-Built with Gatsby
+## Tech Stack
 
-Hosted on Netlify
+1. Built with Gatsby
+2. Hosted on Netlify
+3. Content managed with Contentful
 
+## Getting Started
+
+1. create .env file in the root directory with the following variables
+
+        ``` shell
+        STRIPE_SECRET_KEY=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+        GATSBY_STRIPE_PUBLIC_KEY=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+        CONTENTFUL_HOST=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+        CONTENTFUL_SPACE_ID=XXXXXXXX
+        CONTENTFUL_PREVIEW_ACCESS_TOKEN=XXXXXXXX
+        CONTENTFUL_ENVIRONMENT=XXXXXXXX
+        ```
+
+2. run `pnpm install`
+3. run `pnpm run dev`

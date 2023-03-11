@@ -3,7 +3,7 @@ import { Link } from "gatsby";
 
 import * as styles from "./Navbar.module.css";
 
-const Navbar = ({ page }) => {
+const Navbar = ({ page, handleLoginModal }) => {
   return (
     <nav className={`navbar navbar-expand-md ${styles.navbar}`}>
       <div>
@@ -47,14 +47,14 @@ const Navbar = ({ page }) => {
             </Link>
           </li>
           <li className="nav-item">
-            <Link
-              to="/contact"
+            <button
               className={
-                page === "contact" ? styles.navLinkActive : styles.navLink
+                page === "contact" ? styles.navButtonActive : styles.navButton
               }
+              onClick={handleLoginModal}
             >
               Login
-            </Link>
+            </button>
           </li>
         </ul>
       </div>

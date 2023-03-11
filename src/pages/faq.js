@@ -1,13 +1,9 @@
-import React from "react"
-import { graphql } from "gatsby"
-import Layout from "../components/Layout/Layout"
-import Hero from "../components/HeroImage/HeroImage"
+import React from "react";
+import { graphql } from "gatsby";
+import Layout from "../components/Layout/Layout";
 
 const PartnerPage = (props) => (
   <Layout page="faq">
-    <Hero imageData={props.data.heroImage.gatsbyImageData}>
-      <h1>Frequently Asked Questions</h1>
-    </Hero>
     <div
       style={{
         display: "flex",
@@ -17,33 +13,103 @@ const PartnerPage = (props) => (
         margin: "100px auto",
       }}
     >
-      <h4 style={{ margin: "2rem", fontWeight: 600 }}>What is trailfren? </h4>
-      <p style={{ margin: "2rem", lineHeight: 1.8, fontWeight: 300, fontStyle: "normal" }}>
-        Trailfren is an organization that uses basic QR code technology in the outdoors. Our signs
-        allow people to donate to the organizations that make their outdoor activity possible
-        through trail maintenance and conservation. Contributions as little as $2 per bike ride make
-        a big difference for the spaces you enjoy.
+      <h4 style={{ margin: "2rem 2rem 6rem", fontSize: 40, fontWeight: 600 }}>FAQs</h4>
+      <p
+        style={{
+          margin: "0 2rem",
+          lineHeight: 1.8,
+          fontSize: "1.2rem",
+          fontWeight: "bold",
+        }}
+      >
+        What is trailfren?
       </p>
-      <div style={{ height: "50px" }} />
-      <h4 style={{ margin: "2rem", fontWeight: 600 }}>Where does my money go?</h4>
-      <p style={{ margin: "2rem", lineHeight: 1.8, fontWeight: 300, fontStyle: "normal" }}>
-        The organization receiving your contribution will be shown in our signage. After you scan
-        the QR code you will be taken to a landing page which will also provide a description of the
-        organization and provide an option to contribute.
+      <p
+        style={{
+          margin: "2rem",
+          lineHeight: 1.8,
+          fontWeight: 300,
+          fontStyle: "normal",
+        }}
+      >
+        Trailfren is the friendliest payment solution for outdoor organizations
+        and non-profits. We facilitate in person transactions through QR codes.
+        Our friendly user experience and low maintenance tech makes us simple to
+        setup and easy to use. No training staff required!
       </p>
-      <div style={{ height: "50px" }} />
-      <h4 style={{ margin: "2rem", fontWeight: 600 }}>
-        Can anyone join trailfren and receive money?
-      </h4>
-      <p style={{ margin: "2rem", lineHeight: 1.8, fontWeight: 300, fontStyle: "normal" }}>
-        Yes! If you are an organization that provides for the public you can become a trailfren
-        organization.
+      <p
+        style={{
+          margin: "0 2rem",
+          lineHeight: 1.8,
+          fontSize: "1.2rem",
+          fontWeight: "bold",
+        }}
+      >
+        How do I know if trailfren is right for me?
+      </p>
+      <p
+        style={{
+          margin: "2rem",
+          lineHeight: 1.8,
+          fontWeight: 300,
+          fontStyle: "normal",
+        }}
+      >
+        Our QR codes can be used to sell merch, receive donations, or anything
+        else you like for your non-profit or small business. We are perfect for
+        a small organization that does not have the resources to invest in a POS
+        system or train staff. If you have volunteer run events and sell
+        t-shirts, or a small farmstand with only a few products, we are perfect
+        for you!
+      </p>
+      <p
+        style={{
+          margin: "0 2rem",
+          lineHeight: 1.8,
+          fontSize: "1.2rem",
+          fontWeight: "bold",
+        }}
+      >
+        What are the full services trailfren offers?
+      </p>
+      <p
+        style={{
+          margin: "2rem",
+          lineHeight: 1.8,
+          fontWeight: 300,
+          fontStyle: "normal",
+        }}
+      >
+        We provide digital and physical QR codes, our landing pages integrate
+        with credit cards, apple pay, google pay, and more! We will also provide
+        a simple sales report for types and amounts of products sold.
+      </p>
+      <p
+        style={{
+          margin: "0 2rem",
+          lineHeight: 1.8,
+          fontSize: "1.2rem",
+          fontWeight: "bold",
+        }}
+      >
+        Is trailfren really free?
+      </p>
+      <p
+        style={{
+          margin: "2rem",
+          lineHeight: 1.8,
+          fontWeight: 300,
+          fontStyle: "normal",
+        }}
+      >
+        YES! Our services are offered FREE OF CHARGE to our customers. We are
+        supported by an optional tipping system at the time of checkout.
       </p>
     </div>
   </Layout>
-)
+);
 
-export default PartnerPage
+export default PartnerPage;
 
 export const partnerPageQuery = graphql`
   query {
@@ -51,4 +117,4 @@ export const partnerPageQuery = graphql`
       gatsbyImageData(placeholder: BLURRED, layout: FULL_WIDTH, height: 400)
     }
   }
-`
+`;

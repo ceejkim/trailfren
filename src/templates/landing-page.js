@@ -32,7 +32,7 @@ const LandingPageTemplate = (props) => {
 
   return (
     <div className={styles.background}>
-      <Helmet title={`Donate to ${frenData.name}`} />
+      <Helmet title={`pay ${frenData.name} with trailfren`} />
       <div className={styles.logo}>
         {/* <div className={styles.logo}> */}
         <GatsbyImage image={dynamicImage} alt="" />

@@ -1,19 +1,29 @@
-import React from "react"
-import "@fontsource/poppins"
-import { Helmet } from "react-helmet"
+import React, { useState } from "react";
+import "@fontsource/poppins/400.css";
+import "@fontsource/poppins/200.css";
+import { Helmet } from "react-helmet";
 
-import Navbar from "../Navbar/Navbar"
-import Footer from '../Footer/Footer'
+import Navbar from "../Navbar/Navbar";
+import Footer from "../Footer/Footer";
 
-import "../base.css"
+import "../base.css";
+import LoginModal from "../LoginModal/LoginModal";
 
-export default function Layout({page, children}){
+const Layout = ({ page, children }) => {
+  const [loginModalVisible, setLoginModalVisible] = useState(true);
+
+  const handleLoginModal = () => {
+    setLoginModalVisible(!loginModalVisible);
+  };
   return (
-    <div className="body" style={{ maxWidth: "1600px", margin: "auto", backgroundColor: "black" }}>
+    <div className="body" style={{ maxWidth: "1600px", margin: "auto" }}>
       <Helmet title="trailfren" />
-      <Navbar page={page} />
+      <Navbar page={page} handleLoginModal={handleLoginModal} />
+      <LoginModal showModal={loginModalVisible} />
       {children}
       <Footer />
     </div>
-  )
-}
+  );
+};
+
+export default Layout;

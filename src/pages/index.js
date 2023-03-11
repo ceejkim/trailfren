@@ -1,81 +1,95 @@
 import React from "react";
 import { graphql } from "gatsby";
 import Layout from "../components/Layout/Layout";
-import { GatsbyImage, getImage } from "gatsby-plugin-image";
 
 const IndexPage = (props) => (
   <Layout page="index">
-    <div
-      style={{
-        textAlign: "left",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        maxWidth: "850px",
-        margin: "200px auto",
-      }}
-    >
-      <h1
+    <div style={{ backgroundColor: "black", padding: "200px 0" }}>
+      <div
         style={{
-          color: "#df7c6d",
-          fontSize: 66,
+          textAlign: "left",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          maxWidth: "850px",
+          margin: "auto",
         }}
       >
-        trailfren is easiest way to receive payments for your non-profit or
-        small business. It's also free!
-      </h1>
-      <div style={{ justifyContent: "center", display: "flex" }}>
-        <button
+        <h1
           style={{
-            backgroundColor: "#df7c6d",
-            color: "white",
-            border: "none",
-            width: "143px",
-            height: "61px",
+            color: "#df7c6d",
+            fontSize: 66,
           }}
         >
-          Set Up Now
-        </button>
+          Setup payments for your trail / non-profit organization in 10 minutes
+          or less
+        </h1>
+        <div style={{ justifyContent: "center", display: "flex" }}>
+          <button
+            style={{
+              backgroundColor: "#df7c6d",
+              color: "white",
+              border: "none",
+              width: "143px",
+              height: "61px",
+            }}
+          >
+            Set Up Now
+          </button>
+        </div>
       </div>
     </div>
-    <div style={{ display: "flex" }}>
-      <div className="row p-5">
-        <div className="col-md-6 col-xl-4 p-3">
-          <GatsbyImage
-            image={getImage(props.data.image1.gatsbyImageData)}
-            alt=""
-          />
-        </div>
-        <div className="col-md-6 col-xl-4 p-3">
-          <GatsbyImage
-            image={getImage(props.data.image2.gatsbyImageData)}
-            alt=""
-          />
-        </div>
-        <div className="col-md-6 col-xl-4 p-3">
-          <GatsbyImage
-            image={getImage(props.data.image3.gatsbyImageData)}
-            alt=""
-          />
-        </div>
-        <div className="col-md-6 col-xl-4 p-3">
-          <GatsbyImage
-            image={getImage(props.data.image4.gatsbyImageData)}
-            alt=""
-          />
-        </div>
-        <div className="col-md-6 col-xl-4 p-3">
-          <GatsbyImage
-            image={getImage(props.data.image5.gatsbyImageData)}
-            alt=""
-          />
-        </div>
-        <div className="col-md-6 col-xl-4 p-3">
-          <GatsbyImage
-            image={getImage(props.data.image6.gatsbyImageData)}
-            alt=""
-          />
-        </div>
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        flexDirection: "column",
+        padding: "50px",
+      }}
+    >
+      <div
+        style={{
+          fontSize: "64px",
+          fontWeight: "bold",
+          color: "black",
+          backgroundColor: "#F4EBEA",
+          width: "100%",
+          maxWidth: "733px",
+          marginBottom: "50px",
+          padding: "20px",
+          textAlign: "center",
+        }}
+      >
+        <p>With our trailfren QR codes you can:</p>
+      </div>
+      <div
+        style={{
+          fontSize: "36px",
+          fontWeight: "bold",
+          color: "black",
+          backgroundColor: "#F4EBEA",
+          width: "100%",
+          maxWidth: "733px",
+          marginBottom: "50px",
+          padding: "50px",
+        }}
+      >
+        <ul>
+          <li style={{ marginBottom: 15 }}>
+            Setup digital payments in 10 minutes or less
+          </li>
+          <li style={{ marginBottom: 15 }}>
+            Access Apple Pay, Google Pay, Venmo, Paypal and CC options in one
+            place
+          </li>
+          <li style={{ marginBottom: 15 }}>
+            No app downloads or technical knowledge required
+          </li>
+          <li style={{ marginBottom: 15 }}>No subscription fees, no hassle</li>
+          <li style={{ marginBottom: 15 }}>
+            Perfect for volunteer run-events & small business
+          </li>
+        </ul>
       </div>
     </div>
   </Layout>

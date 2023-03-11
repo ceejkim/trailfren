@@ -6,7 +6,8 @@
   background: black;
 }
 
-.logo, .logo:hover {
+.logo,
+.logo:hover {
   color: white;
   font-size: 34px;
   text-decoration: none;
@@ -30,11 +31,29 @@
   width: auto;
   font-size: 20px;
   margin: 0.5rem;
-  font-weight: lighter;
+  font-weight: 200;
 }
-
 
 .navLinkActive {
   composes: navLink;
   border-bottom: solid white 1px;
+}
+
+.navButton {
+  color: white !important;
+  text-decoration: none;
+  width: auto;
+  font-size: 20px;
+  margin-left: 2rem;
+  font-weight: 200;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.navButtonActive {
+  composes: navLink;
+  border: solid white 1px;
+  border-radius: 5px;
+  padding: 0.5rem;
 }
