@@ -6,7 +6,7 @@ const headers = {
   "Access-Control-Allow-Headers": "Content-Type",
 };
 
-const feeTaken = 10;
+const feeTaken = 99;
 
 exports.handler = async (event, context) => {
   // CORS
