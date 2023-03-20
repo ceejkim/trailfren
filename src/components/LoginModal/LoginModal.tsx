@@ -36,30 +36,53 @@ const Modal: FunctionComponent<ModalProps> = ({ showModal }) => {
             <h2 className={styles.header}>Welcome to trailfren</h2>
             <form className={styles.form}>
               <input
+                className={styles.input}
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Email"
               />
               <input
+                className={styles.input}
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Password"
               />
               {forgotPasswordClicked ? (
-                <div>
-                  <button onClick={handleForgotPassword}>Submit</button>
-                  <button onClick={() => setForgotPasswordClicked(false)}>
-                    Cancel
+                <button
+                  className={styles.mainButton}
+                  onClick={handleForgotPassword}
+                >
+                  Send Reset Link
+                </button>
+              ) : (
+                <button className={styles.mainButton} onClick={handleSignIn}>
+                  Sign In
+                </button>
+              )}
+              {forgotPasswordClicked ? (
+                <div className={styles.secondaryButtonContainer}>
+                  <button
+                    className={styles.secondaryButton}
+                    onClick={() => setForgotPasswordClicked(false)}
+                  >
+                    Back to sign in
                   </button>
                 </div>
               ) : (
-                <div>
-                  <button onClick={handleSignIn}>Sign In</button>
-                  <button onClick={handleCreateAccount}>Create Account</button>
-                  <button onClick={() => setForgotPasswordClicked(true)}>
+                <div className={styles.secondaryButtonContainer}>
+                  <button
+                    className={styles.secondaryButton}
+                    onClick={() => setForgotPasswordClicked(true)}
+                  >
                     Forgot Password?
+                  </button>
+                  <button
+                    className={styles.secondaryButton}
+                    onClick={handleCreateAccount}
+                  >
+                    Create account
                   </button>
                 </div>
               )}

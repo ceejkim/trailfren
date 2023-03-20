@@ -10,6 +10,7 @@ specifiers:
   '@types/react': ^18.0.28
   '@types/react-dom': ^18.0.11
   '@types/react-helmet': ^6.1.6
+  '@types/webpack': ^5.28.0
   axios: ^1.3.4
   bootstrap: ^5.2.3
   bootstrap-icons: ^1.10.3
@@ -52,7 +53,7 @@ dependencies:
   axios: 1.3.4
   bootstrap: 5.2.3_@popperjs+core@2.11.6
   bootstrap-icons: 1.10.3
-  gatsby: 5.7.0_5red3oq6inxhrl22fi2erluppi
+  gatsby: 5.7.0_osxp5kctqf4siycletxdoqfn34
   gatsby-background-image: 1.6.0_hgefj54jzwya6t5wz7qwyqdbja
   gatsby-plugin-image: 3.7.0_5m5mby2l5d42fysfokbhf3q3wy
   gatsby-plugin-manifest: 5.7.0_sxwqjopoaneuglww3qpb2cxyny
@@ -78,6 +79,7 @@ dependencies:
 devDependencies:
   '@types/lodash': 4.14.191
   '@types/react-helmet': 6.1.6
+  '@types/webpack': 5.28.0
   contentful-import: 8.5.35
   dotenv: 16.0.3
   gatsby-plugin-esbuild: 0.0.5_ayjy7j4uy7loo27zyrlvrje44u
@@ -3247,7 +3249,7 @@ packages:
       chrome-trace-event: 1.0.3
       nullthrows: 1.1.1
 
-  /@pmmmwh/react-refresh-webpack-plugin/0.5.10_xsftmjzvfioxqs4ify53ibh7ay:
+  /@pmmmwh/react-refresh-webpack-plugin/0.5.10_vtcifvs55ji25iogcobmi27zm4:
     resolution: {integrity: sha512-j0Ya0hCFZPd4x40qLzbhGsh9TMtdb+CJQiso+WxLOPNasohq9cc5SNUcwsZaRH6++Xh91Xkm/xHCkuIiIu0LUA==}
     engines: {node: '>= 10.13'}
     peerDependencies:
@@ -3273,6 +3275,7 @@ packages:
       webpack-plugin-serve:
         optional: true
     dependencies:
+      '@types/webpack': 5.28.0
       ansi-html-community: 0.0.8
       common-path-prefix: 3.0.0
       core-js-pure: 3.28.0
@@ -3704,6 +3707,18 @@ packages:
   /@types/unist/2.0.6:
     resolution: {integrity: sha512-PBjIUxZHOuj0R15/xuwJYjFi+KZdNFrehocChv4g5hu6aFroHue8m0lBP0POdK2nKzbw0cgV1mws8+V/JAcEkQ==}
     dev: false
+
+  /@types/webpack/5.28.0:
+    resolution: {integrity: sha512-8cP0CzcxUiFuA9xGJkfeVpqmWTk9nx6CWwamRGCj95ph1SmlRRk9KlCZ6avhCbZd4L68LvYT6l1kpdEnQXrF8w==}
+    dependencies:
+      '@types/node': 18.15.3
+      tapable: 2.2.1
+      webpack: 5.75.0
+    transitivePeerDependencies:
+      - '@swc/core'
+      - esbuild
+      - uglify-js
+      - webpack-cli
 
   /@types/yargs-parser/21.0.0:
     resolution: {integrity: sha512-iO9ZQHkZxHn4mSakYV0vFHAVDyEOIJQrV2uZ06HxEPcx+mt8swXoZHIbaaJ2crJYFfErySgktuTZ3BeLz+XmFA==}
@@ -4760,7 +4775,7 @@ packages:
       '@babel/core': 7.17.9
       '@babel/runtime': 7.21.0
       '@babel/types': 7.21.2
-      gatsby: 5.7.0_5red3oq6inxhrl22fi2erluppi
+      gatsby: 5.7.0_osxp5kctqf4siycletxdoqfn34
       gatsby-core-utils: 3.25.0
     dev: true
 
@@ -4774,7 +4789,7 @@ packages:
       '@babel/core': 7.21.0
       '@babel/runtime': 7.21.0
       '@babel/types': 7.21.2
-      gatsby: 5.7.0_5red3oq6inxhrl22fi2erluppi
+      gatsby: 5.7.0_osxp5kctqf4siycletxdoqfn34
       gatsby-core-utils: 4.7.0
 
   /babel-plugin-syntax-trailing-function-commas/7.0.0-beta.0:
@@ -8602,7 +8617,7 @@ packages:
     dependencies:
       '@babel/runtime': 7.21.0
       filter-invalid-dom-props: 2.1.0
-      gatsby: 5.7.0_5red3oq6inxhrl22fi2erluppi
+      gatsby: 5.7.0_osxp5kctqf4siycletxdoqfn34
       global: 4.4.0
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
@@ -8772,7 +8787,7 @@ packages:
       babel-plugin-remove-graphql-queries: 4.12.1_gbahnmor53rsdoq3tblnyuwjje
       esbuild: 0.14.38
       esbuild-loader: 2.18.0_webpack@5.75.0
-      gatsby: 5.7.0_5red3oq6inxhrl22fi2erluppi
+      gatsby: 5.7.0_osxp5kctqf4siycletxdoqfn34
     transitivePeerDependencies:
       - supports-color
       - webpack
@@ -8804,7 +8819,7 @@ packages:
       chokidar: 3.5.3
       common-tags: 1.8.2
       fs-extra: 11.1.0
-      gatsby: 5.7.0_5red3oq6inxhrl22fi2erluppi
+      gatsby: 5.7.0_osxp5kctqf4siycletxdoqfn34
       gatsby-core-utils: 4.7.0
       gatsby-plugin-sharp: 5.7.0_sxwqjopoaneuglww3qpb2cxyny
       gatsby-plugin-utils: 4.7.0_sxwqjopoaneuglww3qpb2cxyny
@@ -8825,7 +8840,7 @@ packages:
       gatsby: ^5.0.0-next
     dependencies:
       '@babel/runtime': 7.21.0
-      gatsby: 5.7.0_5red3oq6inxhrl22fi2erluppi
+      gatsby: 5.7.0_osxp5kctqf4siycletxdoqfn34
       gatsby-core-utils: 4.7.0
       gatsby-plugin-utils: 4.7.0_sxwqjopoaneuglww3qpb2cxyny
       semver: 7.3.8
@@ -8844,7 +8859,7 @@ packages:
       '@babel/preset-env': 7.20.2_@babel+core@7.21.0
       '@babel/preset-typescript': 7.21.0_@babel+core@7.21.0
       base-64: 0.1.0
-      gatsby: 5.7.0_5red3oq6inxhrl22fi2erluppi
+      gatsby: 5.7.0_osxp5kctqf4siycletxdoqfn34
       glob: 7.2.3
       lodash: 4.17.21
     transitivePeerDependencies:
@@ -8863,7 +8878,7 @@ packages:
       chokidar: 3.5.3
       fs-exists-cached: 1.0.0
       fs-extra: 11.1.0
-      gatsby: 5.7.0_5red3oq6inxhrl22fi2erluppi
+      gatsby: 5.7.0_osxp5kctqf4siycletxdoqfn34
       gatsby-core-utils: 4.7.0
       gatsby-page-utils: 3.7.0
       gatsby-plugin-utils: 4.7.0_sxwqjopoaneuglww3qpb2cxyny
@@ -8880,7 +8895,7 @@ packages:
     peerDependencies:
       gatsby: ~2.x.x || ~3.x.x || ~4.x.x
     dependencies:
-      gatsby: 5.7.0_5red3oq6inxhrl22fi2erluppi
+      gatsby: 5.7.0_osxp5kctqf4siycletxdoqfn34
       lodash.get: 4.4.2
       lodash.uniq: 4.5.0
     dev: true
@@ -8893,7 +8908,7 @@ packages:
       react-helmet: ^5.1.3 || ^6.0.0
     dependencies:
       '@babel/runtime': 7.21.0
-      gatsby: 5.7.0_5red3oq6inxhrl22fi2erluppi
+      gatsby: 5.7.0_osxp5kctqf4siycletxdoqfn34
       react-helmet: 6.1.0_react@18.2.0
     dev: false
 
@@ -8909,7 +8924,7 @@ packages:
       debug: 4.3.4
       filenamify: 4.3.0
       fs-extra: 11.1.0
-      gatsby: 5.7.0_5red3oq6inxhrl22fi2erluppi
+      gatsby: 5.7.0_osxp5kctqf4siycletxdoqfn34
       gatsby-core-utils: 4.7.0
       gatsby-plugin-utils: 4.7.0_sxwqjopoaneuglww3qpb2cxyny
       lodash: 4.17.21
@@ -8934,7 +8949,7 @@ packages:
       '@babel/preset-typescript': 7.21.0_@babel+core@7.21.0
       '@babel/runtime': 7.21.0
       babel-plugin-remove-graphql-queries: 5.7.0_5cr2itod56lscdaoxjmcj5utja
-      gatsby: 5.7.0_5red3oq6inxhrl22fi2erluppi
+      gatsby: 5.7.0_osxp5kctqf4siycletxdoqfn34
     transitivePeerDependencies:
       - supports-color
 
@@ -8948,7 +8963,7 @@ packages:
       '@babel/runtime': 7.21.0
       fastq: 1.15.0
       fs-extra: 11.1.0
-      gatsby: 5.7.0_5red3oq6inxhrl22fi2erluppi
+      gatsby: 5.7.0_osxp5kctqf4siycletxdoqfn34
       gatsby-core-utils: 4.7.0
       gatsby-sharp: 1.7.0
       graphql: 16.6.0
@@ -9008,7 +9023,7 @@ packages:
       common-tags: 1.8.2
       contentful: 9.3.3
       fs-extra: 11.1.0
-      gatsby: 5.7.0_5red3oq6inxhrl22fi2erluppi
+      gatsby: 5.7.0_osxp5kctqf4siycletxdoqfn34
       gatsby-core-utils: 4.7.0
       gatsby-plugin-image: 3.7.0_5m5mby2l5d42fysfokbhf3q3wy
       gatsby-plugin-sharp: 5.7.0_sxwqjopoaneuglww3qpb2cxyny
@@ -9040,7 +9055,7 @@ packages:
       chokidar: 3.5.3
       file-type: 16.5.4
       fs-extra: 11.1.0
-      gatsby: 5.7.0_5red3oq6inxhrl22fi2erluppi
+      gatsby: 5.7.0_osxp5kctqf4siycletxdoqfn34
       gatsby-core-utils: 4.7.0
       mime: 3.0.0
       pretty-bytes: 5.6.0
@@ -9075,7 +9090,7 @@ packages:
       gatsby: ^5.0.0-next
     dependencies:
       '@babel/runtime': 7.21.0
-      gatsby: 5.7.0_5red3oq6inxhrl22fi2erluppi
+      gatsby: 5.7.0_osxp5kctqf4siycletxdoqfn34
       gatsby-core-utils: 4.7.0
       gray-matter: 4.0.3
       hast-util-raw: 6.1.0
@@ -9112,7 +9127,7 @@ packages:
       bluebird: 3.7.2
       common-tags: 1.8.2
       fs-extra: 11.1.0
-      gatsby: 5.7.0_5red3oq6inxhrl22fi2erluppi
+      gatsby: 5.7.0_osxp5kctqf4siycletxdoqfn34
       gatsby-plugin-sharp: 5.7.0_sxwqjopoaneuglww3qpb2cxyny
       gatsby-plugin-utils: 4.7.0_sxwqjopoaneuglww3qpb2cxyny
       probe-image-size: 7.2.3
@@ -9134,7 +9149,7 @@ packages:
     transitivePeerDependencies:
       - supports-color
 
-  /gatsby/5.7.0_5red3oq6inxhrl22fi2erluppi:
+  /gatsby/5.7.0_osxp5kctqf4siycletxdoqfn34:
     resolution: {integrity: sha512-aFUC8a6rubY/2EwK62TS0ra/e9g3js+8N6A1wcO6xZ5zKHvcACFYnrh7h1FBA9FMyJNJiHSY3rTy3keP1vxLxQ==}
     engines: {node: '>=18.0.0'}
     hasBin: true
@@ -9165,7 +9180,7 @@ packages:
       '@nodelib/fs.walk': 1.2.8
       '@parcel/cache': 2.8.3_@parcel+core@2.8.3
       '@parcel/core': 2.8.3
-      '@pmmmwh/react-refresh-webpack-plugin': 0.5.10_xsftmjzvfioxqs4ify53ibh7ay
+      '@pmmmwh/react-refresh-webpack-plugin': 0.5.10_vtcifvs55ji25iogcobmi27zm4
       '@types/http-proxy': 1.17.10
       '@typescript-eslint/eslint-plugin': 4.33.0_7qpwrhq7ol6iwf7pojn4j64fom
       '@typescript-eslint/parser': 4.33.0_jeuwjvsopuo23ctsjsevxmvjsi
@@ -9360,7 +9375,7 @@ packages:
       react: ^16.14.0 || ^17.0.0 || ^18.0.0
       react-dom: ^16.14.0 || ^17.0.0 || ^18.0.0
     dependencies:
-      gatsby: 5.7.0_5red3oq6inxhrl22fi2erluppi
+      gatsby: 5.7.0_osxp5kctqf4siycletxdoqfn34
       gatsby-background-image: 1.6.0_hgefj54jzwya6t5wz7qwyqdbja
       gatsby-plugin-image: 3.7.0_5m5mby2l5d42fysfokbhf3q3wy
       react: 18.2.0
