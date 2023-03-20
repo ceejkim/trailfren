@@ -1,11 +1,11 @@
-import React, { useState } from "react";
+import React, { FunctionComponent, useState } from "react";
 
 import * as styles from "./Footer.module.css";
 
-const Footer = () => {
-  const [emailAddress, setEmailAddress] = useState("");
+const Footer: FunctionComponent = () => {
+  const [emailAddress, setEmailAddress] = useState<string>("");
 
-  const handleEmailAddress = (e) => {
+  const handleEmailAddress = (e: React.ChangeEvent<HTMLInputElement>): void => {
     setEmailAddress(e.target.value);
   };
 
@@ -41,4 +41,5 @@ const Footer = () => {
     </div>
   );
 };
+
 export default Footer;

@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { FunctionComponent, useState } from "react";
+import { Helmet } from "react-helmet";
 import "@fontsource/poppins/400.css";
 import "@fontsource/poppins/200.css";
-import { Helmet } from "react-helmet";
 
 import Navbar from "../Navbar/Navbar";
 import Footer from "../Footer/Footer";
@@ -9,7 +9,12 @@ import Footer from "../Footer/Footer";
 import "../base.css";
 import LoginModal from "../LoginModal/LoginModal";
 
-const Layout = ({ page, children }) => {
+interface LayoutProps {
+  page: string;
+  children: React.ReactNode;
+}
+
+const Layout: FunctionComponent<LayoutProps> = ({ page, children }) => {
   const [loginModalVisible, setLoginModalVisible] = useState(true);
 
   const handleLoginModal = () => {

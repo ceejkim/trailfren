@@ -1,8 +1,16 @@
-import React from "react";
 import { graphql } from "gatsby";
 import Layout from "../components/Layout/Layout";
+import { FunctionComponent } from "react";
 
-const PartnerPage = (props) => (
+interface FAQPageProps {
+  data: {
+    heroImage: {
+      gatsbyImageData: any;
+    };
+  };
+}
+
+const FAQPage: FunctionComponent<FAQPageProps> = () => (
   <Layout page="faq">
     <div
       style={{
@@ -109,7 +117,7 @@ const PartnerPage = (props) => (
   </Layout>
 );
 
-export default PartnerPage;
+export default FAQPage;
 
 export const partnerPageQuery = graphql`
   query {

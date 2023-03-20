@@ -21,3 +21,8 @@
 
 2. run `pnpm install`
 3. run `pnpm run dev`
+
+## To Do
+
+1. handle email in Footer.tsx
+2. handle login modal

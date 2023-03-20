@@ -1,9 +1,17 @@
-import React from "react";
 import { Link } from "gatsby";
 
 import * as styles from "./Navbar.module.css";
+import { FunctionComponent } from "react";
 
-const Navbar = ({ page, handleLoginModal }) => {
+interface NavbarProps {
+  page: string;
+  handleLoginModal: () => void;
+}
+
+const Navbar: FunctionComponent<NavbarProps> = ({
+  page,
+  handleLoginModal,
+}) => {
   return (
     <nav className={`navbar navbar-expand-md ${styles.navbar}`}>
       <div>

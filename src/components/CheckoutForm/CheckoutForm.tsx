@@ -1,9 +1,8 @@
-import React, { useState, useCallback } from "react";
+import { useState, useCallback, FunctionComponent, ReactEventHandler } from "react";
 import { useStripe, useElements, CardElement } from "@stripe/react-stripe-js";
+import PaymentRequest from "../PaymentRequest/PaymentRequest";
 
 import * as styles from "./CheckoutForm.module.css";
-
-import PaymentRequest from "../PaymentRequest/PaymentRequest";
 
 const CARD_ELEMENT_OPTIONS = {
   style: {
@@ -23,12 +22,19 @@ const CARD_ELEMENT_OPTIONS = {
   },
 };
 
-export default function CheckoutForm({
+interface CheckoutFormProps {
+  donationAmount: string;
+  finalizedPayment: (payment?: any) => void;
+  accountId: string;
+  landingPagePath: string;
+}
+
+const CheckoutForm: FunctionComponent<CheckoutFormProps> = ({
   donationAmount,
   finalizedPayment,
   accountId,
   landingPagePath,
-}) {
+}) => {
   const stripe = useStripe();
   const elements = useElements();
 
@@ -50,7 +56,7 @@ export default function CheckoutForm({
         {
           method: "POST",
           body: JSON.stringify({
-            amount: Math.round(donationAmount * 100),
+            amount: Math.round(parseFloat(donationAmount) * 100),
             includeTip,
             accountId,
             landingPagePath,
@@ -80,7 +86,7 @@ export default function CheckoutForm({
     }
   }, [donationAmount, includeTip, accountId, landingPagePath]);
 
-  const handleSubmit = async (event) => {
+  const handleSubmit: ReactEventHandler = async (event) => {
     event.preventDefault();
     updateProcessing(true);
     updateMessage("");
@@ -95,16 +101,16 @@ export default function CheckoutForm({
     }
 
     try {
-      const paymentResult = await stripe.confirmCardPayment(clientSecret, {
+      const paymentResult = await stripe!.confirmCardPayment(clientSecret, {
         payment_method: {
-          card: elements.getElement(CardElement),
+          card: elements!.getElement(CardElement)!,
         },
       });
 
       updateProcessing(false);
 
       if (paymentResult.error) {
-        updateMessage(paymentResult.error.message);
+        updateMessage(paymentResult.error.message!);
       } else {
         // The payment has been processed!
         if (paymentResult.paymentIntent.status === "succeeded") {
@@ -124,7 +130,7 @@ export default function CheckoutForm({
     <div>
       <form onSubmit={handleSubmit} className={styles.enterPaymentForm}>
         <PaymentRequest
-          donationAmount={Math.round(donationAmount)}
+          donationAmount={Math.round(parseFloat(donationAmount))}
           tipAmount={includeTip ? 0.1 : 0}
           finalizedPayment={finalizedPayment}
           updateMessage={updateMessage}
@@ -163,4 +169,6 @@ export default function CheckoutForm({
       <p className={styles.userMessage}>{message}</p>
     </div>
   );
-}
+};
+
+export default CheckoutForm;

@@ -1,8 +1,7 @@
-import React from "react";
 import { graphql } from "gatsby";
 import Layout from "../components/Layout/Layout";
 
-const IndexPage = (props) => (
+const IndexPage = () => (
   <Layout page="index">
     <div style={{ backgroundColor: "black", padding: "200px 0" }}>
       <div

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { FunctionComponent } from "react";
 import { graphql, Link } from "gatsby";
 import { Helmet } from "react-helmet";
 import { indexOf, get } from "lodash";
@@ -9,7 +9,30 @@ import DonationBox from "../components/DonationBox/DonationBox";
 
 import * as styles from "./landing-page.module.css";
 
-const LandingPageTemplate = (props) => {
+interface LandingPageProps { 
+  data: {
+    contentfulFren: {
+      name: string;
+      websiteUrl: string;
+      aboutUs: {
+        aboutUs: string;
+      };
+      logo: {
+        gatsbyImageData: any;
+      };
+      stripeAccountId: string;
+      landingPagePath: string;
+    };
+    contentfulLandingPage: {
+      donationAmounts: string[];
+      contributionDeets: {
+        contributionDeets: string;
+      };
+    };
+  };
+}
+
+const LandingPageTemplate: FunctionComponent<LandingPageProps> = (props) => {
   const frenData = get(props, "data.contentfulFren");
   const pageData = get(props, "data.contentfulLandingPage");
 
