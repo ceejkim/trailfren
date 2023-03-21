@@ -1,6 +1,17 @@
-import stripeClient from "stripe";
+import Stripe from "stripe";
+import { GatsbyFunctionRequest, GatsbyFunctionResponse } from "gatsby"
 
-const stripe = stripeClient(process.env.STRIPE_SECRET_KEY);
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2022-11-15',
+});
+
+interface ContactBody {
+  amount: number;
+  includeTip: boolean;
+  accountId: string;
+  landingPagePath: string;
+}
+
 const headers = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "Content-Type",
@@ -8,22 +19,20 @@ const headers = {
 
 const feeTaken = 99;
 
-exports.handler = async (event, context) => {
+exports.handler = async (req: GatsbyFunctionRequest<ContactBody>, res: GatsbyFunctionResponse) => {
   // CORS
   try {
-    if (event.httpMethod === "OPTIONS") {
+    if (req.method === "OPTIONS") {
       return {
         statusCode: 200,
         headers,
       };
     }
 
-    const postBody = JSON.parse(event.body);
-
-    const amount = Number(postBody.amount);
-    const includeTip = postBody.includeTip;
-    const accountId = postBody.accountId;
-    const landingPagePath = postBody.landingPagePath;
+    const amount = Number(req.body.amount);
+    const includeTip = req.body.includeTip;
+    const accountId = req.body.accountId;
+    const landingPagePath = req.body.landingPagePath;
 
     if (!amount || amount < 0) {
       console.error("Amount must be a positive integer.");
@@ -41,7 +50,7 @@ exports.handler = async (event, context) => {
     const paymentIntent = await stripe.paymentIntents.create(
       {
         currency: "usd",
-        amount: Math.round(amount + (includeTip && feeTaken)),
+        amount: Math.round(amount + (includeTip ? feeTaken : 0)),
         application_fee_amount: includeTip ? feeTaken : 0,
         description: landingPagePath,
       },

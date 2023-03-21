@@ -1,5 +1,8 @@
 [build]
-  functions = "functions/"
+  functions = "src/api"
 
 [dev]
   framework = "gatsby"
+
+[[plugins]]
+  package = "@netlify/plugin-gatsby"

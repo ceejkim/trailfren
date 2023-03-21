@@ -1,4 +1,6 @@
 import { FunctionComponent, ReactEventHandler, useState } from "react";
+import axios from "axios";
+
 import * as styles from "./LoginModal.module.css";
 
 interface ModalProps {
@@ -6,49 +8,154 @@ interface ModalProps {
 }
 
 const Modal: FunctionComponent<ModalProps> = ({ showModal }) => {
-  const [email, setEmail] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+    firstName: "",
+    lastName: "",
+    confirmPassword: "",
+    createPassword: "",
+    retypePassword: "",
+  });
+
   const [forgotPasswordClicked, setForgotPasswordClicked] =
     useState<boolean>(false);
+  const [createAccountClicked, setCreateAccountClicked] =
+    useState<boolean>(false);
 
-  const handleSignIn: ReactEventHandler = (event) => {
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     event.preventDefault();
-    // Handle sign in logic here
+    const { name, value } = event.target;
+    setFormData((prevData) => ({ ...prevData, [name]: value }));
   };
 
-  const handleCreateAccount: ReactEventHandler = (event) => {
+  const handleSignIn: ReactEventHandler = async (event) => {
     event.preventDefault();
-    // Handle create account logic here
+    try {
+      const response = await axios.post("/.netlify/functions/login", {
+        email: formData.email,
+        password: formData.password,
+      });
+      console.log(response);
+      // Handle success (e.g., set user state, close modal)
+    } catch (error) {
+      console.error(error);
+      // Handle error (e.g., show error message)
+    }
   };
 
-  const handleForgotPassword: ReactEventHandler = (event) => {
+  const handleCreateAccount: ReactEventHandler = async (event) => {
     event.preventDefault();
-    // Handle forgot password logic here
+    try {
+      const response = await axios.post("/.netlify/functions/signup", {
+        email: formData.email,
+        password: formData.password,
+      });
+      console.log(response);
+      // Handle success (e.g., set user state, close modal)
+    } catch (error) {
+      console.error(error);
+      // Handle error (e.g., show error message)
+    }
   };
 
-  console.log("showModal", showModal);
+  const handleForgotPassword: ReactEventHandler = async (event) => {
+    event.preventDefault();
+    try {
+      const response = await axios.put("/.netlify/functions/reset-password", {
+        email: formData.email,
+      });
+      console.log(response);
+      // Handle success (e.g., show success message)
+    } catch (error) {
+      console.error(error);
+      // Handle error (e.g., show error message)
+    }
+  };
+
+  const header = () => {
+    if (forgotPasswordClicked)
+      return <h2 className={styles.header}>Forgot Password</h2>;
+    if (createAccountClicked)
+      return <h2 className={styles.header}>Create Account</h2>;
+    return <h2 className={styles.header}>Welcome to trailfren</h2>;
+  };
 
   return (
     <div>
       {showModal ? (
         <div className={styles.modal}>
           <div className={styles.modalContent}>
-            <h2 className={styles.header}>Welcome to trailfren</h2>
+            {header()}
             <form className={styles.form}>
-              <input
-                className={styles.input}
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Email"
-              />
-              <input
-                className={styles.input}
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password"
-              />
+              {createAccountClicked && (
+                <>
+                  <div className={styles.doubleInput}>
+                    <input
+                      className={styles.input}
+                      type="text"
+                      name="firstName"
+                      value={formData.firstName}
+                      onChange={handleChange}
+                      placeholder="First Name"
+                    />
+                    <input
+                      className={styles.input}
+                      type="text"
+                      name="lastName"
+                      value={formData.lastName}
+                      onChange={handleChange}
+                      placeholder="Last Name"
+                    />
+                  </div>
+                  <input
+                    className={styles.input}
+                    type="password"
+                    name="createPassword"
+                    value={formData.createPassword}
+                    onChange={handleChange}
+                    placeholder="Create Password"
+                  />
+                  <input
+                    className={styles.input}
+                    type="password"
+                    name="retypePassword"
+                    value={formData.retypePassword}
+                    onChange={handleChange}
+                    placeholder="Re-type Password"
+                  />
+                </>
+              )}
+              {!createAccountClicked && !forgotPasswordClicked ? (
+                <>
+                  <input
+                    className={styles.input}
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    placeholder="Email"
+                  />
+                  <input
+                    className={styles.input}
+                    type="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    placeholder="Password"
+                  />
+                </>
+              ) : null}
+              {forgotPasswordClicked && (
+                <input
+                  className={styles.input}
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="Email"
+                />
+              )}
               {forgotPasswordClicked ? (
                 <button
                   className={styles.mainButton}
@@ -65,7 +172,10 @@ const Modal: FunctionComponent<ModalProps> = ({ showModal }) => {
                 <div className={styles.secondaryButtonContainer}>
                   <button
                     className={styles.secondaryButton}
-                    onClick={() => setForgotPasswordClicked(false)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setForgotPasswordClicked(false);
+                    }}
                   >
                     Back to sign in
                   </button>
@@ -74,13 +184,19 @@ const Modal: FunctionComponent<ModalProps> = ({ showModal }) => {
                 <div className={styles.secondaryButtonContainer}>
                   <button
                     className={styles.secondaryButton}
-                    onClick={() => setForgotPasswordClicked(true)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setForgotPasswordClicked(true);
+                    }}
                   >
                     Forgot Password?
                   </button>
                   <button
                     className={styles.secondaryButton}
-                    onClick={handleCreateAccount}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setCreateAccountClicked(true);
+                    }}
                   >
                     Create account
                   </button>

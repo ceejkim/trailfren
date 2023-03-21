@@ -141,3 +141,10 @@
   justify-content: center;
   gap: 10px;
 }
+.doubleInput {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+}

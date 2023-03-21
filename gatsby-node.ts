@@ -67,20 +67,6 @@ export const createPages: GatsbyNode['createPages'] = async ({ graphql, actions 
   });
 };
 
-// this is so we can use CSS modules in TSX files with autocomplete!
-export const onCreateWebpackConfig: GatsbyNode['onCreateWebpackConfig'] = ({
-  stage,
-  actions,
-  getConfig,
-}: CreateWebpackConfigArgs) => {
-  console.log('stage: ', stage);
-  if (stage === 'develop' || stage === 'build-javascript') {
-    const config = getConfig();
-    console.log('config', config);
-    config.plugins.push(new WatchIgnorePlugin({ paths: [/css\.d\.ts$/] }));
-  }
-};
-
 // this is so React is autoimported in TSX. No need to import React in TSX files now
 exports.onCreateBabelConfig = ({ actions }: { actions: any }) => {
   actions.setBabelPlugin({

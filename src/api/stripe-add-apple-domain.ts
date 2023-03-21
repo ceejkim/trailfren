@@ -1,14 +1,22 @@
-import stripeClient from "stripe";
+import { GatsbyFunctionRequest, GatsbyFunctionResponse } from 'gatsby';
+import Stripe from 'stripe';
 
-const stripe = stripeClient(process.env.STRIPE_SECRET_KEY);
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2022-11-15',
+});
 
 const headers = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "Content-Type",
 }
 
-exports.handler = async (event) => {
-  const accountId = event.body
+interface ContactBody {
+  accountId?: string;
+
+}
+
+export default async function stripeAddAppleDomain(req: GatsbyFunctionRequest<ContactBody>, res: GatsbyFunctionResponse) {
+  const { accountId } = req.body;
 
   if (!accountId) {
     return {

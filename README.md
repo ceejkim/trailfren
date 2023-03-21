@@ -25,4 +25,7 @@
 ## To Do
 
 1. handle email in Footer.tsx
-2. handle login modal
+2. login form - same as Squarespace.
+3. signup form - same as Squarespace.
+4. account page - allow for initial setup and editing of account details.
+5. if any information is missing then disable their page and show a message to the user to complete the form.
