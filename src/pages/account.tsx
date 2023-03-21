@@ -1,6 +1,6 @@
 import { FunctionComponent } from "react";
 import { graphql } from "gatsby";
-import { useContentfulImage } from "gatsby-source-contentful/hooks";
+// import { useContentfulImage } from "gatsby-source-contentful/hooks";
 
 // import * as styles from "./landing-page.module.css";
 
@@ -28,25 +28,25 @@ interface LandingPageProps {
 }
 
 const AccountPageTemplate: FunctionComponent<LandingPageProps> = (props) => {
-  const frenData = get(props, "data.contentfulFren");
-  const pageData = get(props, "data.contentfulLandingPage");
+  // const frenData = get(props, "data.contentfulFren");
+  // const pageData = get(props, "data.contentfulLandingPage");
 
-  // for some reason useContentfulImage() doesn't accept webp images or https:
-  // so I correct for this here
-  const urlOne = frenData.logo.gatsbyImageData.images.sources[0].srcSet.replace(
-    "https:",
-    ""
-  );
-  const index = indexOf(urlOne, "?");
-  const url = urlOne.slice(0, index);
+  // // for some reason useContentfulImage() doesn't accept webp images or https:
+  // // so I correct for this here
+  // const urlOne = frenData.logo.gatsbyImageData.images.sources[0].srcSet.replace(
+  //   "https:",
+  //   ""
+  // );
+  // const index = indexOf(urlOne, "?");
+  // const url = urlOne.slice(0, index);
 
-  const dynamicImage = useContentfulImage({
-    image: {
-      url,
-      height: 150,
-      width: 150,
-    },
-  });
+  // const dynamicImage = useContentfulImage({
+  //   image: {
+  //     url,
+  //     height: 150,
+  //     width: 150,
+  //   },
+  // });
 
   return (
     <div>test</div>
