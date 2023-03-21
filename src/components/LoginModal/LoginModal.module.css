@@ -141,6 +141,13 @@
   justify-content: center;
   gap: 10px;
 }
+.secondaryButtonContainerSmallGap {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  justify-content: center;
+  gap: 2px;
+}
 .doubleInput {
   display: flex;
   flex-direction: row;

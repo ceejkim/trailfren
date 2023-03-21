@@ -1,4 +1,4 @@
-import { GatsbyFunctionRequest, GatsbyFunctionResponse } from 'gatsby';
+import { HandlerEvent, HandlerContext } from "@netlify/functions";
 import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -15,18 +15,21 @@ interface ContactBody {
 
 }
 
-export default async function stripeAddAppleDomain(req: GatsbyFunctionRequest<ContactBody>, res: GatsbyFunctionResponse) {
-  const { accountId } = req.body;
-
-  if (!accountId) {
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({}),
-    }
-  }
-
+exports.handler = async (event: HandlerEvent, context: HandlerContext) => {
   try {
+    if (!event.body) {
+      return { statusCode: 400, error: 'Invalid request body' };
+    }
+    const { accountId } = JSON.parse(event.body) as ContactBody;
+
+    if (!accountId) {
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({}),
+      }
+    }
+
     await stripe.applePayDomains.create(
       {
         domain_name: "www.trailfren.com",

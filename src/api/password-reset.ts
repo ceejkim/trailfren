@@ -1,29 +1,33 @@
-import { GatsbyFunctionRequest, GatsbyFunctionResponse } from 'gatsby';
+import { HandlerEvent, HandlerContext } from "@netlify/functions";
 import GoTrue from 'gotrue-js';
 
 interface PasswordResetBody {
   email: string;
 }
 
-export default async function handlePasswordReset(req: GatsbyFunctionRequest<PasswordResetBody>, res: GatsbyFunctionResponse) {
-  const { email } = req.body;
-
-  if (!email) {
-    res.status(400).send({ error: 'Email is required' });
-    return;
-  }
-
-  // Initialize a new GoTrue client
-  const auth = new GoTrue({
-    APIUrl: `${process.env.NETLIFY_IDENTITY_API_URL}/.netlify/identity`,
-    setCookie: true,
-  });
-
+exports.handler = async (event: HandlerEvent, context: HandlerContext) => {
   try {
+    if (!event.body) {
+      return { statusCode: 400, error: 'Invalid request body' };
+    }
+
+    const { email } = JSON.parse(event.body) as PasswordResetBody;
+
+    if (!email) {
+      return { statusCode: 400, error: 'Email is required' };
+      return;
+    }
+
+    // Initialize a new GoTrue client
+    const auth = new GoTrue({
+      APIUrl: `${process.env.NETLIFY_IDENTITY_API_URL}/.netlify/identity`,
+      setCookie: true,
+    });
+
     // Send a password reset email to the user
     await auth.requestPasswordRecovery(email);
-    res.status(200).send({ message: 'Password reset email sent' });
+    return { statusCode: 200, message: 'Password reset email sent' };
   } catch (error) {
-    res.status(500).send({ error: 'Failed to send password reset email' });
+    return { statusCode: 500, error: 'Failed to send password reset email' };
   }
 }

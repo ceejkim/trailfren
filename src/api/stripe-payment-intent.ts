@@ -1,5 +1,5 @@
 import Stripe from "stripe";
-import { GatsbyFunctionRequest, GatsbyFunctionResponse } from "gatsby"
+import { HandlerEvent, HandlerContext } from "@netlify/functions";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2022-11-15',
@@ -19,20 +19,24 @@ const headers = {
 
 const feeTaken = 99;
 
-exports.handler = async (req: GatsbyFunctionRequest<ContactBody>, res: GatsbyFunctionResponse) => {
+exports.handler = async (event: HandlerEvent, context: HandlerContext) => {
   // CORS
   try {
-    if (req.method === "OPTIONS") {
+    if (!event.body) {
+      return { statusCode: 400, error: 'Invalid request body' };
+    }
+    if (event.httpMethod === "OPTIONS") {
       return {
         statusCode: 200,
         headers,
       };
     }
 
-    const amount = Number(req.body.amount);
-    const includeTip = req.body.includeTip;
-    const accountId = req.body.accountId;
-    const landingPagePath = req.body.landingPagePath;
+    const body = JSON.parse(event.body) as ContactBody;
+    const amount = Number(body.amount);
+    const includeTip = body.includeTip;
+    const accountId = body.accountId;
+    const landingPagePath = body.landingPagePath;
 
     if (!amount || amount < 0) {
       console.error("Amount must be a positive integer.");

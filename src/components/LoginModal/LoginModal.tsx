@@ -81,6 +81,162 @@ const Modal: FunctionComponent<ModalProps> = ({ showModal }) => {
     return <h2 className={styles.header}>Welcome to trailfren</h2>;
   };
 
+  const form = () => {
+    if (createAccountClicked) {
+      return (
+        <>
+          <div className={styles.doubleInput}>
+            <input
+              className={styles.input}
+              type="text"
+              name="firstName"
+              value={formData.firstName}
+              onChange={handleChange}
+              placeholder="First Name"
+            />
+            <input
+              className={styles.input}
+              type="text"
+              name="lastName"
+              value={formData.lastName}
+              onChange={handleChange}
+              placeholder="Last Name"
+            />
+          </div>
+          <input
+            className={styles.input}
+            type="text"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+            placeholder="Email"
+          />
+          <input
+            className={styles.input}
+            type="password"
+            name="createPassword"
+            value={formData.createPassword}
+            onChange={handleChange}
+            placeholder="Create Password"
+          />
+          <input
+            className={styles.input}
+            type="password"
+            name="retypePassword"
+            value={formData.retypePassword}
+            onChange={handleChange}
+            placeholder="Re-type Password"
+          />
+        </>
+      );
+    }
+    if (forgotPasswordClicked) {
+      return (
+        <input
+          className={styles.input}
+          type="email"
+          name="email"
+          value={formData.email}
+          onChange={handleChange}
+          placeholder="Email"
+        />
+      );
+    }
+    return (
+      <>
+        <input
+          className={styles.input}
+          type="email"
+          name="email"
+          value={formData.email}
+          onChange={handleChange}
+          placeholder="Email"
+        />
+        <input
+          className={styles.input}
+          type="password"
+          name="password"
+          value={formData.password}
+          onChange={handleChange}
+          placeholder="Password"
+        />
+      </>
+    );
+  };
+
+  const buttons = () => {
+    if (forgotPasswordClicked) {
+      return (
+        <>
+          <button className={styles.mainButton} onClick={handleForgotPassword}>
+            Send Reset Link
+          </button>
+          <div className={styles.secondaryButtonContainer}>
+            <button
+              className={styles.secondaryButton}
+              onClick={(e) => {
+                e.preventDefault();
+                setForgotPasswordClicked(false);
+              }}
+            >
+              Back to sign in
+            </button>
+          </div>
+        </>
+      );
+    }
+    if (createAccountClicked) {
+      return (
+        <>
+          <button className={styles.mainButton} onClick={handleCreateAccount}>
+            Create Account
+          </button>
+          <div className={styles.secondaryButtonContainerSmallGap}>
+            <button disabled className={styles.secondaryButton}>
+              Already have an account?
+            </button>
+            <button
+              className={styles.secondaryButton}
+              onClick={(e) => {
+                e.preventDefault();
+                setForgotPasswordClicked(false);
+              }}
+            >
+              Sign in
+            </button>
+          </div>
+        </>
+      );
+    }
+    return (
+      <>
+        <button className={styles.mainButton} onClick={handleSignIn}>
+          Sign In
+        </button>
+        <div className={styles.secondaryButtonContainer}>
+          <button
+            className={styles.secondaryButton}
+            onClick={(e) => {
+              e.preventDefault();
+              setForgotPasswordClicked(true);
+            }}
+          >
+            Forgot Password?
+          </button>
+          <button
+            className={styles.secondaryButton}
+            onClick={(e) => {
+              e.preventDefault();
+              setCreateAccountClicked(true);
+            }}
+          >
+            Create account
+          </button>
+        </div>
+      </>
+    );
+  };
+
   return (
     <div>
       {showModal ? (
@@ -88,120 +244,8 @@ const Modal: FunctionComponent<ModalProps> = ({ showModal }) => {
           <div className={styles.modalContent}>
             {header()}
             <form className={styles.form}>
-              {createAccountClicked && (
-                <>
-                  <div className={styles.doubleInput}>
-                    <input
-                      className={styles.input}
-                      type="text"
-                      name="firstName"
-                      value={formData.firstName}
-                      onChange={handleChange}
-                      placeholder="First Name"
-                    />
-                    <input
-                      className={styles.input}
-                      type="text"
-                      name="lastName"
-                      value={formData.lastName}
-                      onChange={handleChange}
-                      placeholder="Last Name"
-                    />
-                  </div>
-                  <input
-                    className={styles.input}
-                    type="password"
-                    name="createPassword"
-                    value={formData.createPassword}
-                    onChange={handleChange}
-                    placeholder="Create Password"
-                  />
-                  <input
-                    className={styles.input}
-                    type="password"
-                    name="retypePassword"
-                    value={formData.retypePassword}
-                    onChange={handleChange}
-                    placeholder="Re-type Password"
-                  />
-                </>
-              )}
-              {!createAccountClicked && !forgotPasswordClicked ? (
-                <>
-                  <input
-                    className={styles.input}
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    placeholder="Email"
-                  />
-                  <input
-                    className={styles.input}
-                    type="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    placeholder="Password"
-                  />
-                </>
-              ) : null}
-              {forgotPasswordClicked && (
-                <input
-                  className={styles.input}
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="Email"
-                />
-              )}
-              {forgotPasswordClicked ? (
-                <button
-                  className={styles.mainButton}
-                  onClick={handleForgotPassword}
-                >
-                  Send Reset Link
-                </button>
-              ) : (
-                <button className={styles.mainButton} onClick={handleSignIn}>
-                  Sign In
-                </button>
-              )}
-              {forgotPasswordClicked ? (
-                <div className={styles.secondaryButtonContainer}>
-                  <button
-                    className={styles.secondaryButton}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setForgotPasswordClicked(false);
-                    }}
-                  >
-                    Back to sign in
-                  </button>
-                </div>
-              ) : (
-                <div className={styles.secondaryButtonContainer}>
-                  <button
-                    className={styles.secondaryButton}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setForgotPasswordClicked(true);
-                    }}
-                  >
-                    Forgot Password?
-                  </button>
-                  <button
-                    className={styles.secondaryButton}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setCreateAccountClicked(true);
-                    }}
-                  >
-                    Create account
-                  </button>
-                </div>
-              )}
+              {form()}
+              {buttons()}
             </form>
           </div>
         </div>
