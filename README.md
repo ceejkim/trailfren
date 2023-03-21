@@ -8,12 +8,12 @@ Hosted on Netlify
 
 1. build
 
-        ```bash
-        export NODE_ENV=production && npm run build.
-        ```
+```bash
+export NODE_ENV=production && npm run build.
+```
 
 2. deploy
 
-        ```bash
-        export NODE_ENV=production && npm run netlify:deploy
-        ```
+```bash
+export NODE_ENV=production && npm run netlify:deploy
+```
