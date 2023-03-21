@@ -1,15 +1,10 @@
-import React, { FunctionComponent } from "react";
-import { graphql, Link } from "gatsby";
-import { Helmet } from "react-helmet";
-import { indexOf, get } from "lodash";
-import { GatsbyImage } from "gatsby-plugin-image";
+import { FunctionComponent } from "react";
+import { graphql } from "gatsby";
 import { useContentfulImage } from "gatsby-source-contentful/hooks";
-
-import DonationBox from "../components/DonationBox/DonationBox";
 
 // import * as styles from "./landing-page.module.css";
 
-interface LandingPageProps { 
+interface LandingPageProps {
   data: {
     contentfulFren: {
       name: string;
@@ -32,7 +27,7 @@ interface LandingPageProps {
   };
 }
 
-const LandingPageTemplate: FunctionComponent<LandingPageProps> = (props) => {
+const AccountPageTemplate: FunctionComponent<LandingPageProps> = (props) => {
   const frenData = get(props, "data.contentfulFren");
   const pageData = get(props, "data.contentfulLandingPage");
 
@@ -54,7 +49,7 @@ const LandingPageTemplate: FunctionComponent<LandingPageProps> = (props) => {
   });
 
   return (
-    <div></div>
+    <div>test</div>
     // <div className={styles.background}>
     //   <Helmet title={`pay ${frenData.name} with trailfren`} />
     //   <div className={styles.logo}>
@@ -103,7 +98,7 @@ const LandingPageTemplate: FunctionComponent<LandingPageProps> = (props) => {
   );
 };
 
-export default LandingPageTemplate;
+export default AccountPageTemplate;
 
 export const pageQuery = graphql`
   query FrenPageQuery($frenId: String!, $landingPageId: String!) {

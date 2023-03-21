@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@fontsource/poppins": "^4.5.10",
+    "@netlify/plugin-emails": "^1.0.3",
     "@popperjs/core": "^2.11.6",
     "@stripe/react-stripe-js": "^2.0.0",
     "@stripe/stripe-js": "^1.50.0",
@@ -44,15 +45,17 @@
     "typescript": "^5.0.2"
   },
   "devDependencies": {
+    "@babel/runtime": "^7.21.0",
     "@netlify/plugin-gatsby": "^3.6.0",
     "@types/lodash": "^4.14.191",
     "@types/react-helmet": "^6.1.6",
     "@types/webpack": "^5.28.0",
+    "babel-loader": "^9.1.2",
     "contentful-import": "^8.5.37",
     "dotenv": "^16.0.3",
     "gatsby-plugin-esbuild": "^0.0.5",
     "gatsby-plugin-pnpm": "^1.2.10",
-    "netlify-cli": "^13.1.7"
+    "netlify-cli": "^13.2.0"
   },
   "engines": {
     "node": ">=18.0.0"

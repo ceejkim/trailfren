@@ -6,3 +6,6 @@
 
 [[plugins]]
   package = "@netlify/plugin-gatsby"
+
+[[plugins]]
+  package = "@netlify/plugin-emails"
