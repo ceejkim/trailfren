@@ -1,11 +1,5 @@
 [build]
-  functions = "src/api"
+  functions = "functions/"
 
 [dev]
   framework = "gatsby"
-
-[[plugins]]
-  package = "@netlify/plugin-gatsby"
-
-[[plugins]]
-  package = "@netlify/plugin-emails"

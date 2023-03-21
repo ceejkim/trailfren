@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@fontsource/poppins": "^4.5.10",
+    "@netlify/functions": "^1.4.0",
     "@netlify/plugin-emails": "^1.0.3",
     "@popperjs/core": "^2.11.6",
     "@stripe/react-stripe-js": "^2.0.0",

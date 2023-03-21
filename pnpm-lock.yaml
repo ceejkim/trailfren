@@ -3,6 +3,7 @@ lockfileVersion: 5.4
 specifiers:
   '@babel/runtime': ^7.21.0
   '@fontsource/poppins': ^4.5.10
+  '@netlify/functions': ^1.4.0
   '@netlify/plugin-emails': ^1.0.3
   '@netlify/plugin-gatsby': ^3.6.0
   '@popperjs/core': ^2.11.6
@@ -50,6 +51,7 @@ specifiers:
 
 dependencies:
   '@fontsource/poppins': 4.5.10
+  '@netlify/functions': 1.4.0
   '@netlify/plugin-emails': 1.0.3
   '@popperjs/core': 2.11.6
   '@stripe/react-stripe-js': 2.0.0_x24xbjcc7qcg4sivl2m652ynv4
