@@ -1,0 +1,329 @@
+"use client";
+
+import {
+  ReactEventHandler,
+  useState,
+  FunctionComponent,
+  useRef,
+  useEffect,
+  useContext,
+} from "react";
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+} from "firebase/auth";
+// import axios from "axios";
+
+import isValidEmail from "../utils/validEmail";
+import Input from "./input";
+import { TrailfrenContext } from "../routes";
+import { app } from "../firebaseConfig";
+import { useNavigate } from "react-router-dom";
+
+const auth = getAuth(app);
+
+interface LoginModalProps {
+  setModalVisible: (value: boolean) => void;
+  visible: boolean;
+}
+
+type FormTypes = "signIn" | "createAccount" | "forgotPassword";
+
+const LoginModal: FunctionComponent<LoginModalProps> = (props) => {
+  const { sdk } = useContext(TrailfrenContext);
+  const navigate = useNavigate();
+  const modalContentRef = useRef<HTMLDivElement>(null);
+  const [formError, setFormError] = useState<string | undefined>(undefined);
+  const [formType, setFormType] = useState<FormTypes>("signIn");
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+    firstName: "",
+    lastName: "",
+    confirmPassword: "",
+    createPassword: "",
+    retypePassword: "",
+  });
+
+  useEffect(() => {
+    const handleClickOutside = (event: any) => {
+      if (
+        modalContentRef.current &&
+        !modalContentRef.current.contains(event.target)
+      ) {
+        props.setModalVisible(false);
+      }
+    };
+    if (props.visible) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [props.visible]);
+
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    event.preventDefault();
+    const { name, value } = event.target;
+    setFormData((prevData) => ({ ...prevData, [name]: value }));
+  };
+
+  const handleSignIn: ReactEventHandler = async (event) => {
+    event.preventDefault();
+    try {
+      signInWithEmailAndPassword(auth, formData.email, formData.password)
+        .then((userCredential) => {
+          // Signed in
+          const user = userCredential.user;
+          props.setModalVisible(false);
+          navigate('/account');
+        })
+        .catch(() => {
+          setFormError("user not found");
+        });
+    } catch (error: any) {
+      console.error(error);
+      setFormError("user not found");
+    }
+  };
+
+  const handleCreateAccount: ReactEventHandler = async (event) => {
+    event.preventDefault();
+    try {
+      createUserWithEmailAndPassword(auth, formData.email, formData.password)
+        .then((userCredential) => {
+          // Signed in
+          const user = userCredential.user;
+          props.setModalVisible(false);
+          navigate('/account');
+        })
+        .catch((error) => {
+          const errorMessage = error.message;
+          setFormError(errorMessage || "unknown error");
+        });
+      } catch (error: any) {
+      setFormError(error || "unknown error");
+    }
+  };
+
+  const handleForgotPassword: ReactEventHandler = async (event) => {
+    event.preventDefault();
+    setFormError(undefined);
+    if (!isValidEmail(formData.email)) {
+      setFormError("invalid email");
+    }
+    try {
+      // const response = await axios.put("/.netlify/functions/reset-password", {
+      //   email: formData.email,
+      // });
+    } catch (error: any) {
+      setFormError(error?.response?.data?.message || "unknown error");
+    }
+  };
+
+  const header = () => {
+    if (formType === "forgotPassword")
+      return (
+        <h2 className="text-2xl font-normal text-gray-800">Reset Password</h2>
+      );
+    if (formType === "createAccount")
+      return (
+        <h2 className="text-2xl font-normal text-gray-800">Create Account</h2>
+      );
+    return (
+      <h2 className="text-2xl font-normal text-gray-800">
+        Welcome to trailfren
+      </h2>
+    );
+  };
+
+  const form = () => {
+    switch (formType) {
+      case "createAccount":
+        return (
+          <>
+            <div className="flex w-full flex-row justify-between gap-2">
+              <Input
+                name="firstName"
+                value={formData.firstName}
+                onChange={handleChange}
+                placeholder="First Name"
+              />
+              <Input
+                name="lastName"
+                value={formData.lastName}
+                onChange={handleChange}
+                placeholder="Last Name"
+              />
+            </div>
+            <Input
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              placeholder="Email"
+            />
+            <Input
+              name="createPassword"
+              value={formData.createPassword}
+              onChange={handleChange}
+              placeholder="Create Password"
+              type="password"
+            />
+            <Input
+              name="retypePassword"
+              value={formData.retypePassword}
+              onChange={handleChange}
+              placeholder="Re-type Password"
+              type="password"
+            />
+          </>
+        );
+
+      case "forgotPassword":
+        return (
+          <Input
+            name="email"
+            type="email"
+            value={formData.email}
+            onChange={handleChange}
+            placeholder="Email"
+          />
+        );
+      default:
+        return (
+          <>
+            <Input
+              name="email"
+              type="email"
+              value={formData.email}
+              onChange={handleChange}
+              placeholder="Email"
+            />
+            <Input
+              name="password"
+              type="password"
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="Password"
+            />
+          </>
+        );
+    }
+  };
+
+  const buttons = () => {
+    switch (formType) {
+      case "forgotPassword":
+        return (
+          <>
+            <button
+              className=" block w-full rounded-md bg-gray-800 py-3 text-xs font-medium text-white hover:bg-gray-800"
+              onClick={handleForgotPassword}
+            >
+              Send Reset Link
+            </button>
+            <div className="flex w-full flex-row justify-center space-x-2.5">
+              <button
+                className="mt-1 block border-none bg-white/0 p-0 text-xs leading-5 text-gray-800"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setFormType("signIn");
+                }}
+              >
+                Back to sign in
+              </button>
+            </div>
+          </>
+        );
+
+      case "createAccount":
+        return (
+          <>
+            <button
+              className="block w-full rounded-md bg-gray-800 py-3 text-sm font-medium text-white hover:bg-gray-800"
+              onClick={handleCreateAccount}
+            >
+              Create Account
+            </button>
+            <div className="flex w-full flex-row justify-center space-x-0.5">
+              <button
+                disabled
+                className="block border-none p-0 text-xs leading-5 text-gray-800"
+              >
+                Already have an account?
+              </button>
+              <button
+                className="block border-none p-0 text-xs leading-5 text-gray-800"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setFormType("forgotPassword");
+                }}
+              >
+                Sign in
+              </button>
+            </div>
+          </>
+        );
+
+      default:
+        return (
+          <>
+            <button
+              className="block w-full rounded-md bg-gray-800 py-3 text-sm font-medium uppercase text-white hover:bg-gray-800"
+              onClick={handleSignIn}
+            >
+              Sign In
+            </button>
+            <div className="flex w-full flex-row justify-center space-x-2.5">
+              <button
+                className="mt-6 block border-none bg-white/0 p-0 text-xs capitalize leading-5 text-gray-800"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setFormType("forgotPassword");
+                }}
+              >
+                Forgot Password?
+              </button>
+              <button
+                className="mt-6 block border-none bg-white/0 p-0 text-xs capitalize leading-5 text-gray-800"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setFormType("createAccount");
+                }}
+              >
+                Create account
+              </button>
+            </div>
+          </>
+        );
+    }
+  };
+  return props.visible ? (
+    <div className="fixed inset-0 z-10 flex h-full w-full items-center justify-center bg-black/50 pt-11">
+      <div
+        ref={modalContentRef}
+        className="w-full max-w-md rounded-sm bg-white p-11 pb-6 text-center shadow-md"
+      >
+        {header()}
+        <a onClick={(e) => {}}>Sign in</a>
+        <form className="mt-5 flex flex-col items-center">
+          {form()}
+          <p
+            className="m-0 h-0 text-xs text-red"
+            aria-live="assertive"
+            role="alert"
+          >
+            {formError}
+          </p>
+          <div className="mt-6">{buttons()}</div>
+        </form>
+      </div>
+    </div>
+  ) : null;
+};
+
+export default LoginModal;
