@@ -1,9 +1,14 @@
 export interface StripePaymentSuccessResponse {
-    clientSecret: string;
+    success: boolean;
+    clientSecret?: string;
+    error?: string;
+}
+export interface StripePaymentErrorResponse {
 }
 export type StripePaymentRequest = {
     amount: number;
-    includeTip: number;
-    accountId: number;
+    includeTip: boolean;
+    accountId: string;
+    landingPageName: string;
     landingPagePath: string;
 };

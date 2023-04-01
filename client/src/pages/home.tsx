@@ -1,28 +1,8 @@
 "use client";
 
-import contentfulClient from "../contentfulClient";
 import Button from "../components/button";
-import { useEffect } from "react";
-import env from "../../env";
 
-export default function Home(props: any) {
-  useEffect(() => {
-    const asyncEffect = async () => {
-      const entries = await getEntries("affiliate");
-    };
-    asyncEffect();
-  }, []);
-  async function getEntries(contentType: string) {
-    try {
-      const response = await contentfulClient.getEntries({
-        content_type: contentType,
-      });
-      return response.items;
-    } catch (error) {
-      console.error("Error fetching data:", error);
-      return [];
-    }
-  }
+export default function Home() {
   function handleSetupNow() {}
   return (
     <>

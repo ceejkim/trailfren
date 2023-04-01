@@ -13,7 +13,7 @@ stripeDomainsRouter.post("/", async (req, res, next) => {
     const { accountId, type } = req.body as StripeDomainsRequest;
 
     if (!accountId) {
-      res.status(400).json({ message: "Missing account id" });
+      res.status(400).send({ message: "Missing account id" });
     }
 
     if (type === 'apple') {
@@ -37,6 +37,6 @@ stripeDomainsRouter.post("/", async (req, res, next) => {
     }
     res.status(200).send();
   } catch (err: any) {
-    res.status(500).json({ message: err?.message || "Something went wrong" });
+    res.status(500).send({ message: err?.message || "Something went wrong" });
   }
 });

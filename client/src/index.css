@@ -14,3 +14,9 @@ input:-webkit-autofill:active {
 * {
   -webkit-font-smoothing: antialiased;
 }
+
+@layer base {
+  h4 {
+    @apply text-2xl font-medium text-gray-500 my-4;
+  }
+}

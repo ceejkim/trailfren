@@ -14,9 +14,13 @@ const style = {
   inactive: "mr-2 text-base font-light text-white no-underline",
 };
 
+
 const Navbar: FunctionComponent<NavbarProps> = (props) => {
   // const { sdk } = useContext(MyContext);
+  
+  const navbarPaths = ["/", "/faq"];
   const pathname = window.location.pathname;
+  if (navbarPaths.includes(pathname) === false) return <div />;
 
   return (
     <nav className="flex w-full flex-row justify-between bg-black px-16 py-12">

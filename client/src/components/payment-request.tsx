@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  Dispatch,
+  SetStateAction,
+} from "react";
 import {
   useStripe,
   PaymentRequestButtonElement,
@@ -9,17 +15,17 @@ interface PaymentRequestProps {
   donationAmount: number;
   finalizedPayment: () => void;
   generatePaymentIntentToken: () => Promise<any>;
-  updateMessage: (message?: string) => void;
+  updateMessage: Dispatch<SetStateAction<string>>;
   tipAmount: number;
 }
 
-export default function PaymentRequestButton({
+const PaymentRequestButton = ({
   donationAmount,
   finalizedPayment,
   generatePaymentIntentToken,
   updateMessage,
   tipAmount,
-}: PaymentRequestProps) {
+}: PaymentRequestProps) => {
   const stripe = useStripe();
   const [paymentRequest, setPaymentRequest] = useState<PaymentRequest | null>(
     null
@@ -27,7 +33,6 @@ export default function PaymentRequestButton({
 
   const handlePaymentMethodReceived = useCallback(
     async (event: any) => {
-      console.log("payment method entered");
       const { clientSecret, error } = await generatePaymentIntentToken();
       if (error) {
         event.complete("fail");
@@ -51,7 +56,7 @@ export default function PaymentRequestButton({
       if (paymentIntent.status === "requires_action") {
         const { error } = await stripe!.confirmCardPayment(clientSecret);
         if (error) {
-          updateMessage(error?.message);
+          updateMessage(error?.message || "");
         } else {
           finalizedPayment();
         }
@@ -109,4 +114,6 @@ export default function PaymentRequestButton({
       </div>
     )
   );
-}
+};
+
+export default PaymentRequestButton;

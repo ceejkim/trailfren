@@ -1,73 +1,96 @@
-import React, { useState } from "react";
-import { Elements } from "@stripe/react-stripe-js";
-import { loadStripe } from "@stripe/stripe-js";
-import CheckoutForm from "../components/checkout-form";
-import env from "../../env";
+import { useContext } from "react";
+import { Link } from "react-router-dom";
 
-interface DonationsPageProps {
-  donationAmounts: number[];
-  accountId: string;
-  landingPagePath: string;
-}
+import { TrailfrenContext } from "../routes";
+import DonationBox from "../components/donations-box";
+import {
+  getAffiliateFromPath,
+  getLandingPageFromPath,
+} from "../utils/affiliates";
+import { handleContentfulImage } from "../utils/contentful";
 
-const DonationsPage = ({
-  donationAmounts,
-  accountId,
-  landingPagePath,
-}: DonationsPageProps) => {
-  const [stripePromise] = useState(() =>
-    loadStripe(env.STRIPE_PUBLIC_KEY, {
-      stripeAccount: accountId,
-    })
-  );
+const DonationsPage = () => {
+  const { affiliates, landingPages } = useContext(TrailfrenContext);
+  const affiliate = getAffiliateFromPath(affiliates, window.location.pathname)!;
+  const landingPage = getLandingPageFromPath(
+    landingPages,
+    window.location.pathname
+  )!;
 
-  const [selectedAmount, updateSelectedAmount] = useState(0);
-  const [confirmationMessage, updateConfirmationMessage] = useState("");
-
-  function finalizedPayment() {
-    updateSelectedAmount(0);
-    updateConfirmationMessage("Thank you for your contribution!");
-  }
-
-  function handleDonationAmountChange(e: React.ChangeEvent<HTMLInputElement>) {
-    updateSelectedAmount(parseInt(e.target.value));
-  }
+  document.title = `Donate to ${affiliate.name}`;
 
   return (
-    <Elements stripe={stripePromise}>
-      {confirmationMessage ? (
-        <div>
-          <p>Thank you for contributing!</p>
-          <button onClick={() => updateConfirmationMessage("")}>Go Back</button>
-        </div>
+    <div className="max-w-[500px] mx-auto my-12">
+      <div className="w-full flex justify-center">
+        {/* <div className={styles.logo}> */}
+        <img
+          className="w-40 h-40"
+          src={handleContentfulImage(affiliate?.logo?.fields.file.url)}
+        />
+      </div>
+      {affiliate.stripeAccountId ? (
+        <DonationBox />
       ) : (
-        <div>
-          <div>
-            <div>Choose an amount to contribute</div>
-            <div className="form-group py-3 px-3 col">
-              <label htmlFor="donationAmount">Donation amount*:</label>
-              <input
-                className="form-control form-control-lg"
-                type="number"
-                step="any"
-                name="donationAmount"
-                id="donationAmount"
-                onChange={handleDonationAmountChange}
-              />
-            </div>
-          </div>
-          {selectedAmount && (
-            <CheckoutForm
-              donationAmount={selectedAmount}
-              finalizedPayment={finalizedPayment}
-              accountId={accountId}
-              landingPagePath={landingPagePath}
-            />
-          )}
+        <div className="text-salmon-400 p-4 text-3xl text-center">
+          {affiliate.name} has not yet set up their account to receive payments,
+          please check back in later
         </div>
       )}
-    </Elements>
+      <div>
+        {landingPage.contributionDeets && (
+          <div>
+            <h4>How we will use your contribution</h4>
+            <p>{landingPage.contributionDeets}</p>
+          </div>
+        )}
+
+        <h4>About us</h4>
+        <p>{affiliate.aboutUs}</p>
+        <p className="my-5">
+          Find out more by visiting{" "}
+          <a
+            href={affiliate.websiteUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-400 font-medium underline hover:text-blue-600"
+          >
+            our website
+          </a>
+        </p>
+      </div>
+      <div className="text-gray-500 text-center border-t border-gray-500 italic">
+        <p>
+          Powered by{" "}
+          <Link className="text-salmon-400 underline" to="/">
+            Trailfren
+          </Link>
+        </p>
+      </div>
+    </div>
   );
 };
 
 export default DonationsPage;
+
+// export const pageQuery = graphql`
+//   query FrenPageQuery($frenId: String!, $landingPageId: String!) {
+//     contentfulFren(id: { eq: $frenId }) {
+//       name
+//       websiteUrl
+//       aboutUs {
+//         aboutUs
+//       }
+//       logo {
+//         gatsbyImageData(layout: FULL_WIDTH)
+//       }
+//       stripeAccountId
+//     }
+//     contentfulLandingPage(id: { eq: $landingPageId }) {
+//       contributionDeets {
+//         contributionDeets
+//       }
+//       donationAmounts
+//       landingPagePath
+//     }
+//   }
+// `;

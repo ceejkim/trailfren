@@ -17,6 +17,10 @@ const Footer: FunctionComponent<FooterProps> = ({}) => {
     console.log("emailAddress", emailAddress);
   };
 
+  const footerPaths = ["/", "/faq"];
+  const pathname = window.location.pathname;
+  if (footerPaths.includes(pathname) === false) return <div />;
+
   return (
     <section className="mb-14 mt-36 h-64 text-center">
       <div className="text-4xl font-medium text-black">trailfren</div>

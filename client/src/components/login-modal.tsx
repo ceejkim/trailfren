@@ -12,8 +12,8 @@ import {
   getAuth,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  sendPasswordResetEmail,
 } from "firebase/auth";
-// import axios from "axios";
 
 import isValidEmail from "../utils/validEmail";
 import Input from "./input";
@@ -35,6 +35,7 @@ const LoginModal: FunctionComponent<LoginModalProps> = (props) => {
   const navigate = useNavigate();
   const modalContentRef = useRef<HTMLDivElement>(null);
   const [formError, setFormError] = useState<string | undefined>(undefined);
+  const [message, setMessage] = useState("");
   const [formType, setFormType] = useState<FormTypes>("signIn");
   const [formData, setFormData] = useState({
     email: "",
@@ -80,7 +81,7 @@ const LoginModal: FunctionComponent<LoginModalProps> = (props) => {
           // Signed in
           const user = userCredential.user;
           props.setModalVisible(false);
-          navigate('/account');
+          navigate("/account");
         })
         .catch(() => {
           setFormError("user not found");
@@ -99,29 +100,25 @@ const LoginModal: FunctionComponent<LoginModalProps> = (props) => {
           // Signed in
           const user = userCredential.user;
           props.setModalVisible(false);
-          navigate('/account');
+          navigate("/account");
         })
         .catch((error) => {
           const errorMessage = error.message;
           setFormError(errorMessage || "unknown error");
         });
-      } catch (error: any) {
+    } catch (error: any) {
       setFormError(error || "unknown error");
     }
   };
 
-  const handleForgotPassword: ReactEventHandler = async (event) => {
+  const handleForgotPassword = async (event: React.FormEvent) => {
     event.preventDefault();
-    setFormError(undefined);
-    if (!isValidEmail(formData.email)) {
-      setFormError("invalid email");
-    }
+
     try {
-      // const response = await axios.put("/.netlify/functions/reset-password", {
-      //   email: formData.email,
-      // });
+      await sendPasswordResetEmail(auth, formData.email);
+      setMessage("Password reset email sent. Please check your inbox.");
     } catch (error: any) {
-      setFormError(error?.response?.data?.message || "unknown error");
+      setFormError(`Error: ${error?.message} || unknown error`);
     }
   };
 
@@ -152,12 +149,14 @@ const LoginModal: FunctionComponent<LoginModalProps> = (props) => {
                 value={formData.firstName}
                 onChange={handleChange}
                 placeholder="First Name"
+                style="bottom-border"
               />
               <Input
                 name="lastName"
                 value={formData.lastName}
                 onChange={handleChange}
                 placeholder="Last Name"
+                style="bottom-border"
               />
             </div>
             <Input
@@ -165,6 +164,7 @@ const LoginModal: FunctionComponent<LoginModalProps> = (props) => {
               value={formData.email}
               onChange={handleChange}
               placeholder="Email"
+              style="bottom-border"
             />
             <Input
               name="createPassword"
@@ -172,6 +172,7 @@ const LoginModal: FunctionComponent<LoginModalProps> = (props) => {
               onChange={handleChange}
               placeholder="Create Password"
               type="password"
+              style="bottom-border"
             />
             <Input
               name="retypePassword"
@@ -179,6 +180,7 @@ const LoginModal: FunctionComponent<LoginModalProps> = (props) => {
               onChange={handleChange}
               placeholder="Re-type Password"
               type="password"
+              style="bottom-border"
             />
           </>
         );
@@ -191,6 +193,7 @@ const LoginModal: FunctionComponent<LoginModalProps> = (props) => {
             value={formData.email}
             onChange={handleChange}
             placeholder="Email"
+            style="bottom-border"
           />
         );
       default:
@@ -202,6 +205,7 @@ const LoginModal: FunctionComponent<LoginModalProps> = (props) => {
               value={formData.email}
               onChange={handleChange}
               placeholder="Email"
+              style="bottom-border"
             />
             <Input
               name="password"
@@ -209,6 +213,7 @@ const LoginModal: FunctionComponent<LoginModalProps> = (props) => {
               value={formData.password}
               onChange={handleChange}
               placeholder="Password"
+              style="bottom-border"
             />
           </>
         );
@@ -312,13 +317,8 @@ const LoginModal: FunctionComponent<LoginModalProps> = (props) => {
         <a onClick={(e) => {}}>Sign in</a>
         <form className="mt-5 flex flex-col items-center">
           {form()}
-          <p
-            className="m-0 h-0 text-xs text-red"
-            aria-live="assertive"
-            role="alert"
-          >
-            {formError}
-          </p>
+          <p className="m-0 h-0 text-xs">{message}</p>
+          <p className="m-0 h-0 text-xs text-red">{formError}</p>
           <div className="mt-6">{buttons()}</div>
         </form>
       </div>

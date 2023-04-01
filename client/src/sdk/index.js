@@ -20,17 +20,16 @@ var TrailfrenSDK = class {
   stripe = {
     newPaymentIntent: async (body) => {
       try {
-        const res = await axios.post(`${this.host}/stripe/payment`, {
-          body
-        });
+        const res = await axios.post(`${this.host}/stripe/payment`, body);
         return {
           success: true,
-          users: res.data
+          ...res.data
         };
       } catch (error) {
+        const errorMessage = error?.response?.data ? error.response.data : "An error occurred while processing the payment.";
         return {
           success: false,
-          error: error?.response?.data
+          error: errorMessage
         };
       }
     },

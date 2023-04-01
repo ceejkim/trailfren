@@ -7,15 +7,7 @@ declare class TrailfrenSDK {
         success: boolean;
     }>;
     stripe: {
-        newPaymentIntent: (body: StripePaymentRequest) => Promise<{
-            success: boolean;
-            users: StripePaymentSuccessResponse;
-            error?: undefined;
-        } | {
-            success: boolean;
-            error: string;
-            users?: undefined;
-        }>;
+        newPaymentIntent: (body: StripePaymentRequest) => Promise<StripePaymentSuccessResponse>;
         newApplePayDomain: (body: StripeDomainsRequest) => Promise<{
             success: boolean;
             error?: undefined;

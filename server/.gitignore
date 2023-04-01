@@ -23,7 +23,6 @@ env.ts
 .env.test.local
 .env.production.local
 tmp.zip
-sdk*
 deploy.tar.gz
 multer-uploads
 bundle.js
