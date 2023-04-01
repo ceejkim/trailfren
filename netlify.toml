@@ -1,5 +1,5 @@
 [build]
-  command = "npm run build"
+  command = "cd client && npm run build"
   publish = "build"
 
 [[redirects]]
