@@ -1,8 +1,8 @@
 "use client";
 
 import { FunctionComponent, useContext } from "react";
-import { Link } from "react-router-dom";
-// import { MyContext } from "../routes";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { TrailfrenContext } from "../routes";
 
 interface NavbarProps {
   setModalVisible: (value: boolean) => void;
@@ -14,16 +14,17 @@ const style = {
   inactive: "mr-2 text-base font-light text-white no-underline",
 };
 
-
 const Navbar: FunctionComponent<NavbarProps> = (props) => {
-  // const { sdk } = useContext(MyContext);
-  
-  const navbarPaths = ["/", "/faq"];
-  const pathname = window.location.pathname;
+  const { user } = useContext(TrailfrenContext);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const navbarPaths = ["/", "/faq", "/account"];
+  const pathname = location.pathname;
   if (navbarPaths.includes(pathname) === false) return <div />;
 
   return (
-    <nav className="flex w-full flex-row justify-between bg-black px-16 py-12">
+    <nav className="flex w-full flex-row justify-between bg-black px-16 py-12 h-[142px]">
       <div>
         <Link to="/" className="text-4xl text-white no-underline">
           trailfren
@@ -46,12 +47,23 @@ const Navbar: FunctionComponent<NavbarProps> = (props) => {
         >
           FAQ
         </Link>
-        <button
-          className="rounded-md px-4 py-0 text-lg font-light text-white no-underline"
-          onClick={() => props.setModalVisible(true)}
-        >
-          Login
-        </button>
+        {user.username ? (
+          <Link
+            to="/account"
+            className={`mr-2 text-lg font-light text-white${
+              pathname === "/account" ? style.active : style.inactive
+            }`}
+          >
+            Account
+          </Link>
+        ) : (
+          <button
+            className="rounded-md px-4 py-0 text-lg font-light text-white no-underline"
+            onClick={() => props.setModalVisible(true)}
+          >
+            Login
+          </button>
+        )}
       </div>
     </nav>
   );

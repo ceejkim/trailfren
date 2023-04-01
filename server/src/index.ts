@@ -1,5 +1,7 @@
 import express from "express";
 import cors from "cors";
+import serverlessHttp from 'serverless-http';
+import bodyParser from 'body-parser';
 
 import auth from './auth';
 import { errorHandler } from "./middleware/error.middleware";
@@ -44,6 +46,7 @@ const port = 3010;
 // app.use(Sentry.Handlers.errorHandler());
 
 // custom middleware
+app.use(bodyParser.json());
 app.use(errorHandler);
 app.use(notFoundHandler);
 
@@ -61,3 +64,6 @@ if ((import.meta as any).hot) {
 process.on('SIGINT', () => {
   process.exit();
 });
+
+module.exports = app;
+module.exports.handler = serverlessHttp(app);

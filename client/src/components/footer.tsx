@@ -17,7 +17,7 @@ const Footer: FunctionComponent<FooterProps> = ({}) => {
     console.log("emailAddress", emailAddress);
   };
 
-  const footerPaths = ["/", "/faq"];
+  const footerPaths = ["/", "/faq", '/account'];
   const pathname = window.location.pathname;
   if (footerPaths.includes(pathname) === false) return <div />;
 

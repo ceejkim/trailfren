@@ -29,7 +29,7 @@ class TrailfrenSDK {
   public stripe = {
     newPaymentIntent: async (body: StripePaymentRequest): Promise<StripePaymentSuccessResponse> => {
       try {
-        const res = await axios.post(`${this.host}/stripe/payment`, body);
+        const res = await axios.post(`${this.host}/stripe/payments`, body);
 
         return {
           success: true,
@@ -47,7 +47,7 @@ class TrailfrenSDK {
     },
     newApplePayDomain: async (body: StripeDomainsRequest) => {
       try {
-        await axios.post(`${this.host}/jira/search`, {
+        await axios.post(`${this.host}/stripe/domains`, {
           body,
         });
         return {
