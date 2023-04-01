@@ -5,7 +5,8 @@ require("dotenv").config({
 const contentfulConfig = {
   spaceId: process.env.CONTENTFUL_SPACE_ID,
   accessToken: process.env.CONTENTFUL_ACCESS_TOKEN,
-  environment: process.env.CONTENTFUL_ENVIRONMENT || 'master'
+  environment: process.env.CONTENTFUL_ENVIRONMENT || 'master',
+  host: 'cdn.contentful.com'
 };
 
 // If you want to use the preview API please define
@@ -56,7 +57,7 @@ module.exports = {
         background_color: `#000000`,
         theme_color: `#df7c6d`,
         display: `standalone`,
-        icon: "static/favicon.ico",
+        icon: "static/favicon.png",
       },
     },
   ],

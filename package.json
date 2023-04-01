@@ -8,40 +8,44 @@
     "url": "https://www.trailfren.com/contact"
   },
   "dependencies": {
+    "@babel/runtime": "^7.21.0",
     "@fontsource/poppins": "^4.5.10",
+    "@netlify/functions": "^1.4.0",
     "@popperjs/core": "^2.11.6",
-    "@stripe/react-stripe-js": "^1.16.5",
-    "@stripe/stripe-js": "^1.48.0",
+    "@stripe/react-stripe-js": "^2.0.0",
+    "@stripe/stripe-js": "^1.50.0",
     "axios": "^1.3.4",
+    "babel-loader": "^9.1.2",
     "bootstrap": "^5.2.3",
     "bootstrap-icons": "^1.10.3",
     "gatsby": "5.7.0",
     "gatsby-background-image": "^1.6.0",
-    "gatsby-plugin-image": "^3.7.0",
-    "gatsby-plugin-manifest": "^5.7.0",
+    "gatsby-plugin-image": "^3.8.0",
+    "gatsby-plugin-manifest": "^5.8.0",
     "gatsby-plugin-netlify-functions": "^0.0.3",
-    "gatsby-plugin-react-helmet": "^6.7.0",
-    "gatsby-plugin-sharp": "^5.7.0",
-    "gatsby-plugin-typescript": "^5.7.0",
-    "gatsby-source-contentful": "^8.7.0",
-    "gatsby-source-filesystem": "^5.7.0",
-    "gatsby-transformer-remark": "^6.7.0",
-    "gatsby-transformer-sharp": "^5.7.0",
+    "gatsby-plugin-react-helmet": "^6.8.0",
+    "gatsby-plugin-sharp": "^5.8.0",
+    "gatsby-plugin-typescript": "^5.8.0",
+    "gatsby-source-contentful": "^8.8.0",
+    "gatsby-source-filesystem": "^5.8.0",
+    "gatsby-transformer-remark": "^6.8.0",
+    "gatsby-transformer-sharp": "^5.8.0",
     "gbimage-bridge": "^0.2.2",
+    "gotrue-js": "^0.9.29",
     "intersection-observer": "^0.12.2",
     "lodash": "^4.17.21",
     "qs": "^6.11.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-helmet": "^6.1.0",
-    "stripe": "^11.14.0"
+    "stripe": "^11.15.0"
   },
   "devDependencies": {
     "@types/lodash": "^4.14.191",
-    "contentful-import": "^8.5.34",
+    "contentful-import": "^8.5.37",
     "dotenv": "^16.0.3",
     "gatsby-plugin-pnpm": "^1.2.10",
-    "netlify-cli": "^13.1.2"
+    "netlify-cli": "^13.2.0"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -49,7 +53,7 @@
   "homepage": "https://www.trailfren.com",
   "keywords": [],
   "license": "MIT",
-  "main": "n/a",
+  "main": "index.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/mattygh/trailfren"

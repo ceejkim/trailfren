@@ -1,6 +1,17 @@
-import stripeClient from "stripe";
+import Stripe from "stripe";
+import { HandlerEvent, HandlerContext } from "@netlify/functions";
 
-const stripe = stripeClient(process.env.STRIPE_SECRET_KEY);
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2022-11-15',
+});
+
+interface ContactBody {
+  amount: number;
+  includeTip: boolean;
+  accountId: string;
+  landingPagePath: string;
+}
+
 const headers = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "Content-Type",
@@ -8,9 +19,12 @@ const headers = {
 
 const feeTaken = 99;
 
-exports.handler = async (event, context) => {
+exports.handler = async (event: HandlerEvent, context: HandlerContext) => {
   // CORS
   try {
+    if (!event.body) {
+      return { statusCode: 400, error: 'Invalid request body' };
+    }
     if (event.httpMethod === "OPTIONS") {
       return {
         statusCode: 200,
@@ -18,12 +32,11 @@ exports.handler = async (event, context) => {
       };
     }
 
-    const postBody = JSON.parse(event.body);
-
-    const amount = Number(postBody.amount);
-    const includeTip = postBody.includeTip;
-    const accountId = postBody.accountId;
-    const landingPagePath = postBody.landingPagePath;
+    const body = JSON.parse(event.body) as ContactBody;
+    const amount = Number(body.amount);
+    const includeTip = body.includeTip;
+    const accountId = body.accountId;
+    const landingPagePath = body.landingPagePath;
 
     if (!amount || amount < 0) {
       console.error("Amount must be a positive integer.");
@@ -41,7 +54,7 @@ exports.handler = async (event, context) => {
     const paymentIntent = await stripe.paymentIntents.create(
       {
         currency: "usd",
-        amount: Math.round(amount + (includeTip && feeTaken)),
+        amount: Math.round(amount + (includeTip ? feeTaken : 0)),
         application_fee_amount: includeTip ? feeTaken : 0,
         description: landingPagePath,
       },
