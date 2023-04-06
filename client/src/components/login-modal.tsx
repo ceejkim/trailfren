@@ -13,15 +13,14 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   sendPasswordResetEmail,
+  setPersistence,
+  browserLocalPersistence,
 } from "firebase/auth";
 
-import isValidEmail from "../utils/validEmail";
 import Input from "./input";
 import { TrailfrenContext } from "../routes";
 import { app } from "../firebaseConfig";
 import { useNavigate } from "react-router-dom";
-
-const auth = getAuth(app);
 
 interface LoginModalProps {
   setModalVisible: (value: boolean) => void;
@@ -30,22 +29,27 @@ interface LoginModalProps {
 
 type FormTypes = "signIn" | "createAccount" | "forgotPassword";
 
+const defaultForm = {
+  email: "",
+  password: "",
+  firstName: "",
+  lastName: "",
+  confirmPassword: "",
+  createPassword: "",
+  retypePassword: "",
+};
+
 const LoginModal: FunctionComponent<LoginModalProps> = (props) => {
-  const { sdk } = useContext(TrailfrenContext);
   const navigate = useNavigate();
+  const auth = getAuth(app);
+  const { sdk } = useContext(TrailfrenContext);
+
   const modalContentRef = useRef<HTMLDivElement>(null);
+
   const [formError, setFormError] = useState<string | undefined>(undefined);
   const [message, setMessage] = useState("");
   const [formType, setFormType] = useState<FormTypes>("signIn");
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-    firstName: "",
-    lastName: "",
-    confirmPassword: "",
-    createPassword: "",
-    retypePassword: "",
-  });
+  const [formData, setFormData] = useState(defaultForm);
 
   useEffect(() => {
     const handleClickOutside = (event: any) => {
@@ -75,17 +79,18 @@ const LoginModal: FunctionComponent<LoginModalProps> = (props) => {
 
   const handleSignIn: ReactEventHandler = async (event) => {
     event.preventDefault();
+    setFormError(undefined);
     try {
-      signInWithEmailAndPassword(auth, formData.email, formData.password)
-        .then((userCredential) => {
-          // Signed in
-          const user = userCredential.user;
-          props.setModalVisible(false);
-          navigate("/account");
-        })
-        .catch(() => {
-          setFormError("user not found");
-        });
+      setPersistence(auth, browserLocalPersistence);
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        formData.email,
+        formData.password
+      );
+      // Signed in
+      const user = userCredential.user;
+      props.setModalVisible(false);
+      navigate("/account");
     } catch (error: any) {
       console.error(error);
       setFormError("user not found");
@@ -94,18 +99,17 @@ const LoginModal: FunctionComponent<LoginModalProps> = (props) => {
 
   const handleCreateAccount: ReactEventHandler = async (event) => {
     event.preventDefault();
+    setFormError(undefined);
     try {
-      createUserWithEmailAndPassword(auth, formData.email, formData.password)
-        .then((userCredential) => {
-          // Signed in
-          const user = userCredential.user;
-          props.setModalVisible(false);
-          navigate("/account");
-        })
-        .catch((error) => {
-          const errorMessage = error.message;
-          setFormError(errorMessage || "unknown error");
-        });
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        formData.email,
+        formData.password
+      );
+      // Signed in
+      const user = userCredential.user;
+      props.setModalVisible(false);
+      navigate("/account");
     } catch (error: any) {
       setFormError(error || "unknown error");
     }
@@ -113,6 +117,7 @@ const LoginModal: FunctionComponent<LoginModalProps> = (props) => {
 
   const handleForgotPassword = async (event: React.FormEvent) => {
     event.preventDefault();
+    setFormError(undefined);
 
     try {
       await sendPasswordResetEmail(auth, formData.email);
@@ -226,7 +231,7 @@ const LoginModal: FunctionComponent<LoginModalProps> = (props) => {
         return (
           <>
             <button
-              className=" block w-full rounded-md bg-gray-800 py-3 text-xs font-medium text-white hover:bg-gray-800"
+              className="px-4 block w-full rounded-md bg-gray-800 py-3 text-xs font-medium text-white hover:bg-gray-800"
               onClick={handleForgotPassword}
             >
               Send Reset Link
@@ -311,10 +316,15 @@ const LoginModal: FunctionComponent<LoginModalProps> = (props) => {
     <div className="fixed inset-0 z-10 flex h-full w-full items-center justify-center bg-black/50 pt-11">
       <div
         ref={modalContentRef}
-        className="w-full max-w-md rounded-sm bg-white p-11 pb-6 text-center shadow-md"
+        className="relative w-full max-w-md rounded-sm bg-white p-11 pb-6 text-center shadow-md"
       >
+        <button
+          className="absolute font-arial text-2xl top-5 right-5 cursor-pointer"
+          onClick={() => props.setModalVisible(false)}
+        >
+          ×
+        </button>
         {header()}
-        <a onClick={(e) => {}}>Sign in</a>
         <form className="mt-5 flex flex-col items-center">
           {form()}
           <p className="m-0 h-0 text-xs">{message}</p>

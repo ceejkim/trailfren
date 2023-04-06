@@ -2,6 +2,9 @@
 export default {
   content: ["./src/**/*.{js,jsx,ts,tsx}"],
   theme: {
+    screens: {
+      md: "900px",
+    },
     colors: {
       salmon: {
         600: "#fa755a",
@@ -28,6 +31,7 @@ export default {
     },
     fontFamily: {
       sans: ["Poppins", "sans-serif"],
+      arial: ["Arial", "sans-serif"],
     },
   },
   plugins: [],

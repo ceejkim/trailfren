@@ -23,8 +23,10 @@ const Navbar: FunctionComponent<NavbarProps> = (props) => {
   const pathname = location.pathname;
   if (navbarPaths.includes(pathname) === false) return <div />;
 
+  console.log('user', user);
+
   return (
-    <nav className="flex w-full flex-row justify-between bg-black px-16 py-12 h-[142px]">
+    <nav className="flex w-full flex-col md:flex-row justify-between bg-black px-16 py-12 h-[142px]">
       <div>
         <Link to="/" className="text-4xl text-white no-underline">
           trailfren

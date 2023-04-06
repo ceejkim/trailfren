@@ -1,6 +1,6 @@
 {
   "name": "server",
-  "version": "1.0.16",
+  "version": "1.0.21",
   "description": "Trailfren server",
   "proxy": "http://localhost:3010",
   "scripts": {

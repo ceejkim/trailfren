@@ -8,6 +8,7 @@ import {
   getLandingPageFromPath,
 } from "../utils/affiliates";
 import { handleContentfulImage } from "../utils/contentful";
+import FooterDonations from "../components/footer-donations";
 
 const DonationsPage = () => {
   const { affiliates, landingPages } = useContext(TrailfrenContext);
@@ -20,7 +21,7 @@ const DonationsPage = () => {
   document.title = `Donate to ${affiliate.name}`;
 
   return (
-    <div className="max-w-[500px] mx-auto my-12">
+    <div className="max-w-[500px] mx-auto my-12 md:px-0 px-10 -mb-20">
       <div className="w-full flex justify-center">
         {/* <div className={styles.logo}> */}
         <img
@@ -58,39 +59,17 @@ const DonationsPage = () => {
           </a>
         </p>
       </div>
-      <div className="text-gray-500 text-center border-t border-gray-500 italic">
+      <FooterDonations />
+      {/* <div className="text-gray-500 text-center border-t border-gray-500 italic">
         <p>
           Powered by{" "}
           <Link className="text-salmon-400 underline" to="/">
             Trailfren
           </Link>
         </p>
-      </div>
+      </div> */}
     </div>
   );
 };
 
 export default DonationsPage;
-
-// export const pageQuery = graphql`
-//   query FrenPageQuery($frenId: String!, $landingPageId: String!) {
-//     contentfulFren(id: { eq: $frenId }) {
-//       name
-//       websiteUrl
-//       aboutUs {
-//         aboutUs
-//       }
-//       logo {
-//         gatsbyImageData(layout: FULL_WIDTH)
-//       }
-//       stripeAccountId
-//     }
-//     contentfulLandingPage(id: { eq: $landingPageId }) {
-//       contributionDeets {
-//         contributionDeets
-//       }
-//       donationAmounts
-//       landingPagePath
-//     }
-//   }
-// `;

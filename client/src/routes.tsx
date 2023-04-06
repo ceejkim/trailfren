@@ -13,7 +13,7 @@ import contentfulClient from "./contentfulClient";
 import "./index.css";
 
 interface User {
-  username: string;
+  username?: string;
 }
 
 export const TrailfrenContext = createContext<{
@@ -23,7 +23,7 @@ export const TrailfrenContext = createContext<{
   landingPages: Contentful.LandingPageField[];
 }>({
   sdk: new TrailfrenSDK(),
-  user: { username: "" },
+  user: {},
   affiliates: [],
   landingPages: [],
 });
@@ -69,9 +69,7 @@ function App() {
       <TrailfrenContext.Provider
         value={{
           sdk,
-          user: {
-            username: "test",
-          },
+          user: {},
           affiliates,
           landingPages,
         }}
@@ -85,6 +83,7 @@ function App() {
           {affiliatePaths.map((path) => (
             <Route key={path} path={path} element={<DonationsPage />} />
           ))}
+          <Route path="*" element={<Home />} />
         </Routes>
         <Footer />
       </TrailfrenContext.Provider>
