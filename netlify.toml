@@ -1,5 +1,24 @@
 [build]
-  functions = "functions/"
+  command = "cd server && npm run build-sdk && npm run copy-sdk-to-client && npm run build-client && cd .. npm run build"
+  publish = "client/dist"
+  functions = "functions"
 
-[dev]
-  framework = "gatsby"
+[[redirects]]
+  from = "/api/stripe/domains"
+  to = "/.netlify/functions/domains"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/stripe/payments"
+  to = "/.netlify/functions/payments"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[context.production]
+  command = "cd server && npm run build-sdk && npm run copy-sdk-to-client && npm run build-client && cd .. npm run build"

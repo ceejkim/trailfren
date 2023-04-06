@@ -1,68 +1,11 @@
 {
-  "name": "trailfren-static-site",
-  "description": "TrailFren Static Site",
-  "private": true,
-  "version": "0.0.1",
-  "author": "",
-  "bugs": {
-    "url": "https://www.trailfren.com/contact"
-  },
   "dependencies": {
-    "@fontsource/poppins": "^4.5.10",
-    "@popperjs/core": "^2.11.6",
-    "@stripe/react-stripe-js": "^1.16.5",
-    "@stripe/stripe-js": "^1.48.0",
-    "axios": "^1.3.4",
-    "bootstrap": "^5.2.3",
-    "bootstrap-icons": "^1.10.3",
-    "gatsby": "5.7.0",
-    "gatsby-background-image": "^1.6.0",
-    "gatsby-plugin-image": "^3.7.0",
-    "gatsby-plugin-manifest": "^5.7.0",
-    "gatsby-plugin-netlify-functions": "^0.0.3",
-    "gatsby-plugin-react-helmet": "^6.7.0",
-    "gatsby-plugin-sharp": "^5.7.0",
-    "gatsby-plugin-typescript": "^5.7.0",
-    "gatsby-source-contentful": "^8.7.0",
-    "gatsby-source-filesystem": "^5.7.0",
-    "gatsby-transformer-remark": "^6.7.0",
-    "gatsby-transformer-sharp": "^5.7.0",
-    "gbimage-bridge": "^0.2.2",
-    "intersection-observer": "^0.12.2",
-    "lodash": "^4.17.21",
-    "qs": "^6.11.1",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-helmet": "^6.1.0",
-    "stripe": "^11.14.0"
-  },
-  "devDependencies": {
-    "@types/lodash": "^4.14.191",
-    "contentful-import": "^8.5.34",
-    "dotenv": "^16.0.3",
-    "gatsby-plugin-pnpm": "^1.2.10",
-    "netlify-cli": "^13.1.2"
-  },
-  "engines": {
-    "node": ">=18.0.0"
-  },
-  "homepage": "https://www.trailfren.com",
-  "keywords": [],
-  "license": "MIT",
-  "main": "n/a",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/mattygh/trailfren"
+    "@netlify/functions": "^1.4.0",
+    "netlify-lambda": "^2.0.16",
+    "serverless-http": "^3.2.0",
+    "stripe": "^11.17.0"
   },
   "scripts": {
-    "dev": "gatsby develop",
-    "build": "gatsby build",
-    "build-function": "rollup functions/stripe-payment-intent.js --file netlify/functions/stripe-payment-intent.js --format cjs",
-    "build-function-two": "rollup functions/stripe-add-apple-domain.js --file netlify/functions/stripe-add-apple-domain.js --format cjs",
-    "heroku-postbuild": "gatsby build",
-    "serve": "gatsby serve",
-    "netlify:login": "netlify login",
-    "netlify:deploy": "netlify deploy -d public -p",
-    "netlify:deploy-functions": "netlify deploy --prod --dir=netlify --functions=functions"
+    "build": "netlify-lambda build server/src"
   }
 }

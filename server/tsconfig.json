@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "outDir": "lib",
+    "sourceMap": true,
+    "strict": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "target": "esnext",
+    "typeRoots": ["src/netbox.d.ts", "src/types.d.ts", "./node_modules/@types"],
+  },
+  "compileOnSave": true,
+  "include": ["src/api/**/*", "src/sdk.ts", "test/**/*"]
+}
