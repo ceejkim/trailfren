@@ -80,6 +80,7 @@ const LoginModal: FunctionComponent<LoginModalProps> = (props) => {
   const handleSignIn: ReactEventHandler = async (event) => {
     event.preventDefault();
     setFormError(undefined);
+    setMessage("");
     try {
       setPersistence(auth, browserLocalPersistence);
       const userCredential = await signInWithEmailAndPassword(
@@ -100,6 +101,7 @@ const LoginModal: FunctionComponent<LoginModalProps> = (props) => {
   const handleCreateAccount: ReactEventHandler = async (event) => {
     event.preventDefault();
     setFormError(undefined);
+    setMessage("");
     try {
       const userCredential = await createUserWithEmailAndPassword(
         auth,
@@ -118,6 +120,7 @@ const LoginModal: FunctionComponent<LoginModalProps> = (props) => {
   const handleForgotPassword = async (event: React.FormEvent) => {
     event.preventDefault();
     setFormError(undefined);
+    setMessage("");
 
     try {
       await sendPasswordResetEmail(auth, formData.email);

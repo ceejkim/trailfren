@@ -3,15 +3,17 @@
 import { useEffect } from "react";
 import Button from "../components/button";
 
-export default function Home() {
+interface Props {
+  setModalVisible: (value: boolean) => void;
+}
 
+export default function Home(props: Props) {
   useEffect(() => {
     if (window.location.pathname !== "/") {
       window.location.pathname = "/";
     }
-  }, [])
+  }, []);
 
-  function handleSetupNow() {}
   return (
     <>
       <div className="bg-black py-52">
@@ -21,7 +23,9 @@ export default function Home() {
             outdoor / non-profit <br /> organization in 10 minutes or less
           </h1>
           <div style={{ justifyContent: "center", display: "flex" }}>
-            <Button onClick={handleSetupNow}>Set Up Now</Button>
+            <Button onClick={() => props.setModalVisible(true)}>
+              Set Up Now
+            </Button>
           </div>
         </div>
       </div>

@@ -1,4 +1,10 @@
-import { FormEvent, FunctionComponent, useEffect, useState } from "react";
+import {
+  FormEvent,
+  FunctionComponent,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import Button from "./button";
 import {
   getAuth,
@@ -7,11 +13,13 @@ import {
   signInWithEmailLink,
 } from "firebase/auth";
 import { app } from "../firebaseConfig";
+import { TrailfrenContext } from "../routes";
 
 interface FooterProps {}
 
 const Footer: FunctionComponent<FooterProps> = ({}) => {
   const auth = getAuth(app);
+  const { user } = useContext(TrailfrenContext);
   const [email, setEmail] = useState<string>("");
   const [message, setMessage] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
@@ -76,12 +84,12 @@ const Footer: FunctionComponent<FooterProps> = ({}) => {
   if (footerPaths.includes(pathname) === false) return <div />;
 
   return (
-    <section className="mb-80 md:mb-14 px-3 md:px-0 md:mt-36 h-64 text-center">
+    <section className={`${!!user ? "h-10" : "h-64"} md:mb-14 px-3 md:px-0 md:mt-36 text-center`}>
       <div className="text-4xl font-medium text-black">trailfren</div>
       {message ? (
         <div className=" my-4">{message}</div>
       ) : (
-        <>
+        <div className={!!user ? " hidden" : ""}>
           <div className="my-10 text-base text-black">
             Sign up with your email address to receive news and updates.
           </div>
@@ -100,7 +108,7 @@ const Footer: FunctionComponent<FooterProps> = ({}) => {
             />
             <Button>Sign Up</Button>
           </form>
-        </>
+        </div>
       )}
       {error && (
         <div className="text-red my-4">

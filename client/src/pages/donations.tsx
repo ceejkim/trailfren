@@ -1,5 +1,4 @@
 import { useContext } from "react";
-import { Link } from "react-router-dom";
 
 import { TrailfrenContext } from "../routes";
 import DonationBox from "../components/donations-box";
@@ -11,12 +10,12 @@ import { handleContentfulImage } from "../utils/contentful";
 import FooterDonations from "../components/footer-donations";
 
 const DonationsPage = () => {
-  const { affiliates, landingPages } = useContext(TrailfrenContext);
+  const { affiliates } = useContext(TrailfrenContext);
   const affiliate = getAffiliateFromPath(affiliates, window.location.pathname)!;
   const landingPage = getLandingPageFromPath(
-    landingPages,
+    affiliate,
     window.location.pathname
-  )!;
+  );
 
   document.title = `Donate to ${affiliate.name}`;
 
@@ -38,10 +37,10 @@ const DonationsPage = () => {
         </div>
       )}
       <div>
-        {landingPage.contributionDeets && (
+        {landingPage?.contributionDeets && (
           <div>
             <h4>How we will use your contribution</h4>
-            <p>{landingPage.contributionDeets}</p>
+            <p>{landingPage?.contributionDeets}</p>
           </div>
         )}
 

@@ -15,7 +15,6 @@ const DonationsPage = () => {
   const { affiliates } = useContext(TrailfrenContext);
 
   const affiliate = getAffiliateFromPath(affiliates, window.location.pathname);
-  console.log('affiliate', affiliate);
   const landingPage = affiliate?.landingPages?.filter(lp => `/${lp.fields.landingPagePath}` === window.location.pathname) || [];
   const landingPageName = landingPage[0]?.fields.name;
 

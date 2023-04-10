@@ -1,6 +1,8 @@
 import { createContext, useEffect, useState } from "react";
 import { Route, Routes } from "react-router-dom";
 import { flatten } from "lodash";
+import { getAuth, User } from "firebase/auth";
+
 import TrailfrenSDK from "./sdk";
 import Navbar from "./components/navbar";
 import Home from "./pages/home";
@@ -9,56 +11,59 @@ import LoginModal from "./components/login-modal";
 import FAQPage from "./pages/faq";
 import DonationsPage from "./pages/donations";
 import Footer from "./components/footer";
-import contentfulClient from "./contentfulClient";
+import { contentfulClient } from "./contentfulClient";
+import { app } from "./firebaseConfig";
 import "./index.css";
-
-interface User {
-  username?: string;
-}
 
 export const TrailfrenContext = createContext<{
   sdk: TrailfrenSDK;
-  user: User;
+  user: User | null;
   affiliates: Contentful.AffiliateField[];
-  landingPages: Contentful.LandingPageField[];
 }>({
   sdk: new TrailfrenSDK(),
-  user: {},
+  user: null,
   affiliates: [],
-  landingPages: [],
 });
 
 function App() {
   const sdk = new TrailfrenSDK();
+  const auth = getAuth(app);
   const [modalVisible, setModalVisible] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
   const [affiliates, setAffiliates] = useState<Contentful.AffiliateField[]>([]);
-  const [landingPages, setLandingPages] = useState<
-    Contentful.LandingPageField[]
-  >([]);
+  const [landingPagePaths, setLandingPagePaths] = useState<string[]>([]);
+
+  function getLandingPagePaths(
+    affiliates: Contentful.AffiliateField[]
+  ): string[] {
+    const landingPages = flatten(affiliates.map((a) => a.landingPages));
+    const landingPagePaths = landingPages.map(
+      (lp) => lp?.fields.landingPagePath
+    );
+    const filteredPaths = landingPagePaths.filter((lp) => lp) as string[];
+
+    return filteredPaths;
+  }
 
   useEffect(() => {
     const asyncEffect = async () => {
+      auth.onAuthStateChanged((user) => {
+        setUser(user);
+      });
+
       const affiliatesRes =
         await contentfulClient.getEntries<Contentful.AffiliateField>({
           content_type: "affiliate",
         });
-      const landingPageRes =
-        await contentfulClient.getEntries<Contentful.LandingPageField>({
-          content_type: "landingPage",
-        });
-      setAffiliates(affiliatesRes.items.map((i) => i.fields));
-      setLandingPages(landingPageRes.items.map((i) => i.fields));
+      const newAffiliates = affiliatesRes.items.map((i) => i.fields);
+      setAffiliates(newAffiliates);
+      const newLandingPagePaths = getLandingPagePaths(newAffiliates);
+      setLandingPagePaths(newLandingPagePaths);
       setLoading(false);
     };
     asyncEffect();
   }, []);
-
-  const affiliatePaths: string[] = flatten(
-    affiliates
-      .map((a) => a.landingPages?.map((lp) => `/${lp.fields.landingPagePath}`)!)
-      .filter((p) => p)
-  );
 
   if (loading) {
     return null;
@@ -69,21 +74,23 @@ function App() {
       <TrailfrenContext.Provider
         value={{
           sdk,
-          user: {},
+          user,
           affiliates,
-          landingPages,
         }}
       >
         <Navbar setModalVisible={setModalVisible} />
         <LoginModal visible={modalVisible} setModalVisible={setModalVisible} />
         <Routes>
-          <Route index element={<Home />} />
+          <Route index element={<Home setModalVisible={setModalVisible} />} />
           <Route path="faq" element={<FAQPage />} />
           <Route path="account" element={<AccountPage />} />
-          {affiliatePaths.map((path) => (
+          {landingPagePaths.map((path) => (
             <Route key={path} path={path} element={<DonationsPage />} />
           ))}
-          <Route path="*" element={<Home />} />
+          <Route
+            path="*"
+            element={<Home setModalVisible={setModalVisible} />}
+          />
         </Routes>
         <Footer />
       </TrailfrenContext.Provider>

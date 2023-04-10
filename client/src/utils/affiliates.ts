@@ -7,12 +7,13 @@ const getAffiliateFromPath = (affiliates: Contentful.AffiliateField[], path: str
     }
   }
 }
-const getLandingPageFromPath = (landingPages: Contentful.LandingPageField[], path: string) => {
-  for (const landingPage of landingPages) {
-    if (`/${landingPage.landingPagePath}` === path) {
-      return landingPage
+const getLandingPageFromPath = (affiliate: Contentful.AffiliateField, path: string): Contentful.AffiliateLandingPage['fields'] | null => {
+  for (const landingPage of affiliate.landingPages || []) {
+    if (landingPage.fields.landingPagePath === path) {
+      return landingPage.fields;
     }
   }
+  return null;
 }
 
 export {

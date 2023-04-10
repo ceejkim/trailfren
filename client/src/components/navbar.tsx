@@ -2,7 +2,9 @@
 
 import { FunctionComponent, useContext } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { getAuth } from "firebase/auth";
 import { TrailfrenContext } from "../routes";
+import { app } from "../firebaseConfig";
 
 interface NavbarProps {
   setModalVisible: (value: boolean) => void;
@@ -15,15 +17,14 @@ const style = {
 };
 
 const Navbar: FunctionComponent<NavbarProps> = (props) => {
-  const { user } = useContext(TrailfrenContext);
+  const auth = getAuth(app);
+  // const { user } = useContext(TrailfrenContext);
   const location = useLocation();
   const navigate = useNavigate();
 
   const navbarPaths = ["/", "/faq", "/account"];
   const pathname = location.pathname;
   if (navbarPaths.includes(pathname) === false) return <div />;
-
-  console.log('user', user);
 
   return (
     <nav className="flex w-full flex-col md:flex-row justify-between bg-black px-16 py-12 h-[142px]">
@@ -49,7 +50,7 @@ const Navbar: FunctionComponent<NavbarProps> = (props) => {
         >
           FAQ
         </Link>
-        {user.username ? (
+        {!!auth.currentUser ? (
           <Link
             to="/account"
             className={`mr-2 text-lg font-light text-white${
