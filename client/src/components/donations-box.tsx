@@ -15,7 +15,10 @@ const DonationsPage = () => {
   const { affiliates } = useContext(TrailfrenContext);
 
   const affiliate = getAffiliateFromPath(affiliates, window.location.pathname);
-  const landingPage = affiliate?.landingPages?.filter(lp => `/${lp.fields.landingPagePath}` === window.location.pathname) || [];
+  const landingPage =
+    affiliate?.landingPages?.filter(
+      (lp) => `/${lp.fields.landingPagePath}` === window.location.pathname
+    ) || [];
   const landingPageName = landingPage[0]?.fields.name;
 
   const [stripePromise] = useState(() =>
@@ -33,6 +36,8 @@ const DonationsPage = () => {
     setDonationAmount(parseInt(e.target.value));
   }
 
+  console.log("affiliate?.color", affiliate?.color);
+
   return (
     <Elements stripe={stripePromise}>
       {confirmationMessage ? (
@@ -44,8 +49,22 @@ const DonationsPage = () => {
         </div>
       ) : (
         <div>
-          <div className="max-w-lg mx-auto my-8 border border-salmon-400">
-            <div className="bg-salmon-400 text-white text-center py-2">
+          <div
+            style={{
+              borderColor: affiliate?.color
+                ? `#${affiliate?.color}`
+                : "#df7c6d",
+            }}
+            className="max-w-lg mx-auto my-8 border "
+          >
+            <div
+              style={{
+                backgroundColor: affiliate?.color
+                  ? `#${affiliate?.color}`
+                  : "#df7c6d",
+              }}
+              className="text-white text-center py-2"
+            >
               Choose an amount to contribute
             </div>
             <div className="form-group py-3 px-3 col">

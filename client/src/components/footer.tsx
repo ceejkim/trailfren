@@ -14,12 +14,13 @@ import {
 } from "firebase/auth";
 import { app } from "../firebaseConfig";
 import { TrailfrenContext } from "../routes";
+import { getAffiliateFromPath } from "../utils/affiliates";
 
 interface FooterProps {}
 
 const Footer: FunctionComponent<FooterProps> = ({}) => {
   const auth = getAuth(app);
-  const { user } = useContext(TrailfrenContext);
+  const { user, affiliates } = useContext(TrailfrenContext);
   const [email, setEmail] = useState<string>("");
   const [message, setMessage] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
@@ -78,13 +79,19 @@ const Footer: FunctionComponent<FooterProps> = ({}) => {
       setError(error.message);
     }
   };
-
   const footerPaths = ["/", "/faq", "/account"];
   const pathname = window.location.pathname;
+
+  const affiliate = getAffiliateFromPath(affiliates, pathname);
+
   if (footerPaths.includes(pathname) === false) return <div />;
 
   return (
-    <section className={`${!!user ? "h-10" : "h-64"} md:mb-14 px-3 md:px-0 md:mt-36 text-center`}>
+    <section
+      className={`${
+        !!user ? "h-10" : "h-64"
+      } md:mb-14 px-3 md:px-0 md:mt-36 text-center`}
+    >
       <div className="text-4xl font-medium text-black">trailfren</div>
       {message ? (
         <div className=" my-4">{message}</div>
@@ -106,7 +113,7 @@ const Footer: FunctionComponent<FooterProps> = ({}) => {
               className=".placeholder:text-gray-400 h-16 w-[300px] rounded-none border border-gray-100 pl-5"
               required // Add the required attribute to ensure input isn't empty
             />
-            <Button>Sign Up</Button>
+            <Button color={affiliate?.color}>Sign Up</Button>
           </form>
         </div>
       )}

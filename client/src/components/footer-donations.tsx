@@ -1,4 +1,4 @@
-import { FormEvent, FunctionComponent, useState } from "react";
+import { FormEvent, FunctionComponent, useContext, useState } from "react";
 import {
   getAuth,
   createUserWithEmailAndPassword,
@@ -7,14 +7,19 @@ import {
 import { v4 as uuidv4 } from "uuid";
 import Button from "./button";
 import { app } from "../firebaseConfig";
+import { getAffiliateFromPath } from "../utils/affiliates";
+import { TrailfrenContext } from "../routes";
 
 interface FooterProps {}
 
 const FooterDonations: FunctionComponent<FooterProps> = ({}) => {
   const auth = getAuth(app);
+  const { affiliates } = useContext(TrailfrenContext);
   const [email, setEmail] = useState<string>("");
   const [message, setMessage] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
+
+  const affiliate = getAffiliateFromPath(affiliates, window.location.pathname);
 
   const handleEmailAddress = (e: React.ChangeEvent<HTMLInputElement>): void => {
     setEmail(e.target.value);
@@ -71,7 +76,7 @@ const FooterDonations: FunctionComponent<FooterProps> = ({}) => {
               className=".placeholder:text-gray-400 h-16 w-[300px] rounded-none border border-gray-100 pl-5"
               required // Add the required attribute to ensure input isn't empty
             />
-            <Button>Sign Up</Button>
+            <Button color={affiliate?.color}>Sign Up</Button>
           </form>
         </>
       )}

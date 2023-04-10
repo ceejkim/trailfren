@@ -7,30 +7,45 @@ interface ButtonProps {
   width?: string;
   loading?: boolean;
   type?: "secondary" | "primary";
+  color?: string;
   onClick?: (e: FormEvent<HTMLButtonElement>) => void;
 }
 
-const Button: FunctionComponent<ButtonProps> = (props) => {
+const TrailfrenButton = (props: ButtonProps) => {
   const classes = {
-    primary: `bg-salmon-400 px-4 h-16 w-[${
+    primary: `px-4 h-16 w-[${
       props.width || "150px"
     }] rounded-none border-none p-2 text-center text-white hover:cursor-pointer hover:opacity-80 disabled:shadow-none${
       props.loading ? "opacity-50 cursor-not-allowed" : ""
     }`,
-    secondary: `bg-white px-4 h-16 w-[${
+    secondary: `px-4 h-16 w-[${
       props.width || "150px"
     }] rounded-none border-none p-2 text-center text-salmon-400 hover:cursor-pointer hover:opacity-80 disabled:shadow-none${
       props.loading ? "opacity-50 cursor-not-allowed" : ""
     }`,
   };
+
+  console.log("button: props", props);
+  let color = "#ffffff";
+  let backgroundColor = props?.color ? `#${props?.color}` : "#df7c6d";
+  if (props.type === "secondary") {
+    color = props?.color ? `${props?.color}` : "#df7c6d";
+    backgroundColor = "#ffffff";
+  }
+  console.log("color", color);
+  console.log("backgroundColor", backgroundColor);
   return (
     <button
       onClick={props.onClick}
       className={classes[props.type || "primary"]}
+      style={{
+        color,
+        backgroundColor,
+      }}
     >
       {props.children}
     </button>
   );
 };
 
-export default Button;
+export default TrailfrenButton;

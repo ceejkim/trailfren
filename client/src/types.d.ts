@@ -143,6 +143,7 @@ declare namespace Contentful {
       contentType: string;
     };
     name?: string;
+    color?: string;
     contactFirstName: string;
     contactLastName: string;
     treasurerEmail: string;

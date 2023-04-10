@@ -18,7 +18,7 @@ export default function Home(props: Props) {
     <>
       <div className="bg-black py-52">
         <div className=" pl-3 mx-auto flex max-w-4xl flex-col justify-center text-left">
-          <h1 className="text-5xl md:text-6xl mb-12 font-medium leading-tight text-salmon-400">
+          <h1 className="text-5xl md:text-6xl mb-12 font-medium leading-tight  md:leading-tight text-salmon-400">
             Setup payments for your <br />
             outdoor / non-profit <br /> organization in 10 minutes or less
           </h1>

@@ -17,7 +17,7 @@ const DonationsPage = () => {
     window.location.pathname
   );
 
-  document.title = `Donate to ${affiliate.name}`;
+  document.title = `Pay ${affiliate.name} with Trailfren`;
 
   return (
     <div className="max-w-[500px] mx-auto my-12 md:px-0 px-10 -mb-20">
@@ -31,7 +31,11 @@ const DonationsPage = () => {
       {affiliate.stripeAccountId ? (
         <DonationBox />
       ) : (
-        <div className="text-salmon-400 p-4 text-3xl text-center">
+        <div
+          className={`${
+            affiliate.color ? `text-[${affiliate.color}]` : "text-salmon-400"
+          } p-4 text-3xl text-center`}
+        >
           {affiliate.name} has not yet set up their account to receive payments,
           please check back in later
         </div>
