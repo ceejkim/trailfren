@@ -36,8 +36,6 @@ const DonationsPage = () => {
     setDonationAmount(parseInt(e.target.value));
   }
 
-  console.log("affiliate?.color", affiliate?.color);
-
   return (
     <Elements stripe={stripePromise}>
       {confirmationMessage ? (

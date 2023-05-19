@@ -128,34 +128,15 @@ declare namespace Contentful {
   }
 
   export interface AffiliateField {
-    title?: string;
-    description?: string;
-    file?: {
-      url: string;
-      details: {
-        size: number;
-        image: {
-          width: number;
-          height: number;
-        };
-      };
-      fileName: string;
-      contentType: string;
-    };
-    name?: string;
-    color?: string;
+    name: string;
+    logo: AffiliateLogo;
+    aboutUs: string;
+    websiteUrl: string;
+    landingPages: AffiliateLandingPage[];
     contactFirstName: string;
     contactLastName: string;
     treasurerEmail: string;
     adminFirebaseEmail: string;
-    logo?: Logo;
-    aboutUs?: string;
-    websiteUrl?: string;
-    stripeAccountId?: string;
-    landingPagePath?: string;
-    contributionDeets?: string;
-    donationAmounts?: string[];
-    landingPages?: AffiliateLandingPage[];
   }
 };
 export as namespace Contentful;

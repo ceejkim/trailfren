@@ -9,7 +9,7 @@ import {
 import { handleContentfulImage } from "../utils/contentful";
 import FooterDonations from "../components/footer-donations";
 
-const DonationsPage = () => {
+export const DonationsPage = () => {
   const { affiliates } = useContext(TrailfrenContext);
   const affiliate = getAffiliateFromPath(affiliates, window.location.pathname)!;
   const landingPage = getLandingPageFromPath(
@@ -74,5 +74,3 @@ const DonationsPage = () => {
     </div>
   );
 };
-
-export default DonationsPage;

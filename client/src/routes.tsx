@@ -5,11 +5,14 @@ import { getAuth, User } from "firebase/auth";
 
 import TrailfrenSDK from "./sdk";
 import Navbar from "./components/navbar";
-import Home from "./pages/home";
-import AccountPage from "./pages/account";
 import LoginModal from "./components/login-modal";
-import FAQPage from "./pages/faq";
-import DonationsPage from "./pages/donations";
+import {
+  HomePage,
+  DonationsPage,
+  AccountPage,
+  FAQPage,
+  SignUpPage,
+} from "./pages";
 import Footer from "./components/footer";
 import { contentfulClient } from "./contentfulClient";
 import { app } from "./firebaseConfig";
@@ -52,11 +55,13 @@ function App() {
         setUser(user);
       });
 
-      const affiliatesRes =
-        await contentfulClient.getEntries<Contentful.AffiliateField>({
-          content_type: "affiliate",
-        });
-      const newAffiliates = affiliatesRes.items.map((i) => i.fields);
+      const affiliatesRes = await contentfulClient.getEntries({
+        content_type: "affiliate",
+      });
+      // contentful getEntries types seem borked, manually cast to AffiliateField[]
+      const newAffiliates = affiliatesRes.items.map(
+        (i) => i.fields
+      ) as unknown as Contentful.AffiliateField[];
       setAffiliates(newAffiliates);
       const newLandingPagePaths = getLandingPagePaths(newAffiliates);
       setLandingPagePaths(newLandingPagePaths);
@@ -81,7 +86,11 @@ function App() {
         <Navbar setModalVisible={setModalVisible} />
         <LoginModal visible={modalVisible} setModalVisible={setModalVisible} />
         <Routes>
-          <Route index element={<Home setModalVisible={setModalVisible} />} />
+          <Route
+            index
+            element={<HomePage setModalVisible={setModalVisible} />}
+          />
+          <Route index element={<SignUpPage />} />
           <Route path="faq" element={<FAQPage />} />
           <Route path="account" element={<AccountPage />} />
           {landingPagePaths.map((path) => (
@@ -89,7 +98,7 @@ function App() {
           ))}
           <Route
             path="*"
-            element={<Home setModalVisible={setModalVisible} />}
+            element={<HomePage setModalVisible={setModalVisible} />}
           />
         </Routes>
         <Footer />

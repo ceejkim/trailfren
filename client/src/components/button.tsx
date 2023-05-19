@@ -25,15 +25,12 @@ const TrailfrenButton = (props: ButtonProps) => {
     }`,
   };
 
-  console.log("button: props", props);
   let color = "#ffffff";
   let backgroundColor = props?.color ? `#${props?.color}` : "#df7c6d";
   if (props.type === "secondary") {
     color = props?.color ? `${props?.color}` : "#df7c6d";
     backgroundColor = "#ffffff";
   }
-  console.log("color", color);
-  console.log("backgroundColor", backgroundColor);
   return (
     <button
       onClick={props.onClick}

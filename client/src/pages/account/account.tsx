@@ -12,8 +12,8 @@ import { AccountInfo } from ".";
 import { handleContentfulImage } from "../../utils/contentful";
 
 interface AccountPageProps {
-  accountInfo: AccountInfo;
-  loadAccountInfo: () => Promise<void>;
+  accountInfo?: AccountInfo;
+  loadAccountInfo?: () => Promise<void>;
 }
 
 interface Form {
@@ -28,23 +28,23 @@ interface Form {
   photo?: File | null;
 }
 
-const AccountPage: FunctionComponent<AccountPageProps> = (props) => {
+export const AccountPage: FunctionComponent<AccountPageProps> = (props) => {
   const [loading, setLoading] = useState(false);
   const [validUrl, setValidUrl] = useState(true);
   const [formErrors, setFormErrors] = useState<Form>({});
   const [formDisabled, setFormDisabled] = useState(true);
 
   const [formData, setFormData] = useState<Form>({
-    contactFirstName: props.accountInfo.affiliate.contactFirstName,
-    contactLastName: props.accountInfo.affiliate.contactLastName,
-    organizationName: props.accountInfo.affiliate.name,
-    email: props.accountInfo.affiliate.treasurerEmail,
-    aboutUs: props.accountInfo.affiliate.aboutUs,
-    contributionDetails: props.accountInfo.affiliate.contributionDeets,
-    website: props.accountInfo.affiliate.websiteUrl,
+    contactFirstName: props.accountInfo?.affiliate.contactFirstName,
+    contactLastName: props.accountInfo?.affiliate.contactLastName,
+    organizationName: props.accountInfo?.affiliate.name,
+    email: props.accountInfo?.affiliate.treasurerEmail,
+    aboutUs: props.accountInfo?.affiliate.aboutUs,
+    contributionDetails: props.accountInfo?.affiliate.contributionDeets,
+    website: props.accountInfo?.affiliate.websiteUrl,
     ...Object.assign(
       {},
-      ...(props.accountInfo.affiliate.landingPages?.map((lp, index) => ({
+      ...(props.accountInfo?.affiliate.landingPages?.map((lp, index) => ({
         [`contributionDeets-${index}`]: lp.fields.contributionDeets,
         [`landingPagePath-${index}`]: lp.fields.landingPagePath,
       })) || [])
@@ -64,7 +64,6 @@ const AccountPage: FunctionComponent<AccountPageProps> = (props) => {
       const isValid = isValidUrl(`https://www.trailfren.com/${inputValue}`);
       setValidUrl(isValid);
     }
-    console.log("new update: ", { [e.target.name]: inputValue });
     setFormData({ ...formData, [e.target.name]: inputValue });
   };
 
@@ -200,7 +199,7 @@ const AccountPage: FunctionComponent<AccountPageProps> = (props) => {
 
       // Get the current entry by ID
       const accountInfoEntry = await environment.getEntry(
-        props.accountInfo.entryId
+        props.accountInfo?.entryId!
       );
 
       // Update fields with new data from the form
@@ -223,7 +222,6 @@ const AccountPage: FunctionComponent<AccountPageProps> = (props) => {
         "en-US": formData.website!,
       };
       if (photoAsset) {
-        console.log("updating photo");
         accountInfoEntry.fields.logo = {
           "en-US": {
             sys: {
@@ -240,7 +238,7 @@ const AccountPage: FunctionComponent<AccountPageProps> = (props) => {
         accountInfoEntry.fields.landingPages["en-US"].length;
       for (let i = 0; i < landingPageCount; i++) {
         const landingPageEntry = await environment.getEntry(
-          props.accountInfo.affiliate.landingPages?.[i].sys.id!
+          props.accountInfo?.affiliate.landingPages?.[i].sys.id!
         );
         landingPageEntry.fields.contributionDeets = {
           "en-US": (formData as any)[`contributionDeets-${i}`],
@@ -256,7 +254,7 @@ const AccountPage: FunctionComponent<AccountPageProps> = (props) => {
       await updatedAccountInfoEntry.publish();
 
       setFormDisabled(true);
-      await props.loadAccountInfo();
+      await props.loadAccountInfo?.();
     } catch (error) {
       console.error("Error updating entry:", error);
       // Perform any error handling actions, e.g. show an error message
@@ -288,7 +286,7 @@ const AccountPage: FunctionComponent<AccountPageProps> = (props) => {
                 <img
                   className="w-40 h-40"
                   src={handleContentfulImage(
-                    props.accountInfo.affiliate?.logo?.fields.file.url
+                    props.accountInfo?.affiliate?.logo?.fields.file.url
                   )}
                 />
               </div>
@@ -464,7 +462,7 @@ const AccountPage: FunctionComponent<AccountPageProps> = (props) => {
               )}
             </div>
             <p className=" text-lg font-bold my-10">Landing Pages</p>
-            {props.accountInfo.affiliate.landingPages?.map(
+            {props.accountInfo?.affiliate.landingPages?.map(
               (landingPage, index) => (
                 <div key={`lp-${index}`}>
                   <div className="mb-4">
@@ -560,5 +558,3 @@ const AccountPage: FunctionComponent<AccountPageProps> = (props) => {
     </section>
   );
 };
-
-export default AccountPage;
