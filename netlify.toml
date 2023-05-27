@@ -21,4 +21,4 @@
   status = 200
 
 [context.production]
-  command = "cd server && npm run build-sdk && npm run copy-sdk-to-client && npm run build-client && cd .. npm run build"
+  command = "cd server && pnpm i && npm run build-sdk && npm run copy-sdk-to-client && npm run build-client && cd .. npm run build"
