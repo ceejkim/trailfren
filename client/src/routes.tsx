@@ -5,15 +5,30 @@ import { getAuth, User } from "firebase/auth";
 
 import TrailfrenSDK from "./sdk";
 import Navbar from "./components/navbar";
-import Home from "./pages/home";
-import AccountPage from "./pages/account";
 import LoginModal from "./components/login-modal";
-import FAQPage from "./pages/faq";
-import DonationsPage from "./pages/donations";
+import {
+  HomePage,
+  DonationsPage,
+  AccountPage,
+  UserAccountPage,
+  FAQPage,
+  SignUpPage,
+} from "./pages";
 import Footer from "./components/footer";
 import { contentfulClient } from "./contentfulClient";
 import { app } from "./firebaseConfig";
 import "./index.css";
+import {
+  collection,
+  getDocs,
+  getFirestore,
+  query,
+  where,
+} from "firebase/firestore";
+
+type OrgInfo = {
+  name: string;
+};
 
 export const TrailfrenContext = createContext<{
   sdk: TrailfrenSDK;
@@ -25,12 +40,15 @@ export const TrailfrenContext = createContext<{
   affiliates: [],
 });
 
+const db = getFirestore(app);
+
 function App() {
   const sdk = new TrailfrenSDK();
   const auth = getAuth(app);
   const [modalVisible, setModalVisible] = useState(false);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
+  const [orgInfo, setOrgInfo] = useState<OrgInfo | null>(null);
   const [affiliates, setAffiliates] = useState<Contentful.AffiliateField[]>([]);
   const [landingPagePaths, setLandingPagePaths] = useState<string[]>([]);
 
@@ -48,15 +66,27 @@ function App() {
 
   useEffect(() => {
     const asyncEffect = async () => {
-      auth.onAuthStateChanged((user) => {
+      auth.onAuthStateChanged(async (user) => {
         setUser(user);
+
+        if (user) {
+          const q = query(
+            collection(db, "affiliates"),
+            where("userId", "==", user.uid)
+          );
+
+          const querySnapshot = await getDocs(q);
+          setOrgInfo(querySnapshot.docs[0]?.data() as OrgInfo);
+        }
       });
 
-      const affiliatesRes =
-        await contentfulClient.getEntries<Contentful.AffiliateField>({
-          content_type: "affiliate",
-        });
-      const newAffiliates = affiliatesRes.items.map((i) => i.fields);
+      const affiliatesRes = await contentfulClient.getEntries({
+        content_type: "affiliate",
+      });
+      // contentful getEntries types seem borked, manually cast to AffiliateField[]
+      const newAffiliates = affiliatesRes.items.map(
+        (i) => i.fields
+      ) as unknown as Contentful.AffiliateField[];
       setAffiliates(newAffiliates);
       const newLandingPagePaths = getLandingPagePaths(newAffiliates);
       setLandingPagePaths(newLandingPagePaths);
@@ -68,6 +98,12 @@ function App() {
   if (loading) {
     return null;
   }
+
+  const affiliate = user?.email
+    ? affiliates.find(
+        (affiliate) => affiliate.adminFirebaseEmail === user.email
+      )
+    : undefined;
 
   return (
     <div>
@@ -81,15 +117,29 @@ function App() {
         <Navbar setModalVisible={setModalVisible} />
         <LoginModal visible={modalVisible} setModalVisible={setModalVisible} />
         <Routes>
-          <Route index element={<Home setModalVisible={setModalVisible} />} />
+          <Route
+            index
+            element={<HomePage setModalVisible={setModalVisible} />}
+          />
+          <Route index element={<SignUpPage />} />
           <Route path="faq" element={<FAQPage />} />
-          <Route path="account" element={<AccountPage />} />
+          <Route path="user-account" element={<UserAccountPage />} />
+          <Route
+            path="account"
+            element={
+              <AccountPage
+                accountInfo={{
+                  affiliate,
+                }}
+              />
+            }
+          />
           {landingPagePaths.map((path) => (
             <Route key={path} path={path} element={<DonationsPage />} />
           ))}
           <Route
             path="*"
-            element={<Home setModalVisible={setModalVisible} />}
+            element={<HomePage setModalVisible={setModalVisible} />}
           />
         </Routes>
         <Footer />

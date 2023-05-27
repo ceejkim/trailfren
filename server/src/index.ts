@@ -1,9 +1,9 @@
 import express from "express";
 import cors from "cors";
-import serverlessHttp from 'serverless-http';
-import bodyParser from 'body-parser';
+import serverlessHttp from "serverless-http";
+import bodyParser from "body-parser";
 
-import auth from './auth';
+import auth from "./auth";
 import { errorHandler } from "./middleware/error.middleware";
 import { notFoundHandler } from "./middleware/not-found.middleware";
 import { stripeDomainsRouter } from "./api/stripe/domains";
@@ -13,18 +13,18 @@ const app = express();
 app.use((req, _res, next) => {
   (req as any).user = {
     username: req.headers.username,
-  }
+  };
   next();
 });
 
 // basic middleware
 app.use(express.json());
 app.use(cors());
-app.use(haltOnTimedout);
+app.use(haltOnTimedOut);
 app.use(auth);
 
-function haltOnTimedout(req: any, res: any, next: any) {
-  if (!req.timedout) {
+function haltOnTimedOut(req: any, res: any, next: any) {
+  if (!req.timedOut) {
     next();
   } else {
     res.status(504).send("Request timed out");
@@ -61,7 +61,7 @@ if ((import.meta as any).hot) {
   });
 }
 
-process.on('SIGINT', () => {
+process.on("SIGINT", () => {
   process.exit();
 });
 

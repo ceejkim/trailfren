@@ -240,7 +240,6 @@ const AccountSignupPage: FunctionComponent<AccountPageProps> = () => {
 
       setLoading(false);
     } catch (error) {
-      console.log("rolling back errors");
       // Rollback actions
       if (asset) {
         await asset.unpublish();
