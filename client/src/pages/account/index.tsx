@@ -1,6 +1,5 @@
 import { getAuth } from "firebase/auth";
 import {
-  DocumentData,
   collection,
   getDocs,
   getFirestore,
@@ -10,14 +9,14 @@ import {
 import { contentfulClient } from "../../contentfulClient";
 import { app } from "../../firebaseConfig";
 import { useEffect, useState } from "react";
-import AccountPage from "./account";
+import { AccountPage } from "./account";
 import AccountSignupPage from "./account-signup";
 
 export interface AccountInfo {
   entryId: string;
   organizationName: string;
   userId: string;
-  affiliate: Contentful.AffiliateField;
+  affiliate?: Contentful.AffiliateField;
 }
 
 const AccountHandler = () => {
@@ -51,14 +50,13 @@ const AccountHandler = () => {
     const newFirebaseAccount = querySnapshot.docs[0].data();
     if (newFirebaseAccount) {
       const [affiliateEntry] = await Promise.all([
-        contentfulClient.getEntries<Contentful.AffiliateField>({
+        contentfulClient.getEntries({
           content_type: "affiliate",
-          adminFirebaseEmail: newFirebaseAccount.email,
         }),
       ]);
       setAccountInfo({
         ...(newFirebaseAccount as AccountInfo),
-        affiliate: affiliateEntry.items[0].fields,
+        affiliate: affiliateEntry.items[0].fields as any,
       });
     }
   };

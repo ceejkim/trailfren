@@ -36,6 +36,8 @@ const DonationsPage = () => {
     setDonationAmount(parseInt(e.target.value));
   }
 
+  console.log("affiliate", affiliate);
+
   return (
     <Elements stripe={stripePromise}>
       {confirmationMessage ? (
@@ -83,7 +85,6 @@ const DonationsPage = () => {
               donationAmount={donationAmount}
               finalizedPayment={finalizedPayment}
               accountId={affiliate?.stripeAccountId!}
-              landingPagePath={affiliate?.landingPagePath!}
               landingPageName={landingPageName}
             />
           ) : null}

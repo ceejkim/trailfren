@@ -26,14 +26,12 @@ interface CheckoutFormProps {
   finalizedPayment: () => void;
   accountId: string;
   landingPageName: string;
-  landingPagePath: string;
 }
 
 const CheckoutForm = ({
   donationAmount,
   accountId,
   landingPageName,
-  landingPagePath,
   finalizedPayment,
 }: CheckoutFormProps) => {
   const { sdk } = useContext(TrailfrenContext);
@@ -50,7 +48,7 @@ const CheckoutForm = ({
         amount: Math.round(donationAmount * 100),
         includeTip,
         accountId,
-        landingPagePath,
+        landingPagePath: window.location.pathname,
         landingPageName,
       });
       if (result.error || !result.success) {
@@ -96,7 +94,7 @@ const CheckoutForm = ({
       <form onSubmit={handleSubmit}>
         <PaymentRequest
           donationAmount={Math.round(donationAmount)}
-          tipAmount={includeTip ? 0.1 : 0}
+          tipAmount={includeTip ? 0.99 : 0}
           finalizedPayment={finalizedPayment}
           updateMessage={setMessage}
           generatePaymentIntentToken={generatePaymentIntentToken}

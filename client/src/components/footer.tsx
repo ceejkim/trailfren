@@ -15,6 +15,7 @@ import {
 import { app } from "../firebaseConfig";
 import { TrailfrenContext } from "../routes";
 import { getAffiliateFromPath } from "../utils/affiliates";
+import { useNavigate } from "react-router-dom";
 
 interface FooterProps {}
 
@@ -24,6 +25,7 @@ const Footer: FunctionComponent<FooterProps> = ({}) => {
   const [email, setEmail] = useState<string>("");
   const [message, setMessage] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   // Call the function to handle sign-in with email link when the component mounts
   useEffect(() => {
@@ -85,6 +87,8 @@ const Footer: FunctionComponent<FooterProps> = ({}) => {
   const affiliate = getAffiliateFromPath(affiliates, pathname);
 
   if (footerPaths.includes(pathname) === false) return <div />;
+
+  console.log("affiliate", affiliate);
 
   return (
     <section

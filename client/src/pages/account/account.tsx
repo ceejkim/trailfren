@@ -1,4 +1,4 @@
-import { FunctionComponent, useState } from "react";
+import { FunctionComponent, useEffect, useState } from "react";
 import { getAuth } from "firebase/auth";
 import { Asset } from "contentful-management";
 import { getFirestore } from "firebase/firestore";
@@ -7,12 +7,14 @@ import Button from "../../components/button";
 import { contentfulClientManagement } from "../../contentfulClient";
 import env from "../../../env";
 import { app } from "../../firebaseConfig";
-import { isValidEmail, isValidUrl } from "../../utils/valid";
-import { AccountInfo } from ".";
+import { isValidUrl } from "../../utils/valid";
 import { handleContentfulImage } from "../../utils/contentful";
+import placeholder from "../../assets/placeholder.png";
 
 interface AccountPageProps {
-  accountInfo?: AccountInfo;
+  accountInfo: {
+    affiliate?: Contentful.AffiliateField;
+  };
   loadAccountInfo?: () => Promise<void>;
 }
 
@@ -25,26 +27,32 @@ interface Form {
   contributionDetails?: string;
   website?: string;
   landingPages?: Contentful.AffiliateLandingPage[];
+  clubs: string[];
   photo?: File | null;
 }
 
 export const AccountPage: FunctionComponent<AccountPageProps> = (props) => {
   const [loading, setLoading] = useState(false);
   const [validUrl, setValidUrl] = useState(true);
-  const [formErrors, setFormErrors] = useState<Form>({});
+  const [formErrors, setFormErrors] = useState<Form>();
   const [formDisabled, setFormDisabled] = useState(true);
 
+  // firebase user email
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
   const [formData, setFormData] = useState<Form>({
-    contactFirstName: props.accountInfo?.affiliate.contactFirstName,
-    contactLastName: props.accountInfo?.affiliate.contactLastName,
-    organizationName: props.accountInfo?.affiliate.name,
-    email: props.accountInfo?.affiliate.treasurerEmail,
-    aboutUs: props.accountInfo?.affiliate.aboutUs,
-    contributionDetails: props.accountInfo?.affiliate.contributionDeets,
-    website: props.accountInfo?.affiliate.websiteUrl,
+    contactFirstName: props.accountInfo?.affiliate?.contactFirstName,
+    contactLastName: props.accountInfo?.affiliate?.contactLastName,
+    organizationName: props.accountInfo?.affiliate?.name,
+    email: props.accountInfo?.affiliate?.treasurerEmail,
+    aboutUs: props.accountInfo?.affiliate?.aboutUs,
+    contributionDetails:
+      props.accountInfo?.affiliate?.landingPages[0].fields.contributionDeets,
+    website: props.accountInfo?.affiliate?.websiteUrl,
     ...Object.assign(
       {},
-      ...(props.accountInfo?.affiliate.landingPages?.map((lp, index) => ({
+      ...(props.accountInfo?.affiliate?.landingPages?.map((lp, index) => ({
         [`contributionDeets-${index}`]: lp.fields.contributionDeets,
         [`landingPagePath-${index}`]: lp.fields.landingPagePath,
       })) || [])
@@ -52,9 +60,12 @@ export const AccountPage: FunctionComponent<AccountPageProps> = (props) => {
     photo: null,
   });
 
-  // firebase user email
-  const auth = getAuth(app);
-  const db = getFirestore(app);
+  useEffect(() => {
+    const asyncEffect = async () => {
+      props.loadAccountInfo?.();
+    };
+    asyncEffect();
+  }, []);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -67,6 +78,13 @@ export const AccountPage: FunctionComponent<AccountPageProps> = (props) => {
     setFormData({ ...formData, [e.target.name]: inputValue });
   };
 
+  const handleClick = (clubName: string) => {
+    setFormData((formData) => ({
+      ...formData,
+      clubs: [...formData.clubs, clubName],
+    }));
+  };
+
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files && e.target.files[0];
     setFormData({ ...formData, photo: file });
@@ -75,73 +93,6 @@ export const AccountPage: FunctionComponent<AccountPageProps> = (props) => {
   const handleEdit = (e: React.FormEvent) => {
     e.preventDefault();
     setFormDisabled((formDisabled) => !formDisabled);
-  };
-
-  const validateForm = () => {
-    const newErrors: Form = {};
-
-    // Validate contactFirstName (required field)
-    if (!formData.contactFirstName) {
-      newErrors.contactFirstName = "Contact first name is required";
-    }
-
-    // Validate contactLastName (required field)
-    if (!formData.contactLastName) {
-      newErrors.contactLastName = "Contact last name is required";
-    }
-
-    // Validate email (required field and email format)
-    if (!formData.email) {
-      newErrors.email = "Email is required";
-    } else if (!isValidEmail(formData.email)) {
-      newErrors.email = "Email is invalid";
-    }
-
-    // Validate organizationName (required field)
-    if (!formData.organizationName) {
-      newErrors.organizationName = "Organization name is required";
-    }
-
-    // Validate aboutUs (required field)
-    if (!formData.aboutUs) {
-      newErrors.aboutUs = "About us is required";
-    }
-
-    // Validate contributionDetails (required field)
-    if (!formData.contributionDetails) {
-      newErrors.contributionDetails = "Contribution details is required";
-    }
-
-    // Validate website (required field and url format)
-    if (!formData.website) {
-      newErrors.website = "Website is required";
-    } else if (!isValidUrl(formData.website)) {
-      newErrors.website = "Website is invalid";
-    }
-
-    // Validate landingPagesFields (required field and url format)
-    if (formData.landingPages) {
-      formData.landingPages.forEach((lp, index) => {
-        if (!lp.fields.contributionDeets) {
-          (newErrors as any)[`contributionDeets-${index}`] =
-            "Contribution details are required";
-        }
-        if (!lp.fields.landingPagePath) {
-          (newErrors as any)[`landingPagePath-${index}`] =
-            "Landing page path is required";
-        } else if (
-          !isValidUrl(`https://www.trailfren.com/${lp.fields.landingPagePath}`)
-        ) {
-          (newErrors as any)[`landingPagePath-${index}`] =
-            "Landing page path is invalid";
-        }
-      });
-    }
-
-    setFormErrors(newErrors);
-
-    // If there are no errors, the form is valid
-    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -198,9 +149,7 @@ export const AccountPage: FunctionComponent<AccountPageProps> = (props) => {
       }
 
       // Get the current entry by ID
-      const accountInfoEntry = await environment.getEntry(
-        props.accountInfo?.entryId!
-      );
+      const accountInfoEntry = await environment.getEntry("placeholder");
 
       // Update fields with new data from the form
       accountInfoEntry.fields.contactFirstName = {
@@ -238,7 +187,7 @@ export const AccountPage: FunctionComponent<AccountPageProps> = (props) => {
         accountInfoEntry.fields.landingPages["en-US"].length;
       for (let i = 0; i < landingPageCount; i++) {
         const landingPageEntry = await environment.getEntry(
-          props.accountInfo?.affiliate.landingPages?.[i].sys.id!
+          props.accountInfo?.affiliate?.landingPages?.[i].sys.id!
         );
         landingPageEntry.fields.contributionDeets = {
           "en-US": (formData as any)[`contributionDeets-${i}`],
@@ -274,20 +223,22 @@ export const AccountPage: FunctionComponent<AccountPageProps> = (props) => {
         loading ? " opacity-50 cursor-not-allowed" : ""
       }`;
 
+  const imageUrl = props.accountInfo?.affiliate?.logo?.fields.file.url;
+
   return (
     <section>
-      <div className="mx-auto mt-20 flex max flex-col max-w-2xl justify-center">
-        <h4 className="mx-8 my-14 text-4xl font-medium">Account</h4>
+      <div className="mx-4 md:mx-auto mt-20 flex max flex-col max-w-2xl justify-center">
+        <h4 className="my-14 text-4xl font-medium">Account</h4>
         <div className="relative">
           <form onSubmit={formDisabled ? handleEdit : handleSubmit}>
             {formDisabled ? (
-              <div className="w-full flex justify-left mb-6">
-                {/* <div className={styles.logo}> */}
+              <div className="w-full flex flex-col justify-left mb-6">
+                <label className="block text-gray-700 text-sm font-bold mb-2">
+                  Organization Logo
+                </label>
                 <img
                   className="w-40 h-40"
-                  src={handleContentfulImage(
-                    props.accountInfo?.affiliate?.logo?.fields.file.url
-                  )}
+                  src={imageUrl ? handleContentfulImage(imageUrl) : placeholder}
                 />
               </div>
             ) : (
@@ -321,14 +272,15 @@ export const AccountPage: FunctionComponent<AccountPageProps> = (props) => {
                   type="text"
                   name="contactFirstName"
                   value={
-                    formDisabled
+                    formDisabled &&
+                    (formData.contactFirstName || formData.contactLastName)
                       ? `${formData.contactFirstName || ""} ${
                           formData.contactLastName || ""
                         }`
                       : formData.contactFirstName || ""
                   }
                   onChange={handleChange}
-                  placeholder="First Name"
+                  placeholder={formDisabled ? "Name" : "First Name"}
                   required
                   disabled={formDisabled || loading}
                   className={inputClass}
@@ -343,14 +295,14 @@ export const AccountPage: FunctionComponent<AccountPageProps> = (props) => {
                   disabled={formDisabled || loading}
                   className={inputClass}
                 />
-                {formErrors.contactFirstName && (
+                {formErrors?.contactFirstName && (
                   <p className="text-red italic absolute bottom-0">
-                    {formErrors.contactFirstName}
+                    {formErrors?.contactFirstName}
                   </p>
                 )}
-                {formErrors.contactLastName && (
+                {formErrors?.contactLastName && (
                   <p className="text-red italic absolute bottom-0ƒ">
-                    {formErrors.contactLastName}
+                    {formErrors?.contactLastName}
                   </p>
                 )}
               </div>
@@ -374,9 +326,9 @@ export const AccountPage: FunctionComponent<AccountPageProps> = (props) => {
                 disabled={formDisabled || loading}
                 className={inputClass}
               />
-              {formErrors.email && (
+              {formErrors?.email && (
                 <p className="text-red-500 text-xs italic absolute -bottom-5 text-red left-44">
-                  {formErrors.email}
+                  {formErrors?.email}
                 </p>
               )}
             </div>
@@ -394,9 +346,9 @@ export const AccountPage: FunctionComponent<AccountPageProps> = (props) => {
                 disabled={formDisabled || loading}
                 className={inputClass}
               />
-              {formErrors.organizationName && (
+              {formErrors?.organizationName && (
                 <p className="text-red-500 text-xs italic absolute -bottom-5 text-red left-44">
-                  {formErrors.organizationName}
+                  {formErrors?.organizationName}
                 </p>
               )}
             </div>
@@ -424,20 +376,20 @@ export const AccountPage: FunctionComponent<AccountPageProps> = (props) => {
                   {`${(formData.aboutUs || "").length} characters`}
                 </p>
               ) : null}
-              {(formData.aboutUs || "").length < 100 ||
-              (formData.aboutUs || "").length > 1000 ? (
+              {(formData.aboutUs || "").length > 0 &&
+              (formData.aboutUs || "").length < 100 ? (
                 <p className="text-red-500 text-xs italic absolute -bottom-4 text-red left-0">
-                  {(formData.aboutUs || "").length < 100
-                    ? "Message must be at least 100 characters."
-                    : ""}
-                  {(formData.aboutUs || "").length > 1000
-                    ? "Message must be under 1000 characters."
-                    : ""}
+                  Message must be at least 100 characters.
                 </p>
               ) : null}
-              {formErrors.aboutUs && (
+              {(formData.aboutUs || "").length > 1000 ? (
+                <p className="text-red-500 text-xs italic absolute -bottom-4 text-red left-0">
+                  Message must be under 1000 characters.
+                </p>
+              ) : null}
+              {formErrors?.aboutUs && (
                 <p className="text-red-500 text-xs italic absolute -bottom-5 text-red left-44">
-                  {formErrors.aboutUs}
+                  {formErrors?.aboutUs}
                 </p>
               )}
             </div>
@@ -450,94 +402,18 @@ export const AccountPage: FunctionComponent<AccountPageProps> = (props) => {
                 name="website"
                 value={formData.website || ""}
                 onChange={handleChange}
-                placeholder="Website"
+                placeholder="URL"
                 required
                 disabled={formDisabled || loading}
                 className={inputClass}
               />
-              {formErrors.website && (
+              {formErrors?.website && (
                 <p className="text-red-500 text-xs italic absolute -bottom-5 text-red left-44">
-                  {formErrors.website}
+                  {formErrors?.website}
                 </p>
               )}
             </div>
-            <p className=" text-lg font-bold my-10">Landing Pages</p>
-            {props.accountInfo?.affiliate.landingPages?.map(
-              (landingPage, index) => (
-                <div key={`lp-${index}`}>
-                  <div className="mb-4">
-                    <label className="block text-gray-700 text-sm font-bold mb-2">
-                      Custom Trailfren URL Path
-                    </label>
-                    {formDisabled ? (
-                      <a
-                        className=" text-blue-600 font-medium hover:opacity-80"
-                        target="_blank"
-                        href={`https://www.trailfren.com/${
-                          (formData as any)[`landingPagePath-${index}`]
-                        }`}
-                      >{`www.trailfren.com/${
-                        (formData as any)[`landingPagePath-${index}`]
-                      }`}</a>
-                    ) : (
-                      <div className="flex items-center mt-2 relative">
-                        <span className="text-gray-700 mr-2">
-                          www.trailfren.com/
-                        </span>
-                        <input
-                          type="text"
-                          name={`landingPagePath-${index}`}
-                          value={
-                            (formData as any)[`landingPagePath-${index}`] || ""
-                          }
-                          onChange={handleChange}
-                          placeholder="your-path-here"
-                          required
-                          disabled={formDisabled || loading}
-                          className={
-                            inputClass + `${formDisabled ? " -ml-2" : ""}`
-                          }
-                        />
-                        {(formErrors as any)[`landingPagePath-${index}`] && (
-                          <p className="text-red-500 text-xs italic absolute -bottom-5 text-red left-44">
-                            {(formErrors as any)[`landingPagePath-${index}`]}
-                          </p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  <div className="mb-4">
-                    <label className="block text-gray-700 text-sm font-bold mb-2">
-                      Contribution Details
-                    </label>
-                    {!formDisabled ? (
-                      <span className="text-xs text-gray-600">
-                        Two sentence blurb on ways the organization will spend
-                        the funds
-                      </span>
-                    ) : null}
-                    <textarea
-                      name={`contributionDeets-${index}`}
-                      value={
-                        (formData as any)[`contributionDeets-${index}`] || ""
-                      }
-                      onChange={handleChange}
-                      rows={4}
-                      placeholder="Contribution details"
-                      required
-                      disabled={formDisabled || loading}
-                      className={textareaClass}
-                    ></textarea>
-                    {(formErrors as any)[`contributionDeets-${index}`] && (
-                      <p className="text-red-500 text-xs italic absolute -bottom-5 text-red left-44">
-                        {(formErrors as any)[`contributionDeets-${index}`]}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )
-            )}
-            <div className="flex justify-end w-full">
+            <div className="flex justify-center md:justify-end mb-4 w-full">
               {!formDisabled ? (
                 <Button
                   type="secondary"
@@ -547,7 +423,7 @@ export const AccountPage: FunctionComponent<AccountPageProps> = (props) => {
                   Cancel
                 </Button>
               ) : null}
-              <Button loading={loading}>
+              <Button loading={true}>
                 {formDisabled ? "Edit Info" : "Update Info"}
               </Button>
             </div>

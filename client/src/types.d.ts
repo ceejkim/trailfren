@@ -13,7 +13,6 @@ declare namespace Contentful {
       "en-US": string;
     };
     aboutUs: {
-
       "en-US": string;
     };
     contributionDetails: {
@@ -137,6 +136,8 @@ declare namespace Contentful {
     contactLastName: string;
     treasurerEmail: string;
     adminFirebaseEmail: string;
+    stripeAccountId: string;
+    color?: string;
   }
-};
+}
 export as namespace Contentful;
