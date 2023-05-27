@@ -16,28 +16,29 @@ const TrailfrenButton = (props: ButtonProps) => {
     primary: `px-4 h-16 w-[${
       props.width || "150px"
     }] rounded-none border-none p-2 text-center text-white hover:cursor-pointer hover:opacity-80 disabled:shadow-none${
-      props.loading ? "opacity-50 cursor-not-allowed" : ""
+      props.loading ? "opacity-50 hover:cursor-default" : ""
     }`,
     secondary: `px-4 h-16 w-[${
       props.width || "150px"
     }] rounded-none border-none p-2 text-center text-salmon-400 hover:cursor-pointer hover:opacity-80 disabled:shadow-none${
-      props.loading ? "opacity-50 cursor-not-allowed" : ""
+      props.loading ? "opacity-50 hover:cursor-default" : ""
     }`,
   };
 
-  console.log("button: props", props);
   let color = "#ffffff";
   let backgroundColor = props?.color ? `#${props?.color}` : "#df7c6d";
   if (props.type === "secondary") {
     color = props?.color ? `${props?.color}` : "#df7c6d";
     backgroundColor = "#ffffff";
   }
-  console.log("color", color);
-  console.log("backgroundColor", backgroundColor);
+  if (props.loading) {
+    backgroundColor = "#CCCCCC";
+  }
   return (
     <button
       onClick={props.onClick}
       className={classes[props.type || "primary"]}
+      disabled={props.loading}
       style={{
         color,
         backgroundColor,

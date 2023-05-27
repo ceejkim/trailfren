@@ -1,14 +1,4 @@
-import { FunctionComponent } from "react";
-
-interface FAQPageProps {
-  // data: {
-  //   heroImage: {
-  //     gatsbyImageData: any;
-  //   };
-  // };
-}
-
-const FAQPage: FunctionComponent<FAQPageProps> = () => (
+export const FAQPage = () => (
   <section>
     <div className="mx-auto mt-20 flex max flex-col max-w-2xl justify-center">
       <h4 className="mx-8 my-14 text-4xl font-medium">FAQs</h4>
@@ -29,7 +19,7 @@ const FAQPage: FunctionComponent<FAQPageProps> = () => (
         else you like for your non-profit or small business. We are perfect for
         a small organization that does not have the resources to invest in a POS
         system or train staff. If you have volunteer-run events and sell
-        t-shirts, or a small farmstand with only a few products, we are perfect
+        t-shirts, or a small farm-stand with only a few products, we are perfect
         for you!
       </p>
       <p className="mx-8 my-0 text-xl font-medium leading-relaxed">
@@ -50,13 +40,3 @@ const FAQPage: FunctionComponent<FAQPageProps> = () => (
     </div>
   </section>
 );
-
-export default FAQPage;
-
-// export const partnerPageQuery = graphql`
-//   query {
-//     heroImage: contentfulAsset(title: { eq: "woods-hero-image" }) {
-//       gatsbyImageData(placeholder: BLURRED, layout: FULL_WIDTH, height: 400)
-//     }
-//   }
-// `;

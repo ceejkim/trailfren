@@ -1,13 +1,6 @@
-"use client";
-
 import { useEffect } from "react";
-import Button from "../components/button";
 
-interface Props {
-  setModalVisible: (value: boolean) => void;
-}
-
-export const HomePage = (props: Props) => {
+export const SignUpPage = () => {
   useEffect(() => {
     if (window.location.pathname !== "/") {
       window.location.pathname = "/";
@@ -23,9 +16,9 @@ export const HomePage = (props: Props) => {
             outdoor / non-profit <br /> organization in 10 minutes or less
           </h1>
           <div style={{ justifyContent: "center", display: "flex" }}>
-            <Button onClick={() => props.setModalVisible(true)}>
+            {/* <Button onClick={() => props.setModalVisible(true)}>
               Set Up Now
-            </Button>
+            </Button> */}
           </div>
         </div>
       </div>

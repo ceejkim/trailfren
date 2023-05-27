@@ -1,4 +1,5 @@
 import { FormEvent, FunctionComponent, useContext, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   getAuth,
   createUserWithEmailAndPassword,
@@ -14,6 +15,7 @@ interface FooterProps {}
 
 const FooterDonations: FunctionComponent<FooterProps> = ({}) => {
   const auth = getAuth(app);
+  const navigate = useNavigate();
   const { affiliates } = useContext(TrailfrenContext);
   const [email, setEmail] = useState<string>("");
   const [message, setMessage] = useState<string>("");
@@ -40,9 +42,10 @@ const FooterDonations: FunctionComponent<FooterProps> = ({}) => {
       const user = userCredential.user;
       await sendEmailVerification(user);
 
-      setMessage(
-        "A verification email has been sent to your email address. Please check your inbox."
-      );
+      // setMessage(
+      //   "A verification email has been sent to your email address. Please check your inbox."
+      // );
+      navigate("/user-account", { state: { referralClub: affiliate?.name } });
     } catch (error: any) {
       console.error("Error during sign up:", error);
       setError(error.message);
