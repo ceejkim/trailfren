@@ -42,13 +42,17 @@ const FooterDonations: FunctionComponent<FooterProps> = ({}) => {
       const user = userCredential.user;
       await sendEmailVerification(user);
 
-      // setMessage(
-      //   "A verification email has been sent to your email address. Please check your inbox."
-      // );
-      navigate("/user-account", { state: { referralClub: affiliate?.name } });
+      setMessage(
+        "A verification email has been sent to your email address. Please check your inbox."
+      );
+      // navigate("/user-account", { state: { referralClub: affiliate?.name } });
     } catch (error: any) {
-      console.error("Error during sign up:", error);
-      setError(error.message);
+      if (error?.code === "auth/email-already-in-use") {
+        navigate("/user-account", { state: { referralClub: affiliate?.name } });
+      } else {
+        console.error("Error during sign up:", error);
+        setError(error?.message);
+      }
     }
   };
 

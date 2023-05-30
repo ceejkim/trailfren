@@ -34,10 +34,8 @@ export const UserAccountPage: FunctionComponent = () => {
   const ref = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!user || !referralClub) return;
-
     const fetchData = async () => {
-      const memberRef = doc(db, "members", user.uid);
+      const memberRef = doc(db, "members", user!.uid);
       const docSnap = await getDoc(memberRef);
 
       if (docSnap.exists()) {
@@ -59,7 +57,9 @@ export const UserAccountPage: FunctionComponent = () => {
       }
     };
 
-    fetchData();
+    if (user?.uid) {
+      fetchData();
+    }
   }, [user, referralClub]);
 
   useEffect(() => {
@@ -139,7 +139,10 @@ export const UserAccountPage: FunctionComponent = () => {
   const categories = Object.keys(clubs[city]);
 
   return (
-    <section>
+    <div>
+      <div className="w-full flex justify-start pl-12 pt-10">
+        <p className="text-4xl text-black no-underline">trailfren</p>
+      </div>
       <div className="mx-4 md:mx-auto mt-20 flex max flex-col max-w-2xl justify-center">
         <h4 className="mb-14 text-4xl font-medium">User Account</h4>
         <form>
@@ -251,6 +254,6 @@ export const UserAccountPage: FunctionComponent = () => {
           ))}
         </div>
       </div>
-    </section>
+    </div>
   );
 };
