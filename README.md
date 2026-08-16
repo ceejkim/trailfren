@@ -1,13 +1,26 @@
-# TrailFren main site
+# Flock BirdWatch
 
-Built with React, Typescript, and Express.
+Flock is a bird-camera social MVP for watching motion-triggered clips, logging sightings, following friends, and running fantasy-style birding challenges.
 
+## MVP Scope
 
-## Questions for CJ
+- Local demo authentication and profile state
+- Friend requests, follow actions, and invite-code sharing
+- Motion-only camera feed with comments and reactions
+- Bird sighting logging with rarity-based points
+- Flock league leaderboard and weekly challenges
+- Affiliate-style gear and seed recommendations
+- Birdfy-style camera connection panel for future integrations
 
-1. Should we add custom color to account page.
-2. Sounds like customers (Peyton Homes) want to be able to customize *all* verbage on the account page.
+## Local Development
 
-email links:
+```bash
+npm install
+npm run dev
+```
 
-- [Peyton Homes](href:https://mail.google.com/mail/u/0/#all/FMfcgzGslbHVnnjcZncDRSvkgvbzlWpn)
+## Build
+
+```bash
+npm run build
+```

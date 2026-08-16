@@ -1,6 +1,23 @@
 {
+  "name": "flock-birdwatch",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
   "scripts": {
-    "deploy": "cd client && npm run build && cd ../server && npm run build && cd .. && netlify deploy",
-    "deploy-prod": "netlify deploy --prod"
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "lucide-react": "^0.468.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "vite": "^5.4.11"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "typescript": "^5.6.3"
   }
 }
