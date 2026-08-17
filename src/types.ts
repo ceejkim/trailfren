@@ -12,6 +12,12 @@ export type CameraProviderId =
 
 export type CameraIntegrationPhase = "partner-export" | "official-cloud" | "local-relay" | "manual";
 
+export type CameraConnectionMode = "partner-request" | "official-oauth" | "local-relay" | "manual-upload";
+
+export type CameraConnectionStatus = "queued" | "oauth-started" | "relay-required" | "partner-review" | "manual-ready";
+
+export type CameraClipIngestStatus = "received" | "processing" | "needs-review" | "ready";
+
 export type CameraSyncStatus = "not-started" | "needs-approval" | "waiting-on-provider" | "relay-required" | "synced";
 
 export type CameraPrivacyMode = "private" | "friends" | "league";
@@ -32,12 +38,53 @@ export type CameraProvider = {
   docsUrl: string;
 };
 
+export type CameraConnectionRequest = {
+  id: string;
+  userId: string;
+  providerId: CameraProviderId;
+  providerName: string;
+  mode: CameraConnectionMode;
+  status: CameraConnectionStatus;
+  requestedAt: string;
+  privacyMode: CameraPrivacyMode;
+  motionUploadsEnabled: boolean;
+  nextStep: string;
+  callbackPath: string;
+};
+
+export type CameraClipIngestRequest = {
+  id: string;
+  userId: string;
+  providerId: CameraProviderId;
+  providerName: string;
+  deviceId: string;
+  cameraName: string;
+  capturedAt: string;
+  durationSeconds: number;
+  motionEventId?: string;
+  thumbnailUrl?: string;
+  clipUrl?: string;
+  privacyMode: CameraPrivacyMode;
+};
+
+export type CameraClipIngestResult = {
+  ingestId: string;
+  status: CameraClipIngestStatus;
+  clip: Clip;
+  sighting: Sighting;
+  reviewMessage: string;
+};
+
 export type CameraSyncState = {
   providerId: CameraProviderId;
   status: CameraSyncStatus;
   approvalLabel: string;
   privacyMode: CameraPrivacyMode;
   motionUploadsEnabled: boolean;
+  connectionRequestId?: string;
+  nextStep?: string;
+  latestIngestId?: string;
+  latestIngestAt?: string;
   lastSyncedAt?: string;
 };
 

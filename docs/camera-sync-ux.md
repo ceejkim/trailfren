@@ -20,6 +20,20 @@ A user should be able to create a Flock account, choose the camera they own, app
 6. New clips default to private.
 7. Motion-triggered clips enter the bird review pipeline before scoring or sharing.
 
+## Implemented Front-End Boundary
+
+The current app now has:
+
+- Provider selection in the Cameras tab.
+- A provider-specific sync/approval CTA.
+- A `CameraConnectionRequest` contract created by the sync button.
+- Callback paths for official OAuth, local relay, partner/export request, and manual upload modes.
+- A next-step message for each integration mode.
+- A demo `CameraClipIngestRequest` flow that creates a private clip and sighting pending review.
+- Persistent local demo state for the latest request and latest ingest result.
+
+This proves the user flow and API shape without collecting real camera credentials or pretending that unsupported vendor APIs exist.
+
 ## Integration Modes
 
 ### Official Cloud Account Link
@@ -87,7 +101,7 @@ Requirements:
 
 ## Front-End Contract
 
-The current front-end should expose:
+The current front-end exposes:
 
 - Provider list
 - Provider-specific sync CTA
@@ -96,24 +110,36 @@ The current front-end should expose:
 - Motion auto-upload preference
 - Provider limitations
 - Shared motion upload pipeline
+- Mock ingest preview for approved motion uploads
 
 The current front-end does not collect secrets or connect to real cameras yet.
 
-## Back-End Contract To Build Next
+## Back-End Contract
+
+Implemented in `src/types.ts` and `src/cameraApi.ts` as a mockable browser boundary. These shapes should become API route payloads when a backend is added.
 
 ```ts
 export type CameraConnectionRequest = {
+  id: string;
   userId: string;
   providerId: CameraProviderId;
+  providerName: string;
+  mode: "partner-request" | "official-oauth" | "local-relay" | "manual-upload";
+  status: "queued" | "oauth-started" | "relay-required" | "partner-review" | "manual-ready";
   requestedAt: string;
   privacyMode: CameraPrivacyMode;
   motionUploadsEnabled: boolean;
-  status: "queued" | "oauth-started" | "relay-required" | "partner-review" | "manual";
+  nextStep: string;
+  callbackPath: string;
 };
 
 export type CameraClipIngestRequest = {
-  deviceId: string;
+  id: string;
+  userId: string;
   providerId: CameraProviderId;
+  providerName: string;
+  deviceId: string;
+  cameraName: string;
   capturedAt: string;
   durationSeconds: number;
   motionEventId?: string;
@@ -122,6 +148,16 @@ export type CameraClipIngestRequest = {
   privacyMode: CameraPrivacyMode;
 };
 ```
+
+## Next Back-End Slice
+
+Turn the mock browser boundary into server-backed routes:
+
+- `POST /api/cameras/connection-requests`
+- `POST /api/cameras/clip-ingests`
+- `GET /api/cameras/:deviceId/status`
+
+The routes should still avoid real credentials until the user explicitly approves credentials/provider setup.
 
 ## Source Anchors
 
