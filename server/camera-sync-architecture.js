@@ -331,6 +331,27 @@ export function getTransport(provider) {
   return "manual-upload";
 }
 
+export function getConnectionRequestStatus(provider) {
+  if (provider.mode === "official-oauth") return "oauth-started";
+  if (provider.mode === "local-relay") return "relay-required";
+  if (provider.mode === "partner-request") return "partner-review";
+  return "manual-ready";
+}
+
+export function getConnectionCallbackPath(provider) {
+  if (provider.mode === "official-oauth") return `/api/cameras/${provider.id}/oauth/callback`;
+  if (provider.mode === "local-relay") return `/api/cameras/${provider.id}/relay/connect`;
+  if (provider.mode === "partner-request") return `/api/cameras/${provider.id}/partner-request`;
+  return "/api/cameras/manual-upload";
+}
+
+export function getProviderNextStep(provider) {
+  if (provider.mode === "official-oauth") return `Start official ${provider.name} account linking and keep tokens server-side only.`;
+  if (provider.mode === "local-relay") return `Install a local Flock relay before any private ${provider.name} camera stream can upload clips.`;
+  if (provider.mode === "partner-request") return `Queue a ${provider.name} partner/export request and keep manual import available until official access exists.`;
+  return "Open manual upload and run clips through private review before scoring.";
+}
+
 export function createSyncSession(body) {
   const provider = getProvider(body.providerId);
   const now = new Date();
@@ -361,11 +382,28 @@ export function createSyncSession(body) {
       sourceUrl: provider.sourceUrl
     },
     storage: {
-      mode: "stateless-contract",
-      next: "persist this session in the account camera database before production camera access"
+      mode: "unpersisted-builder",
+      next: "route handlers attach account-scoped persistence before returning sync sessions"
     },
     createdAt: now.toISOString(),
     expiresAt: expiresAt.toISOString()
+  };
+}
+
+export function createConnectionRequest(body) {
+  const provider = getProvider(body.providerId);
+  return {
+    id: createId("conn"),
+    userId: typeof body.userId === "string" && body.userId.trim() ? body.userId : "demo-user",
+    providerId: provider.id,
+    providerName: provider.name,
+    mode: provider.mode,
+    status: getConnectionRequestStatus(provider),
+    requestedAt: new Date().toISOString(),
+    privacyMode: getPrivacyMode(body.privacyMode),
+    motionUploadsEnabled: body.motionUploadsEnabled !== false,
+    nextStep: getProviderNextStep(provider),
+    callbackPath: getConnectionCallbackPath(provider)
   };
 }
 
@@ -434,6 +472,110 @@ export function formatDuration(seconds) {
   const minutes = Math.floor(seconds / 60).toString().padStart(2, "0");
   const remainingSeconds = Math.floor(seconds % 60).toString().padStart(2, "0");
   return `${minutes}:${remainingSeconds}`;
+}
+
+export function createClipIngestResult(body) {
+  const provider = getProvider(body.providerId);
+  const privacyMode = getPrivacyMode(body.privacyMode);
+  const durationSeconds = typeof body.durationSeconds === "number" ? body.durationSeconds : 18;
+  const bird = provider.audience === "bird-native" ? "Tufted titmouse" : "Downy woodpecker";
+  const rarity = provider.audience === "bird-native" ? "Uncommon" : "Rare";
+  const points = rarityPoints[rarity];
+  const cameraName = typeof body.cameraName === "string" && body.cameraName.trim() ? body.cameraName : `${provider.name} feeder`;
+  const thumbnailUrl =
+    typeof body.thumbnailUrl === "string" && body.thumbnailUrl.trim()
+      ? body.thumbnailUrl
+      : "https://images.unsplash.com/photo-1516233758813-a38d024919c5?auto=format&fit=crop&w=1000&q=80";
+
+  return {
+    ingestId: createId("ingest"),
+    status: "needs-review",
+    clip: {
+      id: createId("clip"),
+      cameraName,
+      bird,
+      rarity,
+      location: "Private backyard",
+      capturedAt: body.capturedAt || "Just now",
+      imageUrl: thumbnailUrl,
+      duration: formatDuration(durationSeconds),
+      confidence: 82,
+      motionOnly: true,
+      owner: typeof body.userId === "string" && body.userId.trim() ? body.userId : "Charlie",
+      points,
+      reactions: 0,
+      comments: []
+    },
+    sighting: {
+      id: createId("sighting"),
+      bird,
+      rarity,
+      location: "Private backyard",
+      source: cameraName,
+      loggedAt: "Needs review",
+      points
+    },
+    reviewMessage: `Received ${provider.name} motion clip as a private ${privacyMode} item pending bird review.`
+  };
+}
+
+export function createRelayUploadResult(body) {
+  const provider = getProvider(body.providerId);
+  const userId = typeof body.userId === "string" && body.userId.trim() ? body.userId : "demo-user";
+  const deviceId = typeof body.deviceId === "string" && body.deviceId.trim() ? body.deviceId : "device-demo";
+  const relayId = typeof body.relayId === "string" && body.relayId.trim() ? body.relayId : "relay-demo";
+  const motionEventId = typeof body.motionEventId === "string" && body.motionEventId.trim() ? body.motionEventId : createId("motion");
+  const privacyMode = getPrivacyMode(body.privacyMode);
+  const durationSeconds = typeof body.durationSeconds === "number" ? body.durationSeconds : 14;
+  const cameraName = typeof body.cameraName === "string" && body.cameraName.trim() ? body.cameraName : `${provider.name} feeder`;
+  const thumbnailUrl =
+    typeof body.thumbnailUrl === "string" && body.thumbnailUrl.trim()
+      ? body.thumbnailUrl
+      : "https://images.unsplash.com/photo-1549608276-5786777e6587?auto=format&fit=crop&w=1000&q=80";
+  const bird = provider.audience === "bird-native" ? "Tufted titmouse" : "Northern cardinal";
+  const rarity = "Uncommon";
+  const points = rarityPoints[rarity];
+
+  return {
+    uploadId: createId("upload"),
+    status: "needs-review",
+    deviceId,
+    relayId,
+    motionEventId,
+    acceptedAt: new Date().toISOString(),
+    architecture: {
+      triggerSource: provider.triggerSource,
+      uploadPath: provider.uploadPath,
+      credentialBoundary: provider.credentialBoundary,
+      signatureMode: process.env.FLOCK_RELAY_SIGNING_SECRET ? "server-hmac" : "demo-prefix"
+    },
+    clip: {
+      id: createId("clip"),
+      cameraName,
+      bird,
+      rarity,
+      location: "Private backyard",
+      capturedAt: body.capturedAt || "Just now",
+      imageUrl: thumbnailUrl,
+      duration: formatDuration(durationSeconds),
+      confidence: 79,
+      motionOnly: true,
+      owner: userId === "demo-user" ? "Charlie" : userId,
+      points,
+      reactions: 0,
+      comments: []
+    },
+    sighting: {
+      id: createId("sighting"),
+      bird,
+      rarity,
+      location: "Private backyard",
+      source: cameraName,
+      loggedAt: "Needs review",
+      points
+    },
+    reviewMessage: `Accepted signed relay upload ${motionEventId} from ${cameraName} as a ${privacyMode} item pending review.`
+  };
 }
 
 export function getRelaySignatureError(request, body) {

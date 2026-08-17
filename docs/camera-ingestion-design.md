@@ -42,8 +42,9 @@ This avoids pretending Vercel can directly open private home-network streams lik
 
 ## Implemented Boundary
 
-The current deployed boundary has stateless Vercel routes for:
+The current API boundary has account-scoped Vercel routes for:
 
+- `GET /api/cameras/account-state`
 - `POST /api/cameras/connection-requests`
 - `GET /api/cameras/providers`
 - `POST /api/cameras/sync-sessions`
@@ -54,9 +55,9 @@ The current deployed boundary has stateless Vercel routes for:
 
 The front end has a one-tap Camera Sync wizard, plus a Device Relay panel that registers a device record and previews a signed relay upload. The result is added to the local demo feed as a private, needs-review clip.
 
-The backend now has a shared camera sync architecture core in `server/camera-sync-architecture.js`. It owns provider capabilities, common camera identification, sync-session creation, device registration creation, secret rejection, private endpoint rejection, and relay signature verification.
+The backend now has a shared camera sync architecture core in `server/camera-sync-architecture.js` and a persistence layer in `server/camera-sync-store.js`. Together they own provider capabilities, common camera identification, sync-session creation, device registration creation, account-scoped persistence, secret rejection, private endpoint rejection, and relay signature verification.
 
-This is not durable account storage yet. It is the API and UX contract that durable storage and real relay signing should attach to.
+Durability depends on deployment configuration. Local development uses an ignored JSON store, Vercel/serverless production can use the cloud REST store env vars, and unconfigured production responses clearly report `volatile-memory`.
 
 ## Data Model Sketch
 
@@ -237,4 +238,4 @@ For Ring/Nest setup, the UI should say:
 
 ## Remaining Day 2 Gap
 
-The next non-blocked implementation should add durable authenticated persistence for sync sessions, device registrations, and relay upload records. Real relay signing secrets, camera credentials, and private clip storage remain approval-gated.
+The next non-blocked implementation should connect the persistence seam to the chosen production auth/database service and configure production relay signing. Real relay signing secrets, camera credentials, and private clip storage remain approval-gated.

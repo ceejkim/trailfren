@@ -1,13 +1,5 @@
-const providers = {
-  birdfy: { id: "birdfy", name: "Birdfy / Netvue", mode: "partner-request" },
-  "bird-buddy": { id: "bird-buddy", name: "Bird Buddy", mode: "partner-request" },
-  ring: { id: "ring", name: "Ring", mode: "official-oauth" },
-  nest: { id: "nest", name: "Google Nest Cam", mode: "official-oauth" },
-  reolink: { id: "reolink", name: "Reolink", mode: "local-relay" },
-  tapo: { id: "tapo", name: "Tapo", mode: "local-relay" },
-  wyze: { id: "wyze", name: "Wyze supported RTSP models", mode: "local-relay" },
-  "manual-upload": { id: "manual-upload", name: "Manual upload", mode: "manual-upload" }
-};
+import { getProvider, getProviderNextStep } from "../../../server/camera-sync-architecture.js";
+import { getStoredCameraDevice } from "../../../server/camera-sync-store.js";
 
 function first(value) {
   return Array.isArray(value) ? value[0] : value;
@@ -30,14 +22,7 @@ function getDeviceStatus(mode) {
   return "ready-for-ingest";
 }
 
-function getNextStep(mode, providerName) {
-  if (mode === "official-oauth") return `Start official ${providerName} account linking and keep tokens server-side only.`;
-  if (mode === "local-relay") return `Install a local Flock relay before any private ${providerName} camera stream can upload clips.`;
-  if (mode === "partner-request") return `Queue a ${providerName} partner/export request and keep manual import available until official access exists.`;
-  return "Open manual upload and run clips through private review before scoring.";
-}
-
-export default function handler(request, response) {
+export default async function handler(request, response) {
   response.setHeader("cache-control", "no-store");
 
   if (request.method !== "GET") {
@@ -45,18 +30,25 @@ export default function handler(request, response) {
     return response.status(405).json({ error: "Method not allowed" });
   }
 
-  const deviceId = getDeviceId(request);
-  const providerId = first(request.query?.providerId);
-  const provider = providerId && providers[providerId] ? providers[providerId] : providers["manual-upload"];
+  try {
+    const deviceId = getDeviceId(request);
+    const storedDevice = await getStoredCameraDevice(request, deviceId);
+    const provider = storedDevice ? getProvider(storedDevice.providerId) : getProvider(first(request.query?.providerId) || "manual-upload");
 
-  return response.status(200).json({
-    device: {
-      deviceId,
-      providerId: provider.id,
-      providerName: provider.name,
-      status: getDeviceStatus(provider.mode),
-      lastSeenAt: new Date().toISOString(),
-      nextStep: getNextStep(provider.mode, provider.name)
-    }
-  });
+    return response.status(200).json({
+      device: {
+        deviceId,
+        providerId: provider.id,
+        providerName: provider.name,
+        status: storedDevice?.connectionStatus || getDeviceStatus(provider.mode),
+        lastSeenAt: storedDevice?.lastSeenAt || new Date().toISOString(),
+        nextStep: getProviderNextStep(provider),
+        persisted: Boolean(storedDevice),
+        storage: storedDevice?.storage
+      }
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unable to read camera device status.";
+    return response.status(400).json({ error: message });
+  }
 }

@@ -36,7 +36,7 @@ This keeps the product simple while still being honest about camera access const
 
 `GET /api/cameras/providers` exposes the supported camera capability registry plus watchlist. This is the backend source for identifying the common camera ecosystems Flock can route safely.
 
-`POST /api/cameras/sync-sessions` creates a stateless sync orchestration session. It does not persist secrets or touch camera feeds.
+`POST /api/cameras/sync-sessions` creates an account-scoped sync orchestration session. It does not persist secrets or touch camera feeds.
 
 Accepted fields:
 

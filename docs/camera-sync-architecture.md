@@ -22,6 +22,7 @@ Flock should make camera sync feel simple to users while routing each camera thr
 The shared server architecture lives in:
 
 - `server/camera-sync-architecture.js`
+- `server/camera-sync-store.js`
 
 It centralizes:
 
@@ -34,13 +35,19 @@ It centralizes:
 - relay signature verification
 - demo-prefix signatures when no server secret is configured
 - HMAC relay signatures when `FLOCK_RELAY_SIGNING_SECRET` is configured
+- account ownership context for camera records
+- pluggable camera sync persistence for cloud REST stores, local development, and explicit volatile demos
 
 Routes using this core:
 
+- `GET /api/cameras/account-state`
 - `GET /api/cameras/providers`
 - `POST /api/cameras/sync-sessions`
+- `POST /api/cameras/connection-requests`
 - `POST /api/cameras/devices`
+- `POST /api/cameras/clip-ingests`
 - `POST /api/cameras/relay-uploads`
+- `GET /api/cameras/:deviceId/status`
 
 ## Common Camera Set
 
@@ -77,15 +84,27 @@ This creates the real production seam for a user-owned relay without storing RTS
 
 ## Account-Owned Records
 
-The current routes still return stateless records, but their shapes are the intended durable backend model:
+The routes now persist account-owned camera records through `server/camera-sync-store.js`:
 
 - `CameraSyncSession`
+- `CameraConnectionRequest`
 - `CameraDevice`
 - `CameraRelayEnrollment`
 - `CameraRelayUploadResult`
 - `CameraClipIngestResult`
+- `CameraReviewRecord`
 
-The next backend slice should persist these behind authenticated account ownership. A database is required before the app can truly remember sync sessions/devices across Vercel instances.
+Each record is stored under the resolved account owner. In demo mode, the owner comes from `userId`, `x-flock-user-id`, or `?userId=` and the response marks `authMode: demo-unsigned`. When `FLOCK_SESSION_SIGNING_SECRET` is configured, write/read requests must include `x-flock-user-id` and `x-flock-session-signature`, where the signature is an HMAC of the user id. This is the server-side auth seam; production should replace or wrap it with the real app auth provider before private camera data is stored.
+
+Storage modes:
+
+- `cloud-rest`: enabled by `FLOCK_CAMERA_STORE_REST_URL` plus `FLOCK_CAMERA_STORE_REST_TOKEN`, or compatible `KV_REST_API_URL`/`KV_REST_API_TOKEN` env vars. This is the deployable durable path for Vercel-style serverless functions.
+- `local-json`: local development store in `.flock-camera-store.local.json`, ignored by Git.
+- `volatile-memory`: production fallback when no cloud store is configured. Responses label this as non-durable so it cannot be confused with production persistence.
+
+`GET /api/cameras/account-state` returns the account-owned sync sessions, requests, devices, relay enrollments, relay uploads, clip ingests, and review queue items for the resolved account.
+
+See `docs/camera-sync-persistence.md` for deployment and verification details.
 
 ## What Stays Gated
 

@@ -72,7 +72,7 @@ Do not implement these without explicit approval:
 
 ## Next Slice
 
-Add durable authenticated storage for:
+Connect the camera store to production auth and durable cloud storage for:
 
 - camera devices
 - relay enrollments

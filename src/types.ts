@@ -40,6 +40,32 @@ export type CameraDeviceConnectionStatus =
 
 export type RelayUploadStatus = "signature-required" | "accepted" | "needs-review" | "rejected";
 
+export type CameraPersistenceMetadata = {
+  mode: string;
+  durable: boolean;
+  collection: string;
+  ownerId: string;
+  authMode: string;
+  dataBoundary: string;
+  next: string;
+};
+
+export type CameraReviewRecord = {
+  id: string;
+  ownerId: string;
+  source: "relay-upload" | "clip-ingest";
+  providerId: CameraProviderId;
+  deviceId?: string;
+  relayId?: string;
+  uploadId: string;
+  clipId: string;
+  sightingId: string;
+  status: "needs-review" | "approved" | "rejected";
+  privacyMode: CameraPrivacyMode;
+  reviewMessage: string;
+  createdAt: string;
+};
+
 export type CameraProvider = {
   id: CameraProviderId;
   name: string;
@@ -68,6 +94,7 @@ export type CameraConnectionRequest = {
   motionUploadsEnabled: boolean;
   nextStep: string;
   callbackPath: string;
+  storage?: CameraPersistenceMetadata;
 };
 
 export type CameraSyncSession = {
@@ -94,10 +121,7 @@ export type CameraSyncSession = {
     hardGates: string[];
     sourceUrl: string;
   };
-  storage?: {
-    mode: string;
-    next: string;
-  };
+  storage?: CameraPersistenceMetadata;
   createdAt: string;
   expiresAt: string;
 };
@@ -117,22 +141,28 @@ export type CameraDevice = {
   relayId?: string;
   registeredAt: string;
   lastSeenAt?: string;
+  storage?: CameraPersistenceMetadata;
 };
 
 export type CameraRelayEnrollment = {
   relayId: string;
   deviceId: string;
+  ownerId?: string;
   uploadUrl: string;
   healthUrl: string;
   signatureHeader: "x-flock-relay-signature";
   signingKeyStatus: "demo-required" | "server-secret-required";
+  signatureFormat?: string;
+  enrolledAt?: string;
   instructions: string[];
+  storage?: CameraPersistenceMetadata;
 };
 
 export type CameraDeviceRegistrationResult = {
   device: CameraDevice;
   relay?: CameraRelayEnrollment;
   reviewMessage: string;
+  storage?: CameraPersistenceMetadata;
 };
 
 export type CameraClipIngestRequest = {
@@ -152,10 +182,13 @@ export type CameraClipIngestRequest = {
 
 export type CameraClipIngestResult = {
   ingestId: string;
+  userId?: string;
   status: CameraClipIngestStatus;
   clip: Clip;
   sighting: Sighting;
   reviewMessage: string;
+  storage?: CameraPersistenceMetadata;
+  reviewRecord?: CameraReviewRecord;
 };
 
 export type CameraRelayUploadRequest = {
@@ -174,14 +207,43 @@ export type CameraRelayUploadRequest = {
 
 export type CameraRelayUploadResult = {
   uploadId: string;
+  userId?: string;
   status: RelayUploadStatus;
   deviceId: string;
   relayId: string;
   motionEventId: string;
   acceptedAt: string;
+  architecture?: {
+    triggerSource: string;
+    uploadPath: string;
+    credentialBoundary: string;
+    signatureMode: string;
+  };
   clip: Clip;
   sighting: Sighting;
   reviewMessage: string;
+  storage?: CameraPersistenceMetadata;
+  reviewRecord?: CameraReviewRecord;
+};
+
+export type CameraAccountState = {
+  account: {
+    userId: string;
+    authMode: string;
+    authenticated: boolean;
+    hardGate: string | null;
+  };
+  storage: CameraPersistenceMetadata;
+  counts: Record<string, number>;
+  records: {
+    syncSessions: CameraSyncSession[];
+    connectionRequests: CameraConnectionRequest[];
+    devices: CameraDevice[];
+    relayEnrollments: CameraRelayEnrollment[];
+    relayUploads: CameraRelayUploadResult[];
+    clipIngests: CameraClipIngestResult[];
+    reviewItems: CameraReviewRecord[];
+  };
 };
 
 export type CameraSyncState = {
