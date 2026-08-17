@@ -5,10 +5,11 @@ Updated: August 16, 2026
 ## Current State
 
 - GitHub repo: `ceejkim/trailfren`
-- Active branch: `work`
-- Local BirdWatch branch: `upload/flock-mvp`, tracking `origin/work`
-- Latest pushed commit: `9f6c191` (`Build Flock bird camera social MVP`)
-- Draft PR: `https://github.com/ceejkim/trailfren/pull/3`
+- Canonical branch: `main`
+- Automation working branch: `work`
+- Merged MVP PR: `https://github.com/ceejkim/trailfren/pull/3`
+- Merged docs/agent PR: `https://github.com/ceejkim/trailfren/pull/10`
+- Latest docs merge commit: `1e164e2` (`Add Flock autonomous build docs and agent briefs`)
 - GitHub tracking issues:
   - Day 1: `https://github.com/ceejkim/trailfren/issues/4`
   - Day 2: `https://github.com/ceejkim/trailfren/issues/5`
@@ -18,22 +19,23 @@ Updated: August 16, 2026
 - Deployment path: GitHub is synced to Vercel
 - Automation: `Flock daily camera integration build lane`
 - Schedule: Monday-Friday at 9:00 AM local time for 5 runs
-- Supporting deliverables in this task:
-  - `flock_camera_integration_matrix.md`
-  - `flock_camera_ingestion_design.md`
+- Canonical project docs:
+  - `docs/camera-integrations.md`
+  - `docs/camera-ingestion-design.md`
+  - `docs/agents/README.md`
 
 ## What Is Done
 
-- Rebuilt and pushed the Flock/BirdWatch MVP into the Trailfren GitHub repo.
-- Created a draft PR against `main`.
-- Confirmed the local repo is clean on the pushed branch.
-- Verified the app previously with `npm run build` and browser smoke testing.
+- Rebuilt and merged the Flock/BirdWatch MVP into the Trailfren GitHub repo.
+- Verified the MVP previously with `npm run build` and browser smoke testing.
 - Created an active daily automation against the registered `BirdWatch` Git project.
+- Updated the automation to use GitHub as the canonical source of truth.
 - Updated the automation to include Vercel deployment awareness.
-- Updated the automation to avoid approval prompts during unattended work.
+- Updated the automation to avoid approval prompts during unattended work except for hard gates.
 - Created five GitHub tracking issues for the daily build plan.
 - Added Day 1 camera integration matrix seed to issue #4.
 - Added Day 2 real camera ingestion architecture seed to issue #5.
+- Merged the autonomous build docs and agent briefs into `main`.
 
 ## Current App Shape
 
@@ -63,6 +65,11 @@ The app does not yet have:
 ## Operating Rules For Unattended Work
 
 - Build one shippable vertical slice per run.
+- Use GitHub as the authoritative source of truth.
+- Prefer GitHub-native docs, issue, PR, and metadata updates where practical.
+- Use local/worktree checkout only when code editing, package scripts, browser checks, or build verification require it.
+- Sync local/worktree checkout from GitHub before editing.
+- Commit and push completed slices to GitHub so Vercel can deploy from the repository.
 - Read the minimum repo context needed.
 - Do not request approval for sandbox/tool escalation.
 - Do not invent workarounds when approval, credentials, paid services, or private camera access are required.
@@ -71,7 +78,6 @@ The app does not yet have:
 - Do not scrape, reverse engineer, bypass vendor limits, or harvest credentials.
 - Do not expose private camera feeds without explicit user approval.
 - Do not add paid services or sensitive credentials without explicit user approval.
-- Let GitHub trigger Vercel after each push.
 - Report commit SHA, branch, checks, deployment status, blocked items, and next slice.
 
 ## Five Main Goals
@@ -191,7 +197,7 @@ These should stay blocked until the user explicitly says yes:
 - Publishing private clips publicly.
 - Paying for API access, partner programs, hosting tiers, or model inference.
 - Completing Ring/Nest developer certification flows.
-- Merging to `main` if that changes production behavior.
+- Merging code that changes production behavior if branch protection or deployment state requires a separate yes.
 
 ## Next Best Non-Blocked Tasks
 
@@ -208,10 +214,11 @@ If a future run cannot edit, push, deploy, or authenticate, it should still make
 
 Daily runs should begin with only:
 
-- `git status --short --branch`
-- `git log -5 --oneline`
-- `package.json`
-- deployment config
-- files directly related to the day objective
+- `README.md`
+- `docs/autonomous-build-plan.md`
+- the active daily GitHub issue
+- `docs/agents/build-captain.md`
+- exactly one specialist agent brief when needed
+- package/deployment files only if code/build work requires them
 
 Broader scans should happen only when the build is blocked or the relevant code path is unclear.
