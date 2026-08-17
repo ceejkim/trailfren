@@ -49,10 +49,14 @@ import {
 } from "./cameraSync";
 import {
   createCameraConnectionRequest,
+  createCameraDeviceRegistration,
   createDemoCameraClipIngest,
+  createDemoRelayUpload,
+  createCameraSyncSession,
   getSyncStatusForConnectionRequest
 } from "./cameraApi";
 import { CameraRelayPanel } from "./CameraRelayPanel";
+import { CameraSyncWizard } from "./CameraSyncWizard";
 import type {
   CameraClipIngestResult,
   CameraConnectionRequest,
@@ -60,6 +64,7 @@ import type {
   CameraPrivacyMode,
   CameraProviderId,
   CameraRelayUploadResult,
+  CameraSyncSession,
   CameraSyncState,
   Clip,
   Friend,
@@ -77,6 +82,7 @@ type AppState = {
   clips: Clip[];
   sightings: Sighting[];
   cameraSync: CameraSyncState;
+  lastSyncSession?: CameraSyncSession;
   lastConnectionRequest?: CameraConnectionRequest;
   lastDeviceRegistration?: CameraDeviceRegistrationResult;
   lastIngestResult?: CameraClipIngestResult;
@@ -106,6 +112,7 @@ function loadState(): AppState {
       clips: parsed.clips ?? fallback.clips,
       sightings: parsed.sightings ?? fallback.sightings,
       cameraSync: { ...fallback.cameraSync, ...(parsed.cameraSync ?? {}) },
+      lastSyncSession: parsed.lastSyncSession,
       lastConnectionRequest: parsed.lastConnectionRequest,
       lastDeviceRegistration: parsed.lastDeviceRegistration,
       lastIngestResult: parsed.lastIngestResult,
@@ -283,6 +290,7 @@ function App() {
         latestIngestAt: undefined,
         lastSyncedAt: undefined
       },
+      lastSyncSession: undefined,
       lastConnectionRequest: undefined,
       lastDeviceRegistration: undefined,
       lastIngestResult: undefined,
@@ -291,6 +299,12 @@ function App() {
   }
 
   function startCameraSync() {
+    const syncSession = createCameraSyncSession({
+      userId: state.profile.id,
+      provider: selectedProvider,
+      privacyMode: state.cameraSync.privacyMode,
+      motionUploadsEnabled: state.cameraSync.motionUploadsEnabled
+    });
     const connectionRequest = createCameraConnectionRequest({
       userId: state.profile.id,
       provider: selectedProvider,
@@ -309,9 +323,32 @@ function App() {
         nextStep: connectionRequest.nextStep,
         lastSyncedAt: nextStatus === "synced" ? "Just now" : state.cameraSync.lastSyncedAt
       },
+      lastSyncSession: syncSession,
       lastConnectionRequest: connectionRequest
     });
     setActiveTab("cameras");
+  }
+
+  function registerSelectedCameraDevice() {
+    const registration = createCameraDeviceRegistration({
+      userId: state.profile.id,
+      provider: selectedProvider,
+      privacyMode: state.cameraSync.privacyMode,
+      motionUploadsEnabled: state.cameraSync.motionUploadsEnabled,
+      locationLabel: state.profile.location
+    });
+    recordDeviceRegistration(registration);
+  }
+
+  function previewSignedRelayUpload() {
+    if (!state.lastDeviceRegistration?.device) return;
+    const relayUpload = createDemoRelayUpload({
+      userId: state.profile.id,
+      provider: selectedProvider,
+      device: state.lastDeviceRegistration.device,
+      privacyMode: state.cameraSync.privacyMode
+    });
+    acceptRelayUpload(relayUpload);
   }
 
   function previewMotionUpload() {
@@ -643,12 +680,32 @@ function App() {
 
         {activeTab === "cameras" && (
           <div className="camera-sync-grid">
+            <CameraSyncWizard
+              userName={state.profile.name}
+              userHandle={state.profile.handle}
+              providers={cameraProviders}
+              provider={selectedProvider}
+              cameraSync={state.cameraSync}
+              syncSession={state.lastSyncSession}
+              connectionRequest={state.lastConnectionRequest}
+              registration={state.lastDeviceRegistration}
+              ingestResult={state.lastIngestResult}
+              relayUpload={state.lastRelayUpload}
+              onProviderChange={selectCameraProvider}
+              onPrivacyChange={setPrivacyMode}
+              onMotionUploadsChange={setMotionUploadsEnabled}
+              onStartConnection={startCameraSync}
+              onRegisterDevice={registerSelectedCameraDevice}
+              onPreviewMotionUpload={previewMotionUpload}
+              onPreviewRelayUpload={previewSignedRelayUpload}
+            />
+
             <section className="panel wide">
               <div className="section-heading">
                 <RadioTower size={20} />
                 <div>
-                  <h2>Camera Sync</h2>
-                  <p>Select a camera, approve the right connection path, and keep new motion clips private until reviewed.</p>
+                  <h2>Provider Architecture</h2>
+                  <p>Every camera follows the simplest safe path available for that ecosystem.</p>
                 </div>
               </div>
               <div className="provider-grid">

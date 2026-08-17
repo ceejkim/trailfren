@@ -20,6 +20,12 @@ export type CameraClipIngestStatus = "received" | "processing" | "needs-review" 
 
 export type CameraSyncStatus = "not-started" | "needs-approval" | "waiting-on-provider" | "relay-required" | "synced";
 
+export type CameraSyncSessionStatus =
+  | "approval-required"
+  | "device-registration-required"
+  | "export-approval-required"
+  | "manual-ready";
+
 export type CameraPrivacyMode = "private" | "friends" | "league";
 
 export type CameraStreamTransport = "rtsp" | "onvif" | "cloud-oauth" | "partner-export" | "manual-upload";
@@ -62,6 +68,25 @@ export type CameraConnectionRequest = {
   motionUploadsEnabled: boolean;
   nextStep: string;
   callbackPath: string;
+};
+
+export type CameraSyncSession = {
+  id: string;
+  userId: string;
+  providerId: CameraProviderId;
+  providerName: string;
+  mode: CameraConnectionMode;
+  status: CameraSyncSessionStatus;
+  approvalPath: string;
+  privacyMode: CameraPrivacyMode;
+  motionUploadsEnabled: boolean;
+  deviceRegistrationRequired: boolean;
+  relayRequired: boolean;
+  oauthRequired: boolean;
+  partnerAccessRequired: boolean;
+  checklist: string[];
+  createdAt: string;
+  expiresAt: string;
 };
 
 export type CameraDevice = {

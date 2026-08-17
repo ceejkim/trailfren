@@ -45,18 +45,38 @@ This avoids pretending Vercel can directly open private home-network streams lik
 The current deployed boundary has stateless Vercel routes for:
 
 - `POST /api/cameras/connection-requests`
+- `POST /api/cameras/sync-sessions`
 - `POST /api/cameras/devices`
 - `POST /api/cameras/clip-ingests`
 - `POST /api/cameras/relay-uploads`
 - `GET /api/cameras/:deviceId/status`
 
-The front end has a Device Relay panel that registers a device record and previews a signed relay upload. The result is added to the local demo feed as a private, needs-review clip.
+The front end has a one-tap Camera Sync wizard, plus a Device Relay panel that registers a device record and previews a signed relay upload. The result is added to the local demo feed as a private, needs-review clip.
 
 This is not durable account storage yet. It is the API and UX contract that durable storage and real relay signing should attach to.
 
 ## Data Model Sketch
 
 ```ts
+export type CameraSyncSession = {
+  id: string;
+  userId: string;
+  providerId: CameraProviderId;
+  providerName: string;
+  mode: CameraConnectionMode;
+  status: "approval-required" | "device-registration-required" | "export-approval-required" | "manual-ready";
+  approvalPath: string;
+  privacyMode: CameraPrivacyMode;
+  motionUploadsEnabled: boolean;
+  deviceRegistrationRequired: boolean;
+  relayRequired: boolean;
+  oauthRequired: boolean;
+  partnerAccessRequired: boolean;
+  checklist: string[];
+  createdAt: string;
+  expiresAt: string;
+};
+
 export type CameraDevice = {
   id: string;
   ownerId: string;
@@ -137,13 +157,16 @@ Implemented files:
 
 - `src/types.ts`
 - `src/cameraApi.ts`
+- `src/CameraSyncWizard.tsx`
 - `src/CameraRelayPanel.tsx`
+- `api/cameras/sync-sessions.js`
 - `api/cameras/devices.js`
 - `api/cameras/relay-uploads.js`
 - `docs/local-camera-relay.md`
 
 The relay contract supports:
 
+- sync-session orchestration
 - device registration
 - relay enrollment metadata
 - signed motion event payload
@@ -208,4 +231,4 @@ For Ring/Nest setup, the UI should say:
 
 ## Remaining Day 2 Gap
 
-The next non-blocked implementation should add durable authenticated persistence for device registrations and relay upload records. Real relay signing secrets, camera credentials, and private clip storage remain approval-gated.
+The next non-blocked implementation should add durable authenticated persistence for sync sessions, device registrations, and relay upload records. Real relay signing secrets, camera credentials, and private clip storage remain approval-gated.
