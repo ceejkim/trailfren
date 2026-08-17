@@ -1,6 +1,7 @@
 import {
   CheckCircle2,
   Cloud,
+  Database,
   KeyRound,
   LockKeyhole,
   RadioTower,
@@ -10,6 +11,7 @@ import {
   Wifi
 } from "lucide-react";
 import type {
+  CameraAccountState,
   CameraClipIngestResult,
   CameraConnectionRequest,
   CameraDeviceRegistrationResult,
@@ -27,6 +29,8 @@ type CameraSyncWizardProps = {
   providers: CameraProvider[];
   provider: CameraProvider;
   cameraSync: CameraSyncState;
+  accountState: CameraAccountState | null;
+  accountStatus: "loading" | "ready" | "offline";
   syncSession?: CameraSyncSession;
   connectionRequest?: CameraConnectionRequest;
   registration?: CameraDeviceRegistrationResult;
@@ -119,6 +123,8 @@ export function CameraSyncWizard({
   providers,
   provider,
   cameraSync,
+  accountState,
+  accountStatus,
   syncSession,
   connectionRequest,
   registration,
@@ -145,6 +151,17 @@ export function CameraSyncWizard({
   const ActionIcon = action.icon;
   const ProviderIcon = getProviderIcon(provider);
   const activeUpload = relayUpload ?? ingestResult;
+  const accountRecordCount = accountState
+    ? Object.values(accountState.counts).reduce((sum, count) => sum + count, 0)
+    : 0;
+  const storeLabel =
+    accountStatus === "loading"
+      ? "Checking"
+      : accountState
+        ? accountState.storage.durable
+          ? "Durable"
+          : "Preview"
+        : "Offline";
 
   return (
     <section className="panel wide camera-sync-wizard" aria-label="Camera sync setup">
@@ -156,11 +173,21 @@ export function CameraSyncWizard({
             <p>{userName} can approve one camera path and send bird-triggered clips into private review.</p>
           </div>
         </div>
-        <div className="wizard-account">
-          <CheckCircle2 size={17} />
-          <div>
-            <span>Account</span>
-            <strong>{userHandle}</strong>
+        <div className="wizard-account-stack">
+          <div className="wizard-account">
+            <CheckCircle2 size={17} />
+            <div>
+              <span>Account</span>
+              <strong>{userHandle}</strong>
+            </div>
+          </div>
+          <div className={accountState?.storage.durable ? "wizard-account wizard-store durable" : "wizard-account wizard-store"}>
+            <Database size={17} />
+            <div>
+              <span>Store</span>
+              <strong>{storeLabel}</strong>
+              <em>{accountState ? `${accountRecordCount} records · ${accountState.storage.mode}` : accountStatus}</em>
+            </div>
           </div>
         </div>
       </div>

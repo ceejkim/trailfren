@@ -31,7 +31,7 @@ import {
   Wifi,
   Zap
 } from "lucide-react";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
   challenges,
   demoProfile,
@@ -48,16 +48,18 @@ import {
   syncStatusLabel
 } from "./cameraSync";
 import {
-  createCameraConnectionRequest,
-  createCameraDeviceRegistration,
-  createDemoCameraClipIngest,
-  createDemoRelayUpload,
-  createCameraSyncSession,
-  getSyncStatusForConnectionRequest
+  fetchCameraAccountState,
+  getSyncStatusForConnectionRequest,
+  requestCameraConnectionRequest,
+  requestCameraDeviceRegistration,
+  requestCameraSyncSession,
+  requestDemoCameraClipIngest,
+  requestDemoRelayUpload
 } from "./cameraApi";
 import { CameraRelayPanel } from "./CameraRelayPanel";
 import { CameraSyncWizard } from "./CameraSyncWizard";
 import type {
+  CameraAccountState,
   CameraClipIngestResult,
   CameraConnectionRequest,
   CameraDeviceRegistrationResult,
@@ -75,6 +77,7 @@ import type {
 
 const storageKey = "flock-birdwatch-state";
 const rarityOptions: Rarity[] = ["Common", "Uncommon", "Rare", "Legendary"];
+type CameraAccountLoadStatus = "loading" | "ready" | "offline";
 
 type AppState = {
   profile: UserProfile;
@@ -127,6 +130,136 @@ function saveState(nextState: AppState) {
   window.localStorage.setItem(storageKey, JSON.stringify(nextState));
 }
 
+function getTime(record: unknown, paths: string[]) {
+  for (const path of paths) {
+    const value = path.split(".").reduce<unknown>((cursor, key) => {
+      if (!cursor || typeof cursor !== "object") return undefined;
+      return (cursor as Record<string, unknown>)[key];
+    }, record);
+
+    if (value === "Just now") return Number.MAX_SAFE_INTEGER;
+    if (typeof value === "string") {
+      const parsed = Date.parse(value);
+      if (Number.isFinite(parsed)) return parsed;
+    }
+  }
+  return 0;
+}
+
+function getLatest<T>(items: T[], paths: string[]): T | undefined {
+  const sorted = items
+    .map((item, index) => ({ item, index, time: getTime(item, paths) }))
+    .sort((left, right) => left.time - right.time || left.index - right.index);
+  return sorted[sorted.length - 1]?.item;
+}
+
+function mergeById<T extends { id: string }>(incoming: T[], existing: T[]) {
+  const seen = new Set<string>();
+  return [...incoming, ...existing].filter((item) => {
+    if (seen.has(item.id)) return false;
+    seen.add(item.id);
+    return true;
+  });
+}
+
+function getSyncStatusFromSession(session?: CameraSyncSession): CameraSyncState["status"] {
+  if (!session) return "not-started";
+  if (session.relayRequired) return "relay-required";
+  if (session.oauthRequired) return "waiting-on-provider";
+  if (session.partnerAccessRequired) return "needs-approval";
+  return "synced";
+}
+
+function reconcileCameraAccountState(current: AppState, accountState: CameraAccountState): AppState {
+  const records = accountState.records;
+  const syncSession = getLatest(records.syncSessions, ["createdAt"]);
+  const connectionRequest = getLatest(records.connectionRequests, ["requestedAt"]);
+  const device = getLatest(records.devices, ["lastSeenAt", "registeredAt"]);
+  const relay =
+    device?.relayId && records.relayEnrollments.find((candidate) => candidate.relayId === device.relayId)
+      ? records.relayEnrollments.find((candidate) => candidate.relayId === device.relayId)
+      : getLatest(records.relayEnrollments, ["enrolledAt"]);
+  const relayUpload = getLatest(records.relayUploads, ["acceptedAt"]);
+  const clipIngest = getLatest(records.clipIngests, ["reviewRecord.createdAt"]);
+  const providerId = syncSession?.providerId ?? connectionRequest?.providerId ?? device?.providerId ?? current.cameraSync.providerId;
+  const provider = getCameraProvider(providerId);
+  const hasAccountRecords =
+    records.syncSessions.length +
+      records.connectionRequests.length +
+      records.devices.length +
+      records.relayUploads.length +
+      records.clipIngests.length >
+    0;
+
+  if (!hasAccountRecords) return current;
+
+  const registration = device
+    ? ({
+        device,
+        relay,
+        storage: device.storage,
+        reviewMessage: device.storage
+          ? `Restored ${device.providerName} device from ${device.storage.mode} account storage.`
+          : `Restored ${device.providerName} device from account storage.`
+      } satisfies CameraDeviceRegistrationResult)
+    : current.lastDeviceRegistration;
+
+  const relayUploadTime = getTime(relayUpload, ["acceptedAt"]);
+  const clipIngestTime = getTime(clipIngest, ["reviewRecord.createdAt"]);
+  const lastIngestResult =
+    relayUpload && relayUploadTime >= clipIngestTime
+      ? ({
+          ingestId: relayUpload.uploadId,
+          userId: relayUpload.userId,
+          status: "needs-review",
+          clip: relayUpload.clip,
+          sighting: relayUpload.sighting,
+          reviewMessage: relayUpload.reviewMessage,
+          storage: relayUpload.storage,
+          reviewRecord: relayUpload.reviewRecord
+        } satisfies CameraClipIngestResult)
+      : clipIngest ?? current.lastIngestResult;
+
+  const nextStatus =
+    relayUpload || clipIngest || device?.connectionStatus === "connected"
+      ? "synced"
+      : connectionRequest
+        ? getSyncStatusForConnectionRequest(connectionRequest)
+        : getSyncStatusFromSession(syncSession);
+  const latestIngestAt =
+    relayUpload?.acceptedAt ?? clipIngest?.reviewRecord?.createdAt ?? device?.lastSeenAt ?? syncSession?.createdAt ?? current.cameraSync.latestIngestAt;
+  const persistedClips = [...records.relayUploads.map((upload) => upload.clip), ...records.clipIngests.map((ingest) => ingest.clip)];
+  const persistedSightings = [...records.relayUploads.map((upload) => upload.sighting), ...records.clipIngests.map((ingest) => ingest.sighting)];
+
+  return {
+    ...current,
+    clips: mergeById(persistedClips, current.clips),
+    sightings: mergeById(persistedSightings, current.sightings),
+    cameraSync: {
+      ...current.cameraSync,
+      providerId,
+      status: nextStatus,
+      approvalLabel: provider.primaryAction,
+      privacyMode: syncSession?.privacyMode ?? connectionRequest?.privacyMode ?? device?.privacyMode ?? current.cameraSync.privacyMode,
+      motionUploadsEnabled: syncSession?.motionUploadsEnabled ?? connectionRequest?.motionUploadsEnabled ?? device?.motionOnly ?? current.cameraSync.motionUploadsEnabled,
+      connectionRequestId: connectionRequest?.id ?? current.cameraSync.connectionRequestId,
+      registeredDeviceId: device?.id ?? relayUpload?.deviceId ?? current.cameraSync.registeredDeviceId,
+      relayId: relay?.relayId ?? device?.relayId ?? relayUpload?.relayId ?? current.cameraSync.relayId,
+      relayUploadUrl: relay?.uploadUrl ?? current.cameraSync.relayUploadUrl,
+      latestIngestId: clipIngest?.ingestId ?? current.cameraSync.latestIngestId,
+      latestRelayUploadId: relayUpload?.uploadId ?? current.cameraSync.latestRelayUploadId,
+      latestIngestAt,
+      nextStep: connectionRequest?.nextStep ?? current.cameraSync.nextStep,
+      lastSyncedAt: nextStatus === "synced" ? latestIngestAt : current.cameraSync.lastSyncedAt
+    },
+    lastSyncSession: syncSession ?? current.lastSyncSession,
+    lastConnectionRequest: connectionRequest ?? current.lastConnectionRequest,
+    lastDeviceRegistration: registration,
+    lastIngestResult,
+    lastRelayUpload: relayUpload ?? current.lastRelayUpload
+  };
+}
+
 function App() {
   const [state, setState] = useState<AppState>(() => loadState());
   const [activeTab, setActiveTab] = useState("feed");
@@ -144,6 +277,8 @@ function App() {
   });
   const [motionOnly, setMotionOnly] = useState(true);
   const [copiedInvite, setCopiedInvite] = useState(false);
+  const [cameraAccountState, setCameraAccountState] = useState<CameraAccountState | null>(null);
+  const [cameraAccountStatus, setCameraAccountStatus] = useState<CameraAccountLoadStatus>("loading");
 
   const selectedProvider = getCameraProvider(state.cameraSync.providerId);
 
@@ -151,6 +286,47 @@ function App() {
     setState(next);
     saveState(next);
   }
+
+  function applyCameraAccountState(accountState: CameraAccountState) {
+    setCameraAccountState(accountState);
+    setCameraAccountStatus("ready");
+    setState((current) => {
+      const next = reconcileCameraAccountState(current, accountState);
+      saveState(next);
+      return next;
+    });
+  }
+
+  async function refreshCameraAccountState() {
+    const accountState = await fetchCameraAccountState(state.profile.id);
+    if (!accountState) {
+      setCameraAccountStatus("offline");
+      return;
+    }
+    applyCameraAccountState(accountState);
+  }
+
+  useEffect(() => {
+    let cancelled = false;
+    setCameraAccountStatus("loading");
+
+    fetchCameraAccountState(state.profile.id)
+      .then((accountState) => {
+        if (cancelled) return;
+        if (!accountState) {
+          setCameraAccountStatus("offline");
+          return;
+        }
+        applyCameraAccountState(accountState);
+      })
+      .catch(() => {
+        if (!cancelled) setCameraAccountStatus("offline");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [state.profile.id]);
 
   const leaderboard = useMemo(() => {
     const currentUser = {
@@ -298,19 +474,14 @@ function App() {
     });
   }
 
-  function startCameraSync() {
-    const syncSession = createCameraSyncSession({
+  async function startCameraSync() {
+    const input = {
       userId: state.profile.id,
       provider: selectedProvider,
       privacyMode: state.cameraSync.privacyMode,
       motionUploadsEnabled: state.cameraSync.motionUploadsEnabled
-    });
-    const connectionRequest = createCameraConnectionRequest({
-      userId: state.profile.id,
-      provider: selectedProvider,
-      privacyMode: state.cameraSync.privacyMode,
-      motionUploadsEnabled: state.cameraSync.motionUploadsEnabled
-    });
+    };
+    const [syncSession, connectionRequest] = await Promise.all([requestCameraSyncSession(input), requestCameraConnectionRequest(input)]);
     const nextStatus = getSyncStatusForConnectionRequest(connectionRequest);
 
     commit({
@@ -327,10 +498,11 @@ function App() {
       lastConnectionRequest: connectionRequest
     });
     setActiveTab("cameras");
+    void refreshCameraAccountState();
   }
 
-  function registerSelectedCameraDevice() {
-    const registration = createCameraDeviceRegistration({
+  async function registerSelectedCameraDevice() {
+    const registration = await requestCameraDeviceRegistration({
       userId: state.profile.id,
       provider: selectedProvider,
       privacyMode: state.cameraSync.privacyMode,
@@ -338,21 +510,23 @@ function App() {
       locationLabel: state.profile.location
     });
     recordDeviceRegistration(registration);
+    void refreshCameraAccountState();
   }
 
-  function previewSignedRelayUpload() {
+  async function previewSignedRelayUpload() {
     if (!state.lastDeviceRegistration?.device) return;
-    const relayUpload = createDemoRelayUpload({
+    const relayUpload = await requestDemoRelayUpload({
       userId: state.profile.id,
       provider: selectedProvider,
       device: state.lastDeviceRegistration.device,
       privacyMode: state.cameraSync.privacyMode
     });
     acceptRelayUpload(relayUpload);
+    void refreshCameraAccountState();
   }
 
-  function previewMotionUpload() {
-    const ingestResult = createDemoCameraClipIngest({
+  async function previewMotionUpload() {
+    const ingestResult = await requestDemoCameraClipIngest({
       userId: state.profile.id,
       provider: selectedProvider,
       privacyMode: state.cameraSync.privacyMode
@@ -372,6 +546,7 @@ function App() {
       lastIngestResult: ingestResult
     });
     setActiveTab("feed");
+    void refreshCameraAccountState();
   }
 
   function recordDeviceRegistration(registration: CameraDeviceRegistrationResult) {
@@ -686,6 +861,8 @@ function App() {
               providers={cameraProviders}
               provider={selectedProvider}
               cameraSync={state.cameraSync}
+              accountState={cameraAccountState}
+              accountStatus={cameraAccountStatus}
               syncSession={state.lastSyncSession}
               connectionRequest={state.lastConnectionRequest}
               registration={state.lastDeviceRegistration}

@@ -25,6 +25,7 @@ Key planning docs:
 - [Camera account sync wizard](docs/camera-account-sync-wizard.md)
 - [Camera sync architecture](docs/camera-sync-architecture.md)
 - [Camera sync persistence](docs/camera-sync-persistence.md)
+- [Camera production readiness](docs/camera-production-readiness.md)
 - [Local camera relay handoff](docs/local-camera-relay.md)
 - [Agent operating briefs](docs/agents/README.md)
 
@@ -39,4 +40,5 @@ npm run dev
 
 ```bash
 npm run build
+npm run smoke:camera
 ```

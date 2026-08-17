@@ -16,8 +16,9 @@ Updated: August 17, 2026
 - Merged camera device relay upload PR: `https://github.com/ceejkim/trailfren/pull/17`
 - Merged camera account sync wizard PR: `https://github.com/ceejkim/trailfren/pull/19`
 - Merged camera sync backend architecture PR: `https://github.com/ceejkim/trailfren/pull/20`
-- Latest shipped slice: shared camera sync backend architecture, provider discovery, one-tap sync sessions, device registration, relay signature verification, and account-scoped camera persistence
-- Current working slice: durable cloud store/auth provider configuration and frontend reconciliation for persisted camera state
+- Merged account-scoped camera sync persistence PR: `https://github.com/ceejkim/trailfren/pull/22`
+- Latest shipped slice: shared camera sync backend architecture, provider discovery, one-tap sync sessions, device registration, relay signature verification, account-scoped camera persistence, and frontend account-state reconciliation
+- Current working slice: durable cloud store/auth provider configuration and production readiness gates
 - GitHub tracking issues:
   - Day 1: `https://github.com/ceejkim/trailfren/issues/4`
   - Day 2: `https://github.com/ceejkim/trailfren/issues/5`
@@ -33,6 +34,8 @@ Updated: August 17, 2026
   - `docs/camera-sync-ux.md`
   - `docs/camera-account-sync-wizard.md`
   - `docs/camera-sync-architecture.md`
+  - `docs/camera-sync-persistence.md`
+  - `docs/camera-production-readiness.md`
   - `docs/agents/README.md`
 
 ## What Is Done
@@ -53,6 +56,8 @@ Updated: August 17, 2026
 - Added account-scoped Vercel routes for device registration, relay uploads, sync-session orchestration, account state, and review records.
 - Added the account-aware Camera Sync wizard for selecting a camera and pressing one provider-specific sync/approval action.
 - Added a shared backend camera sync architecture core for provider capabilities, common camera identification, sync sessions, device registration, relay signatures, and safe secret rejection.
+- Added account-state reconciliation so the frontend can restore persisted camera records after reload.
+- Added `npm run smoke:camera` for repeatable camera API persistence verification.
 - Added a Device Relay panel for account-bound local relay registration and signed relay upload previews.
 - Verified the live API rejects sensitive fields such as `password`.
 
@@ -74,6 +79,8 @@ The app is a compact Vite + React + TypeScript MVP with:
 - Account-scoped API routes for camera sync sessions, connection requests, device registration, relay uploads, clip ingest previews, account state, and device status
 - Shared server-side provider registry and camera sync architecture core
 - Server-side camera sync store with cloud REST, local JSON, and explicit volatile fallback modes
+- Frontend camera state reconciliation from `GET /api/cameras/account-state`
+- Camera API smoke script for account/store/relay verification
 
 The app does not yet have:
 
@@ -131,7 +138,7 @@ Definition of done:
 
 Goal: Add the first real ingestion path without overcommitting cloud complexity.
 
-Status: In progress. Contracts, the one-tap wizard, shared provider architecture, account-scoped persistence boundary, and live-tested API routes are in place; production auth/database configuration and production relay secret management are next.
+Status: In progress. Contracts, the one-tap wizard, shared provider architecture, account-scoped persistence boundary, frontend reconciliation, and live-tested API routes are in place; production auth/database configuration and production relay secret management are next.
 
 Deliverables:
 

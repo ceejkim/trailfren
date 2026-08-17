@@ -1,5 +1,6 @@
 import { KeyRound, RadioTower, ShieldCheck, UploadCloud } from "lucide-react";
-import { createCameraDeviceRegistration, createDemoRelayUpload } from "./cameraApi";
+import { useState } from "react";
+import { requestCameraDeviceRegistration, requestDemoRelayUpload } from "./cameraApi";
 import type {
   CameraDeviceRegistrationResult,
   CameraPrivacyMode,
@@ -30,26 +31,38 @@ export function CameraRelayPanel({
   onDeviceRegistered,
   onRelayUploadAccepted
 }: CameraRelayPanelProps) {
-  function registerDevice() {
-    const nextRegistration = createCameraDeviceRegistration({
-      userId,
-      provider,
-      privacyMode,
-      motionUploadsEnabled,
-      locationLabel
-    });
-    onDeviceRegistered(nextRegistration);
+  const [busyAction, setBusyAction] = useState<"device" | "upload" | null>(null);
+
+  async function registerDevice() {
+    setBusyAction("device");
+    try {
+      const nextRegistration = await requestCameraDeviceRegistration({
+        userId,
+        provider,
+        privacyMode,
+        motionUploadsEnabled,
+        locationLabel
+      });
+      onDeviceRegistered(nextRegistration);
+    } finally {
+      setBusyAction(null);
+    }
   }
 
-  function previewSignedRelayUpload() {
+  async function previewSignedRelayUpload() {
     if (!registration?.device) return;
-    const nextRelayUpload = createDemoRelayUpload({
-      userId,
-      provider,
-      device: registration.device,
-      privacyMode
-    });
-    onRelayUploadAccepted(nextRelayUpload);
+    setBusyAction("upload");
+    try {
+      const nextRelayUpload = await requestDemoRelayUpload({
+        userId,
+        provider,
+        device: registration.device,
+        privacyMode
+      });
+      onRelayUploadAccepted(nextRelayUpload);
+    } finally {
+      setBusyAction(null);
+    }
   }
 
   const relayReady = Boolean(registration?.relay);
@@ -64,9 +77,9 @@ export function CameraRelayPanel({
         <strong>{provider.name}</strong>
         <p>{provider.requiresLocalRelay ? "Local relay upload contract" : provider.connectionLabel}</p>
       </div>
-      <button className="secondary-button" onClick={registerDevice} type="button">
+      <button className="secondary-button" disabled={busyAction === "device"} onClick={registerDevice} type="button">
         <ShieldCheck size={17} />
-        Register device record
+        {busyAction === "device" ? "Registering" : "Register device record"}
       </button>
 
       {registration && (
@@ -89,9 +102,9 @@ export function CameraRelayPanel({
         </div>
       )}
 
-      <button className="secondary-button" disabled={!relayReady} onClick={previewSignedRelayUpload} type="button">
+      <button className="secondary-button" disabled={!relayReady || busyAction === "upload"} onClick={previewSignedRelayUpload} type="button">
         <UploadCloud size={17} />
-        Preview signed relay upload
+        {busyAction === "upload" ? "Uploading" : "Preview signed relay upload"}
       </button>
 
       {relayUpload && (

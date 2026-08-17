@@ -38,6 +38,8 @@ The current app now has:
 - A signed relay upload preview that creates a private clip and sighting pending review.
 - Best-effort POST calls from the browser boundary to the deployed camera API routes.
 - Persistent local demo state for the latest request, device registration, relay upload, and latest ingest result.
+- Account-state reconciliation from the server camera store after reload.
+- Camera Sync wizard store status so preview/non-durable storage is visible.
 
 This proves the user flow and API shape without collecting real camera credentials or pretending that unsupported vendor APIs exist.
 
@@ -53,7 +55,7 @@ The current backend boundary is implemented as Vercel functions with account-sco
 - `POST /api/cameras/relay-uploads`
 - `GET /api/cameras/:deviceId/status`
 
-The route files are self-contained JavaScript functions under `api/` so Vercel packages one clear runtime implementation for each endpoint. The routes intentionally do not persist or list user camera records yet. They validate the supported provider, reject sensitive fields such as passwords, secrets, tokens, API keys, and refresh values, reject unredacted RTSP/ONVIF endpoints, and return safe demo objects that match the front-end contracts.
+The route files are self-contained JavaScript functions under `api/` so Vercel packages one clear runtime implementation for each endpoint. The routes persist account-scoped camera records through the server camera store, validate the supported provider, reject sensitive fields such as passwords, secrets, tokens, API keys, and refresh values, reject unredacted RTSP/ONVIF endpoints, and return safe objects that match the front-end contracts.
 
 The relay upload endpoint requires the `x-flock-relay-signature` header in demo mode. Production signing must move to a server-held relay secret after real account persistence exists.
 
@@ -223,7 +225,7 @@ Turn the account-scoped API boundary into production-authenticated durable state
 - Persist sync sessions and reconcile them in the wizard after reload.
 - Replace demo relay signatures with server-held relay signing secrets.
 - Add provider-specific OAuth handoff routes only after credentials and vendor setup are approved.
-- Add loading/error UI that reconciles the front-end state with server responses.
+- Continue improving loading/error UI around persisted server responses.
 
 The routes should still avoid real credentials until the user explicitly approves credentials/provider setup.
 
