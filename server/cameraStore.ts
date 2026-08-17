@@ -38,21 +38,6 @@ type CameraConnectionRequest = {
   callbackPath: string;
 };
 
-type CameraClipIngestRequest = {
-  id: string;
-  userId: string;
-  providerId: CameraProviderId;
-  providerName: string;
-  deviceId: string;
-  cameraName: string;
-  capturedAt: string;
-  durationSeconds: number;
-  motionEventId?: string;
-  thumbnailUrl?: string;
-  clipUrl?: string;
-  privacyMode: CameraPrivacyMode;
-};
-
 type Clip = {
   id: string;
   cameraName: string;
@@ -93,21 +78,9 @@ type CameraDeviceStatus = {
   providerId: CameraProviderId;
   providerName: string;
   status: "awaiting-setup" | "waiting-on-provider" | "relay-required" | "ready-for-ingest";
-  lastConnectionRequestId?: string;
-  lastIngestId?: string;
-  lastSeenAt?: string;
+  lastSeenAt: string;
   nextStep: string;
 };
-
-type CameraStore = {
-  connections: CameraConnectionRequest[];
-  ingests: CameraClipIngestResult[];
-  devices: Record<string, CameraDeviceStatus>;
-};
-
-declare global {
-  var __flockCameraStore: CameraStore | undefined;
-}
 
 const providers: Record<CameraProviderId, ProviderConfig> = {
   birdfy: { id: "birdfy", name: "Birdfy / Netvue", mode: "partner-request" },
@@ -126,11 +99,6 @@ const rarityPoints: Record<Rarity, number> = {
   Rare: 60,
   Legendary: 150
 };
-
-function getStore() {
-  globalThis.__flockCameraStore ??= { connections: [], ingests: [], devices: {} };
-  return globalThis.__flockCameraStore;
-}
 
 function createId(prefix: string) {
   const randomPart =
@@ -228,8 +196,8 @@ export function createConnectionRequest(body: Record<string, unknown>) {
   const userId = typeof body.userId === "string" && body.userId.trim() ? body.userId : "demo-user";
   const privacyMode = getPrivacyMode(body.privacyMode);
   const motionUploadsEnabled = body.motionUploadsEnabled !== false;
-  const deviceId = `${provider.id}-demo-device`;
-  const request: CameraConnectionRequest = {
+
+  return {
     id: createId("conn"),
     userId,
     providerId: provider.id,
@@ -241,62 +209,35 @@ export function createConnectionRequest(body: Record<string, unknown>) {
     motionUploadsEnabled,
     nextStep: getNextStep(mode, provider.name),
     callbackPath: getCallbackPath(mode, provider.id)
-  };
-
-  const store = getStore();
-  store.connections.unshift(request);
-  store.devices[deviceId] = {
-    deviceId,
-    providerId: provider.id,
-    providerName: provider.name,
-    status: getDeviceStatus(mode),
-    lastConnectionRequestId: request.id,
-    lastSeenAt: request.requestedAt,
-    nextStep: request.nextStep
-  };
-
-  return request;
+  } satisfies CameraConnectionRequest;
 }
 
 export function createClipIngest(body: Record<string, unknown>) {
   rejectSecretFields(body);
   const provider = getProvider(body.providerId);
   const privacyMode = getPrivacyMode(body.privacyMode);
-  const userId = typeof body.userId === "string" && body.userId.trim() ? body.userId : "demo-user";
   const durationSeconds = typeof body.durationSeconds === "number" ? body.durationSeconds : 18;
-  const deviceId = typeof body.deviceId === "string" && body.deviceId.trim() ? body.deviceId : `${provider.id}-demo-device`;
   const bird: string = provider.id === "birdfy" || provider.id === "bird-buddy" ? "Tufted titmouse" : "Downy woodpecker";
   const rarity: Rarity = provider.id === "birdfy" || provider.id === "bird-buddy" ? "Uncommon" : "Rare";
   const points = rarityPoints[rarity];
-  const capturedAt = new Date().toISOString();
-  const request: CameraClipIngestRequest = {
-    id: createId("ingest"),
-    userId,
-    providerId: provider.id,
-    providerName: provider.name,
-    deviceId,
-    cameraName: typeof body.cameraName === "string" && body.cameraName.trim() ? body.cameraName : `${provider.name} feeder`,
-    capturedAt,
-    durationSeconds,
-    motionEventId: createId("motion"),
-    thumbnailUrl:
-      typeof body.thumbnailUrl === "string" && body.thumbnailUrl.trim()
-        ? body.thumbnailUrl
-        : "https://images.unsplash.com/photo-1516233758813-a38d024919c5?auto=format&fit=crop&w=1000&q=80",
-    privacyMode
-  };
-  const result: CameraClipIngestResult = {
-    ingestId: request.id,
+  const cameraName = typeof body.cameraName === "string" && body.cameraName.trim() ? body.cameraName : `${provider.name} feeder`;
+  const thumbnailUrl =
+    typeof body.thumbnailUrl === "string" && body.thumbnailUrl.trim()
+      ? body.thumbnailUrl
+      : "https://images.unsplash.com/photo-1516233758813-a38d024919c5?auto=format&fit=crop&w=1000&q=80";
+
+  return {
+    ingestId: createId("ingest"),
     status: "needs-review",
     clip: {
       id: createId("clip"),
-      cameraName: request.cameraName,
+      cameraName,
       bird,
       rarity,
       location: "Private backyard",
       capturedAt: "Just now",
-      imageUrl: request.thumbnailUrl ?? "https://images.unsplash.com/photo-1486365227551-f3f90034a57c?auto=format&fit=crop&w=1000&q=80",
-      duration: formatDuration(request.durationSeconds),
+      imageUrl: thumbnailUrl,
+      duration: formatDuration(durationSeconds),
       confidence: 82,
       motionOnly: true,
       owner: "Charlie",
@@ -309,47 +250,22 @@ export function createClipIngest(body: Record<string, unknown>) {
       bird,
       rarity,
       location: "Private backyard",
-      source: request.cameraName,
+      source: cameraName,
       loggedAt: "Needs review",
       points
     },
     reviewMessage: `Received ${provider.name} motion clip as a private ${privacyMode} item pending bird review.`
-  };
-
-  const store = getStore();
-  store.ingests.unshift(result);
-  store.devices[deviceId] = {
-    ...(store.devices[deviceId] ?? {
-      deviceId,
-      providerId: provider.id,
-      providerName: provider.name,
-      nextStep: "Review the latest motion clip before scoring."
-    }),
-    status: "ready-for-ingest",
-    lastIngestId: result.ingestId,
-    lastSeenAt: capturedAt
-  };
-
-  return result;
+  } satisfies CameraClipIngestResult;
 }
 
-export function listConnectionRequests() {
-  return getStore().connections.slice(0, 20);
-}
-
-export function listClipIngests() {
-  return getStore().ingests.slice(0, 20);
-}
-
-export function getCameraDeviceStatus(deviceId: string) {
-  const store = getStore();
-  return (
-    store.devices[deviceId] ?? {
-      deviceId,
-      providerId: "manual-upload",
-      providerName: "Manual upload",
-      status: "awaiting-setup",
-      nextStep: "Create a connection request before clips can be ingested."
-    }
-  );
+export function getCameraDeviceStatus(deviceId: string, providerId?: string | null) {
+  const provider = providerId && providerId in providers ? providers[providerId as CameraProviderId] : providers["manual-upload"];
+  return {
+    deviceId,
+    providerId: provider.id,
+    providerName: provider.name,
+    status: getDeviceStatus(provider.mode),
+    lastSeenAt: new Date().toISOString(),
+    nextStep: getNextStep(provider.mode, provider.name)
+  } satisfies CameraDeviceStatus;
 }
