@@ -23,14 +23,18 @@ This keeps the product simple while still being honest about camera access const
 
 ## Implemented Files
 
+- `server/camera-sync-architecture.js`
+- `api/cameras/providers.js`
+- `api/cameras/sync-sessions.js`
 - `src/CameraSyncWizard.tsx`
 - `src/cameraSyncWizard.css`
-- `api/cameras/sync-sessions.js`
 - `src/types.ts`
 - `src/cameraApi.ts`
 - `src/App.tsx`
 
 ## API Contract
+
+`GET /api/cameras/providers` exposes the supported camera capability registry plus watchlist. This is the backend source for identifying the common camera ecosystems Flock can route safely.
 
 `POST /api/cameras/sync-sessions` creates a stateless sync orchestration session. It does not persist secrets or touch camera feeds.
 
@@ -61,6 +65,18 @@ Returned fields include:
 - `syncSession.oauthRequired`
 - `syncSession.partnerAccessRequired`
 - `syncSession.checklist`
+- `syncSession.architecture`
+- `syncSession.storage`
+
+## Relay Signing
+
+The actual relay path is no longer just UI copy:
+
+- local RTSP/ONVIF cameras register a relay enrollment
+- relay uploads must include `x-flock-relay-signature`
+- demo mode accepts `demo-<deviceId>-<motionEventId>`
+- production mode can set `FLOCK_RELAY_SIGNING_SECRET` and require `sha256=<hmac(deviceId.relayId.motionEventId)>`
+- real camera credentials and RTSP URLs stay in the user-owned relay
 
 ## Current Access Reality
 

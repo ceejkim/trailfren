@@ -23,6 +23,7 @@ Key planning docs:
 - [Camera ingestion design](docs/camera-ingestion-design.md)
 - [Camera sync UX](docs/camera-sync-ux.md)
 - [Camera account sync wizard](docs/camera-account-sync-wizard.md)
+- [Camera sync architecture](docs/camera-sync-architecture.md)
 - [Local camera relay handoff](docs/local-camera-relay.md)
 - [Agent operating briefs](docs/agents/README.md)
 

@@ -45,6 +45,7 @@ This avoids pretending Vercel can directly open private home-network streams lik
 The current deployed boundary has stateless Vercel routes for:
 
 - `POST /api/cameras/connection-requests`
+- `GET /api/cameras/providers`
 - `POST /api/cameras/sync-sessions`
 - `POST /api/cameras/devices`
 - `POST /api/cameras/clip-ingests`
@@ -52,6 +53,8 @@ The current deployed boundary has stateless Vercel routes for:
 - `GET /api/cameras/:deviceId/status`
 
 The front end has a one-tap Camera Sync wizard, plus a Device Relay panel that registers a device record and previews a signed relay upload. The result is added to the local demo feed as a private, needs-review clip.
+
+The backend now has a shared camera sync architecture core in `server/camera-sync-architecture.js`. It owns provider capabilities, common camera identification, sync-session creation, device registration creation, secret rejection, private endpoint rejection, and relay signature verification.
 
 This is not durable account storage yet. It is the API and UX contract that durable storage and real relay signing should attach to.
 
@@ -159,6 +162,8 @@ Implemented files:
 - `src/cameraApi.ts`
 - `src/CameraSyncWizard.tsx`
 - `src/CameraRelayPanel.tsx`
+- `server/camera-sync-architecture.js`
+- `api/cameras/providers.js`
 - `api/cameras/sync-sessions.js`
 - `api/cameras/devices.js`
 - `api/cameras/relay-uploads.js`
@@ -166,10 +171,11 @@ Implemented files:
 
 The relay contract supports:
 
+- provider capability discovery
 - sync-session orchestration
 - device registration
 - relay enrollment metadata
-- signed motion event payload
+- signed motion event payload with demo-prefix or server-held HMAC verification
 - signed clip upload payload
 - health status route shape
 

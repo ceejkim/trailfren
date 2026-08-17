@@ -46,6 +46,7 @@ This proves the user flow and API shape without collecting real camera credentia
 The current backend boundary is implemented as stateless Vercel functions:
 
 - `POST /api/cameras/connection-requests`
+- `GET /api/cameras/providers`
 - `POST /api/cameras/sync-sessions`
 - `POST /api/cameras/devices`
 - `POST /api/cameras/clip-ingests`
@@ -57,6 +58,8 @@ The route files are self-contained JavaScript functions under `api/` so Vercel p
 The relay upload endpoint requires the `x-flock-relay-signature` header in demo mode. Production signing must move to a server-held relay secret after real account persistence exists.
 
 The sync-session endpoint is the stateless orchestration surface for the simple account-to-camera wizard. It returns the safe next path for the selected provider and rejects secrets or private stream URLs.
+
+The providers endpoint exposes the backend capability registry that identifies the first supported camera set and the next watchlist. This keeps the UI/provider copy anchored to the real sync architecture rather than a visual-only list.
 
 This is the correct bridge between the mock app and a real integration system: it gives Vercel a deployable API surface while avoiding private-feed storage, credential collection, or vendor API claims that have not been approved.
 

@@ -30,6 +30,7 @@ Updated: August 17, 2026
   - `docs/camera-ingestion-design.md`
   - `docs/camera-sync-ux.md`
   - `docs/camera-account-sync-wizard.md`
+  - `docs/camera-sync-architecture.md`
   - `docs/agents/README.md`
 
 ## What Is Done
@@ -49,6 +50,7 @@ Updated: August 17, 2026
 - Added live-tested stateless Vercel routes for connection requests, clip ingest previews, and generic device status.
 - Added stateless Vercel routes for device registration, relay uploads, and sync-session orchestration.
 - Added the account-aware Camera Sync wizard for selecting a camera and pressing one provider-specific sync/approval action.
+- Added a shared backend camera sync architecture core for provider capabilities, common camera identification, sync sessions, device registration, relay signatures, and safe secret rejection.
 - Added a Device Relay panel for account-bound local relay registration and signed relay upload previews.
 - Verified the live API rejects sensitive fields such as `password`.
 
@@ -68,6 +70,7 @@ The app is a compact Vite + React + TypeScript MVP with:
 - One-tap account-aware camera sync wizard
 - Camera sync session, connection request, device registration, relay upload, and clip ingest contracts
 - Stateless Vercel API routes for camera sync sessions, connection requests, device registration, relay uploads, clip ingest previews, and generic device status
+- Shared server-side provider registry and camera sync architecture core
 
 The app does not yet have:
 
@@ -124,12 +127,13 @@ Definition of done:
 
 Goal: Add the first real ingestion path without overcommitting cloud complexity.
 
-Status: In progress. Contracts, the one-tap wizard, and the live-tested stateless API boundary are in place; durable auth/storage and real relay upload auth are next.
+Status: In progress. Contracts, the one-tap wizard, shared provider architecture, and live-tested stateless API boundary are in place; durable auth/storage and production relay secret management are next.
 
 Deliverables:
 
 - Local RTSP/ONVIF connector skeleton.
 - One-tap camera sync session boundary.
+- Shared provider capability registry and relay signature architecture.
 - Stream registration data model.
 - Motion-event data flow.
 - Clip metadata shape.
