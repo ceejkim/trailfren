@@ -1,5 +1,4 @@
 import { KeyRound, RadioTower, ShieldCheck, UploadCloud } from "lucide-react";
-import { useState } from "react";
 import { createCameraDeviceRegistration, createDemoRelayUpload } from "./cameraApi";
 import type {
   CameraDeviceRegistrationResult,
@@ -14,6 +13,9 @@ type CameraRelayPanelProps = {
   provider: CameraProvider;
   privacyMode: CameraPrivacyMode;
   motionUploadsEnabled: boolean;
+  registration?: CameraDeviceRegistrationResult;
+  relayUpload?: CameraRelayUploadResult;
+  onDeviceRegistered: (registration: CameraDeviceRegistrationResult) => void;
   onRelayUploadAccepted: (relayUpload: CameraRelayUploadResult) => void;
 };
 
@@ -23,11 +25,11 @@ export function CameraRelayPanel({
   provider,
   privacyMode,
   motionUploadsEnabled,
+  registration,
+  relayUpload,
+  onDeviceRegistered,
   onRelayUploadAccepted
 }: CameraRelayPanelProps) {
-  const [registration, setRegistration] = useState<CameraDeviceRegistrationResult>();
-  const [relayUpload, setRelayUpload] = useState<CameraRelayUploadResult>();
-
   function registerDevice() {
     const nextRegistration = createCameraDeviceRegistration({
       userId,
@@ -36,8 +38,7 @@ export function CameraRelayPanel({
       motionUploadsEnabled,
       locationLabel
     });
-    setRegistration(nextRegistration);
-    setRelayUpload(undefined);
+    onDeviceRegistered(nextRegistration);
   }
 
   function previewSignedRelayUpload() {
@@ -48,7 +49,6 @@ export function CameraRelayPanel({
       device: registration.device,
       privacyMode
     });
-    setRelayUpload(nextRelayUpload);
     onRelayUploadAccepted(nextRelayUpload);
   }
 
