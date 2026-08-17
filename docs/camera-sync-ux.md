@@ -1,0 +1,131 @@
+# Camera Sync User Flow
+
+Updated: August 17, 2026
+
+## Product Promise
+
+A user should be able to create a Flock account, choose the camera they own, approve the safest available connection path, and have bird-triggered motion clips appear privately in BirdWatch/Flock for review, scoring, and sharing.
+
+## UX Flow
+
+1. Create or sign in to Flock.
+2. Open Cameras.
+3. Select camera provider.
+4. Click the provider-specific sync button.
+5. Flock routes the user to the correct connection path:
+   - Official account link for Ring and Nest.
+   - Local relay setup for RTSP/ONVIF cameras such as Reolink, Tapo, and supported Wyze models.
+   - Partner/export/share/import path for Birdfy and Bird Buddy until official developer access exists.
+   - Manual upload fallback for every provider.
+6. New clips default to private.
+7. Motion-triggered clips enter the bird review pipeline before scoring or sharing.
+
+## Integration Modes
+
+### Official Cloud Account Link
+
+Use for providers with official APIs and account linking.
+
+Current targets:
+
+- Ring
+- Google Nest
+
+Requirements:
+
+- OAuth/account linking
+- Server-side token storage
+- Webhook endpoints
+- Webhook signature validation
+- Vendor certification or app review where required
+- Vercel environment variables for client IDs/secrets/webhook keys
+
+### Local Relay
+
+Use for cameras with local RTSP/ONVIF support.
+
+Current targets:
+
+- Reolink
+- Tapo
+- Supported Wyze models
+
+Requirements:
+
+- User-owned relay on the same network as the camera
+- Camera credentials stored only in the relay or server-side secret store
+- Clip upload contract from relay to Flock
+- Health check and pause controls
+- Clear user messaging that Vercel cannot directly access private LAN camera streams
+
+### Partner / Export / Share Import
+
+Use for bird-native cameras without a documented public developer API.
+
+Current targets:
+
+- Birdfy / Netvue
+- Bird Buddy
+
+Requirements:
+
+- No password collection inside Flock
+- No scraping or private API automation
+- User-approved export/import, share link handling, email import, or partner access
+- Partner outreach tracked separately from MVP development
+
+### Manual Upload
+
+Use as the universal fallback.
+
+Requirements:
+
+- Upload clip
+- Choose camera/source
+- Default privacy
+- Bird review before scoring
+
+## Front-End Contract
+
+The current front-end should expose:
+
+- Provider list
+- Provider-specific sync CTA
+- Connection status
+- Privacy default
+- Motion auto-upload preference
+- Provider limitations
+- Shared motion upload pipeline
+
+The current front-end does not collect secrets or connect to real cameras yet.
+
+## Back-End Contract To Build Next
+
+```ts
+export type CameraConnectionRequest = {
+  userId: string;
+  providerId: CameraProviderId;
+  requestedAt: string;
+  privacyMode: CameraPrivacyMode;
+  motionUploadsEnabled: boolean;
+  status: "queued" | "oauth-started" | "relay-required" | "partner-review" | "manual";
+};
+
+export type CameraClipIngestRequest = {
+  deviceId: string;
+  providerId: CameraProviderId;
+  capturedAt: string;
+  durationSeconds: number;
+  motionEventId?: string;
+  thumbnailUrl?: string;
+  clipUrl?: string;
+  privacyMode: CameraPrivacyMode;
+};
+```
+
+## Source Anchors
+
+- Birdfy support describes motion detection, cloud-saved recorded clips, app settings, and third-party live streaming options: https://support.birdfy.com/help/birdfy-app/Introduction-BirdfyApp/
+- Bird Buddy EULA restricts commercial use, reverse engineering, unauthorized access, and app redistribution while allowing user content sharing within terms: https://mybirdbuddy.com/app-eula/
+- Ring Developer docs describe official account linking, motion events, webhooks, live video, clips, and certification requirements: https://developer.ring.com/
+- Google Nest Device Access docs describe camera motion events and WebRTC live stream traits: https://developers.google.com/nest/device-access/api/camera-wired

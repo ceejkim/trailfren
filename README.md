@@ -21,6 +21,7 @@ Key planning docs:
 - [Autonomous build plan](docs/autonomous-build-plan.md)
 - [Camera integration matrix](docs/camera-integrations.md)
 - [Camera ingestion design](docs/camera-ingestion-design.md)
+- [Camera sync UX](docs/camera-sync-ux.md)
 - [Agent operating briefs](docs/agents/README.md)
 
 ## Local Development

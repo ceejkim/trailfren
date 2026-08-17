@@ -6,22 +6,29 @@ import {
   ChevronRight,
   CircleUserRound,
   Clipboard,
+  Cloud,
+  ExternalLink,
   Flame,
   Gamepad2,
   Heart,
+  LockKeyhole,
   MessageCircle,
   Play,
   Plus,
   RadioTower,
+  RotateCw,
   Search,
   Send,
   Settings,
   Share2,
+  ShieldCheck,
   ShoppingBag,
   Sparkles,
   Trophy,
+  UploadCloud,
   UserPlus,
   Users,
+  Wifi,
   Zap
 } from "lucide-react";
 import { FormEvent, useMemo, useState } from "react";
@@ -34,7 +41,14 @@ import {
   rarityPoints,
   recommendations
 } from "./data";
-import type { Clip, Friend, Rarity, Sighting, UserProfile } from "./types";
+import {
+  cameraProviders,
+  defaultCameraSync,
+  getCameraProvider,
+  getNextSyncStatus,
+  syncStatusLabel
+} from "./cameraSync";
+import type { CameraPrivacyMode, CameraProviderId, CameraSyncState, Clip, Friend, Rarity, Sighting, UserProfile } from "./types";
 
 const storageKey = "flock-birdwatch-state";
 const rarityOptions: Rarity[] = ["Common", "Uncommon", "Rare", "Legendary"];
@@ -44,28 +58,35 @@ type AppState = {
   friends: Friend[];
   clips: Clip[];
   sightings: Sighting[];
+  cameraSync: CameraSyncState;
 };
 
+function getInitialState(): AppState {
+  return {
+    profile: demoProfile,
+    friends: initialFriends,
+    clips: initialClips,
+    sightings: initialSightings,
+    cameraSync: defaultCameraSync
+  };
+}
+
 function loadState(): AppState {
+  const fallback = getInitialState();
   const stored = window.localStorage.getItem(storageKey);
-  if (!stored) {
-    return {
-      profile: demoProfile,
-      friends: initialFriends,
-      clips: initialClips,
-      sightings: initialSightings
-    };
-  }
+  if (!stored) return fallback;
 
   try {
-    return JSON.parse(stored) as AppState;
-  } catch {
+    const parsed = JSON.parse(stored) as Partial<AppState>;
     return {
-      profile: demoProfile,
-      friends: initialFriends,
-      clips: initialClips,
-      sightings: initialSightings
+      profile: { ...fallback.profile, ...(parsed.profile ?? {}) },
+      friends: parsed.friends ?? fallback.friends,
+      clips: parsed.clips ?? fallback.clips,
+      sightings: parsed.sightings ?? fallback.sightings,
+      cameraSync: { ...fallback.cameraSync, ...(parsed.cameraSync ?? {}) }
     };
+  } catch {
+    return fallback;
   }
 }
 
@@ -88,9 +109,10 @@ function App() {
     location: state.profile.location,
     favoriteBird: state.profile.favoriteBird
   });
-  const [cameraProvider, setCameraProvider] = useState("Birdfy");
   const [motionOnly, setMotionOnly] = useState(true);
   const [copiedInvite, setCopiedInvite] = useState(false);
+
+  const selectedProvider = getCameraProvider(state.cameraSync.providerId);
 
   function commit(next: AppState) {
     setState(next);
@@ -115,6 +137,7 @@ function App() {
   const rareClips = state.clips.filter((clip) => clip.rarity === "Rare" || clip.rarity === "Legendary").length;
   const followingCount = state.friends.filter((friend) => friend.status === "following").length;
   const weeklyPoints = state.sightings.reduce((sum, sighting) => sum + sighting.points, 0);
+  const connectedCameraCount = state.cameraSync.status === "synced" ? 1 : 0;
 
   function addSighting(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -215,6 +238,42 @@ function App() {
     });
   }
 
+  function selectCameraProvider(providerId: CameraProviderId) {
+    const provider = getCameraProvider(providerId);
+    commit({
+      ...state,
+      cameraSync: {
+        ...state.cameraSync,
+        providerId,
+        status: "not-started",
+        approvalLabel: provider.primaryAction,
+        lastSyncedAt: undefined
+      }
+    });
+  }
+
+  function startCameraSync() {
+    const nextStatus = getNextSyncStatus(selectedProvider);
+    commit({
+      ...state,
+      cameraSync: {
+        ...state.cameraSync,
+        status: nextStatus,
+        approvalLabel: selectedProvider.primaryAction,
+        lastSyncedAt: nextStatus === "synced" ? "Just now" : state.cameraSync.lastSyncedAt
+      }
+    });
+    setActiveTab("cameras");
+  }
+
+  function setPrivacyMode(privacyMode: CameraPrivacyMode) {
+    commit({ ...state, cameraSync: { ...state.cameraSync, privacyMode } });
+  }
+
+  function setMotionUploadsEnabled(motionUploadsEnabled: boolean) {
+    commit({ ...state, cameraSync: { ...state.cameraSync, motionUploadsEnabled } });
+  }
+
   async function copyInvite() {
     await navigator.clipboard.writeText(state.profile.inviteCode);
     setCopiedInvite(true);
@@ -223,6 +282,7 @@ function App() {
 
   const tabs = [
     { id: "feed", label: "Feed", icon: Bird },
+    { id: "cameras", label: "Cameras", icon: RadioTower },
     { id: "league", label: "League", icon: Trophy },
     { id: "friends", label: "Friends", icon: Users },
     { id: "gear", label: "Gear", icon: ShoppingBag }
@@ -262,24 +322,33 @@ function App() {
         <div className="camera-panel">
           <div className="section-heading compact">
             <RadioTower size={17} />
-            <span>Camera Link</span>
+            <span>Camera Sync</span>
           </div>
           <label className="field-label" htmlFor="provider">
-            Provider
+            Camera
           </label>
-          <select id="provider" value={cameraProvider} onChange={(event) => setCameraProvider(event.target.value)}>
-            <option>Birdfy</option>
-            <option>Netvue</option>
-            <option>Nest Cam</option>
-            <option>Manual upload</option>
+          <select
+            id="provider"
+            value={state.cameraSync.providerId}
+            onChange={(event) => selectCameraProvider(event.target.value as CameraProviderId)}
+          >
+            {cameraProviders.map((provider) => (
+              <option key={provider.id} value={provider.id}>
+                {provider.name}
+              </option>
+            ))}
           </select>
           <label className="toggle-row">
             <input checked={motionOnly} onChange={(event) => setMotionOnly(event.target.checked)} type="checkbox" />
             <span>Motion clips only</span>
           </label>
+          <button className="sync-primary-button" onClick={startCameraSync} type="button">
+            <RotateCw size={16} />
+            {selectedProvider.primaryAction}
+          </button>
           <div className="connection-status">
-            <span className="status-dot" />
-            {cameraProvider} ready
+            <span className={`status-dot status-${state.cameraSync.status}`} />
+            {syncStatusLabel[state.cameraSync.status]}
           </div>
         </div>
       </aside>
@@ -306,8 +375,8 @@ function App() {
 
         <section className="metric-grid" aria-label="Flock metrics">
           <Metric icon={Camera} label="Motion clips" value={totalClips.toString()} tone="blue" />
+          <Metric icon={RadioTower} label="Synced cameras" value={connectedCameraCount.toString()} tone="green" />
           <Metric icon={Sparkles} label="Rare hits" value={rareClips.toString()} tone="gold" />
-          <Metric icon={Users} label="Following" value={followingCount.toString()} tone="green" />
           <Metric icon={Zap} label="Weekly points" value={weeklyPoints.toString()} tone="coral" />
         </section>
 
@@ -458,6 +527,122 @@ function App() {
                 </div>
               </section>
             </aside>
+          </div>
+        )}
+
+        {activeTab === "cameras" && (
+          <div className="camera-sync-grid">
+            <section className="panel wide">
+              <div className="section-heading">
+                <RadioTower size={20} />
+                <div>
+                  <h2>Camera Sync</h2>
+                  <p>Select a camera, approve the right connection path, and keep new motion clips private until reviewed.</p>
+                </div>
+              </div>
+              <div className="provider-grid">
+                {cameraProviders.map((provider) => (
+                  <button
+                    className={provider.id === state.cameraSync.providerId ? "provider-card selected" : "provider-card"}
+                    key={provider.id}
+                    onClick={() => selectCameraProvider(provider.id)}
+                    type="button"
+                  >
+                    <span className="provider-category">{provider.category}</span>
+                    <strong>{provider.name}</strong>
+                    <p>{provider.syncSummary}</p>
+                    <footer>
+                      <span>{provider.connectionLabel}</span>
+                      {provider.requiresLocalRelay ? <Wifi size={16} /> : provider.requiresOAuth ? <Cloud size={16} /> : <ShieldCheck size={16} />}
+                    </footer>
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            <section className="panel sync-detail-panel">
+              <div className="section-heading compact">
+                <Cloud size={18} />
+                <span>{selectedProvider.name}</span>
+              </div>
+              <div className={`sync-status-card status-${state.cameraSync.status}`}>
+                <span>{syncStatusLabel[state.cameraSync.status]}</span>
+                <strong>{selectedProvider.connectionLabel}</strong>
+                <p>{selectedProvider.motionFlow}</p>
+              </div>
+              <button className="primary-button" onClick={startCameraSync} type="button">
+                <RotateCw size={17} />
+                {selectedProvider.primaryAction}
+              </button>
+              <label className="sync-control">
+                <span>Default privacy</span>
+                <select value={state.cameraSync.privacyMode} onChange={(event) => setPrivacyMode(event.target.value as CameraPrivacyMode)}>
+                  <option value="private">Private</option>
+                  <option value="friends">Friends</option>
+                  <option value="league">League after review</option>
+                </select>
+              </label>
+              <label className="toggle-row app-toggle">
+                <input
+                  checked={state.cameraSync.motionUploadsEnabled}
+                  onChange={(event) => setMotionUploadsEnabled(event.target.checked)}
+                  type="checkbox"
+                />
+                <span>Auto-upload motion clips after approval</span>
+              </label>
+              <a className="docs-link" href={selectedProvider.docsUrl} rel="noreferrer" target="_blank">
+                Source notes
+                <ExternalLink size={15} />
+              </a>
+              <div className="constraint-list">
+                {selectedProvider.limitations.map((limitation) => (
+                  <p key={limitation}>
+                    <LockKeyhole size={15} />
+                    {limitation}
+                  </p>
+                ))}
+              </div>
+            </section>
+
+            <section className="panel wide">
+              <div className="section-heading">
+                <UploadCloud size={20} />
+                <div>
+                  <h2>Motion Upload Pipeline</h2>
+                  <p>Every provider lands in the same review queue before scoring or sharing.</p>
+                </div>
+              </div>
+              <div className="sync-flow">
+                <article>
+                  <strong>1</strong>
+                  <div>
+                    <h3>Approve</h3>
+                    <p>Account link, relay setup, partner export, or manual upload.</p>
+                  </div>
+                </article>
+                <article>
+                  <strong>2</strong>
+                  <div>
+                    <h3>Capture</h3>
+                    <p>Motion events create private clip records with source and timing metadata.</p>
+                  </div>
+                </article>
+                <article>
+                  <strong>3</strong>
+                  <div>
+                    <h3>Review</h3>
+                    <p>Bird detection, species confidence, and user correction happen before league points.</p>
+                  </div>
+                </article>
+                <article>
+                  <strong>4</strong>
+                  <div>
+                    <h3>Share</h3>
+                    <p>Clips follow the privacy default and can be promoted to friends or leagues.</p>
+                  </div>
+                </article>
+              </div>
+            </section>
           </div>
         )}
 
