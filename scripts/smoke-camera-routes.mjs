@@ -11,6 +11,7 @@ import devices from "../api/cameras/devices.js";
 import nestEvents from "../api/cameras/nest/events.js";
 import nestOAuthStart from "../api/cameras/nest/oauth/start.js";
 import providerAdapters from "../api/cameras/provider-adapters.js";
+import relayManifests from "../api/cameras/relay-manifests.js";
 import relayUploads from "../api/cameras/relay-uploads.js";
 import ringOAuthStart from "../api/cameras/ring/oauth/start.js";
 import ringWebhooks from "../api/cameras/ring/webhooks.js";
@@ -115,6 +116,19 @@ assert(wyzeUnsupported.payload.modelCheck.localRelayEligible === false, "expecte
 assert(wyzeUnsupported.payload.modelCheck.fallbackProviderId === "manual-upload", "expected unsupported Wyze manual fallback");
 
 const { device, relay } = registration.payload.registrationResult;
+const relayManifest = await call(
+  relayManifests,
+  post({
+    userId,
+    providerId: "reolink",
+    deviceId: device.id,
+    relayId: relay.relayId,
+    displayName: device.displayName,
+    redactedEndpoint: device.redactedEndpoint,
+    privacyMode: "private",
+    motionUploadsEnabled: true
+  })
+);
 const motionEventId = "motion-smoke";
 const relayUpload = await call(
   relayUploads,
@@ -136,6 +150,10 @@ const clipIngest = await call(
   post({ userId, providerId: "manual-upload", deviceId: device.id, cameraName: "Manual feeder", privacyMode: "league" })
 );
 
+assert(relayManifest.statusCode === 201, `expected relay manifest 201, got ${relayManifest.statusCode}`);
+assert(relayManifest.payload.relayManifest.cloudUpload.path === "/api/cameras/relay-uploads", "expected relay upload manifest path");
+assert(relayManifest.payload.relayManifest.localSecrets.boundary === "keep-inside-user-relay", "expected local-only relay secret boundary");
+assert(!JSON.stringify(relayManifest.payload.relayManifest).includes("admin:pass"), "expected manifest to avoid camera credentials");
 assert(relayUpload.statusCode === 202, `expected relay upload 202, got ${relayUpload.statusCode}`);
 assert(clipIngest.statusCode === 201, `expected clip ingest 201, got ${clipIngest.statusCode}`);
 
@@ -181,6 +199,7 @@ assert(account.payload.counts.syncSessions === 1, "expected one sync session");
 assert(account.payload.counts.connectionRequests === 1, "expected one connection request");
 assert(account.payload.counts.devices === 1, "expected one device");
 assert(account.payload.counts.relayEnrollments === 1, "expected one relay enrollment");
+assert(account.payload.counts.relayManifests === 1, "expected one relay manifest");
 assert(account.payload.counts.relayUploads === 1, "expected one relay upload");
 assert(account.payload.counts.clipIngests === 1, "expected one clip ingest");
 assert(account.payload.counts.reviewItems === 2, "expected two review items");
@@ -195,11 +214,18 @@ assert(deviceStatus.payload.device.status === "connected", "expected connected d
 
 const sensitive = await call(syncSessions, post({ userId, providerId: "birdfy", password: "nope" }));
 const endpoint = await call(devices, post({ userId, providerId: "reolink", redactedEndpoint: "rtsp://admin:pass@192.168.1.5/stream" }));
+const manifestEndpoint = await call(
+  relayManifests,
+  post({ userId, providerId: "reolink", deviceId: device.id, relayId: relay.relayId, redactedEndpoint: "rtsp://admin:pass@192.168.1.5/stream" })
+);
+const cloudManifest = await call(relayManifests, post({ userId, providerId: "ring", deviceId: device.id, relayId: relay.relayId }));
 const sensitiveAnalysis = await call(birdReviews, post({ userId, providerId: "reolink", reviewItemId: reviewItem.id, token: "nope" }));
 const sensitivePartner = await call(birdfyPartnerRequest, post({ userId, providerId: "birdfy", password: "nope" }));
 
 assert(sensitive.statusCode === 400, "expected sensitive field rejection");
 assert(endpoint.statusCode === 400, "expected unredacted endpoint rejection");
+assert(manifestEndpoint.statusCode === 400, "expected manifest unredacted endpoint rejection");
+assert(cloudManifest.statusCode === 400, "expected relay manifest to reject non-relay provider");
 assert(sensitiveAnalysis.statusCode === 400, "expected sensitive bird analysis rejection");
 assert(sensitivePartner.statusCode === 400, "expected sensitive partner request rejection");
 
@@ -221,6 +247,7 @@ console.log(
       storeFile: process.env.FLOCK_CAMERA_STORE_FILE,
       counts: account.payload.counts,
       adapterContracts: adapters.payload.adapters.length,
+      relayManifestStatus: relayManifest.payload.relayManifest.status,
       deviceStatus: deviceStatus.payload.device.status,
       birdAnalysisStatus: birdAnalysis.payload.analysis.status,
       birdCorrectionStatus: birdCorrection.payload.correction.reviewStatus,

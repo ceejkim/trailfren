@@ -31,8 +31,9 @@ The environment checklist includes shared account-safety requirements such as `F
 | Birdfy / Netvue | `POST /api/cameras/birdfy/partner-request` | `partner-review-required` | No public developer API is documented; use partner access, user-approved export, share import, or manual upload. |
 | Bird Buddy | `POST /api/cameras/bird-buddy/partner-request` | `partner-review-required` | Use partner access or user-approved postcard/share export. Do not automate private app access. |
 | Wyze | `POST /api/cameras/wyze/model-check` | `supported-rtsp-model` or `unsupported-model` | RTSP is model and firmware specific, so Wyze must be checked before relay setup. |
-| Reolink | `POST /api/cameras/devices` and `POST /api/cameras/relay-uploads` | `relay-required` | User-owned local relay reads RTSP/ONVIF and uploads signed clip records to Vercel. |
-| Tapo | `POST /api/cameras/devices` and `POST /api/cameras/relay-uploads` | `relay-required` | User-owned local relay reads RTSP/ONVIF and uploads signed clip records to Vercel. |
+| Reolink | `POST /api/cameras/devices`, `POST /api/cameras/relay-manifests`, and `POST /api/cameras/relay-uploads` | `relay-required` | User-owned local relay reads RTSP/ONVIF and uploads signed clip records to Vercel. |
+| Tapo | `POST /api/cameras/devices`, `POST /api/cameras/relay-manifests`, and `POST /api/cameras/relay-uploads` | `relay-required` | User-owned local relay reads RTSP/ONVIF and uploads signed clip records to Vercel. |
+| Supported Wyze RTSP models | `POST /api/cameras/wyze/model-check`, `POST /api/cameras/relay-manifests`, and `POST /api/cameras/relay-uploads` | `model-check-required` | A supported model can receive a relay manifest after the RTSP eligibility check and device registration. |
 | Manual upload | `POST /api/cameras/clip-ingests` | `available-now` | Always-available fallback for unsupported cameras. |
 
 ## Vercel Environment Checklist

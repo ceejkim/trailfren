@@ -5,6 +5,7 @@ import type {
   CameraDeviceRegistrationResult,
   CameraPrivacyMode,
   CameraProvider,
+  CameraRelayManifest,
   CameraRelayUploadResult
 } from "./types";
 
@@ -15,8 +16,10 @@ type CameraRelayPanelProps = {
   privacyMode: CameraPrivacyMode;
   motionUploadsEnabled: boolean;
   registration?: CameraDeviceRegistrationResult;
+  relayManifest?: CameraRelayManifest;
   relayUpload?: CameraRelayUploadResult;
   onDeviceRegistered: (registration: CameraDeviceRegistrationResult) => void;
+  onCreateRelayManifest: () => Promise<void> | void;
   onRelayUploadAccepted: (relayUpload: CameraRelayUploadResult) => void;
 };
 
@@ -27,11 +30,13 @@ export function CameraRelayPanel({
   privacyMode,
   motionUploadsEnabled,
   registration,
+  relayManifest,
   relayUpload,
   onDeviceRegistered,
+  onCreateRelayManifest,
   onRelayUploadAccepted
 }: CameraRelayPanelProps) {
-  const [busyAction, setBusyAction] = useState<"device" | "upload" | null>(null);
+  const [busyAction, setBusyAction] = useState<"device" | "manifest" | "upload" | null>(null);
 
   async function registerDevice() {
     setBusyAction("device");
@@ -65,7 +70,18 @@ export function CameraRelayPanel({
     }
   }
 
+  async function createRelayManifest() {
+    if (!registration?.relay) return;
+    setBusyAction("manifest");
+    try {
+      await onCreateRelayManifest();
+    } finally {
+      setBusyAction(null);
+    }
+  }
+
   const relayReady = Boolean(registration?.relay);
+  const manifestReady = Boolean(relayManifest);
 
   return (
     <section className="panel relay-contract-panel">
@@ -102,7 +118,24 @@ export function CameraRelayPanel({
         </div>
       )}
 
-      <button className="secondary-button" disabled={!relayReady || busyAction === "upload"} onClick={previewSignedRelayUpload} type="button">
+      <button className="secondary-button" disabled={!relayReady || busyAction === "manifest"} onClick={createRelayManifest} type="button">
+        <RadioTower size={17} />
+        {busyAction === "manifest" ? "Creating" : "Create relay manifest"}
+      </button>
+
+      {relayManifest && (
+        <div className="relay-manifest-card">
+          <div>
+            <RadioTower size={17} />
+            <strong>{relayManifest.status}</strong>
+          </div>
+          <span>{relayManifest.relayRuntime.eventStrategy}</span>
+          <span>{relayManifest.cloudUpload.path}</span>
+          <code>{relayManifest.sampleSignature}</code>
+        </div>
+      )}
+
+      <button className="secondary-button" disabled={!manifestReady || busyAction === "upload"} onClick={previewSignedRelayUpload} type="button">
         <UploadCloud size={17} />
         {busyAction === "upload" ? "Uploading" : "Preview signed relay upload"}
       </button>

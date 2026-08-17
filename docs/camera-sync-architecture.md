@@ -36,6 +36,7 @@ It centralizes:
 - sensitive-field rejection
 - private RTSP/ONVIF endpoint rejection
 - relay signature verification
+- account-owned relay manifest creation for local camera agents
 - demo-prefix signatures when no server secret is configured
 - HMAC relay signatures when `FLOCK_RELAY_SIGNING_SECRET` is configured
 - account ownership context for camera records
@@ -49,6 +50,7 @@ Routes using this core:
 - `POST /api/cameras/sync-sessions`
 - `POST /api/cameras/connection-requests`
 - `POST /api/cameras/devices`
+- `POST /api/cameras/relay-manifests`
 - `POST /api/cameras/clip-ingests`
 - `POST /api/cameras/relay-uploads`
 - `GET /api/cameras/:deviceId/status`
@@ -82,6 +84,7 @@ The adapter layer turns the provider registry into stable cloud contracts:
 - official cloud adapters for Ring and Nest
 - partner/export adapters for Birdfy and Bird Buddy
 - local relay adapters for Reolink, Tapo, and supported Wyze models
+- relay manifest generation after device registration so local camera agents can upload without exposing camera credentials
 - a Wyze model-check route before relay setup
 - manual upload as the permanent fallback
 
@@ -115,6 +118,7 @@ The routes now persist account-owned camera records through `server/camera-sync-
 - `CameraConnectionRequest`
 - `CameraDevice`
 - `CameraRelayEnrollment`
+- `CameraRelayManifest`
 - `CameraRelayUploadResult`
 - `CameraClipIngestResult`
 - `CameraReviewRecord`

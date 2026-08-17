@@ -306,6 +306,38 @@
   font-size: 0.86rem;
 }
 
+.relay-manifest-card {
+  display: grid;
+  gap: 7px;
+  padding: 11px;
+  border: 1px solid #d8dfc5;
+  border-radius: 8px;
+  background: #fbfdee;
+  color: #26372e;
+  font-size: 0.86rem;
+}
+
+.relay-manifest-card div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.relay-manifest-card span,
+.relay-manifest-card code {
+  overflow-wrap: anywhere;
+  color: #52635a;
+}
+
+.relay-manifest-card code {
+  padding: 5px 7px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.72);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
 .relay-contract-card div {
   display: flex;
   align-items: center;

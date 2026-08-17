@@ -218,13 +218,19 @@ export const cameraProviderAdapters = {
         purpose: "Register a redacted, user-owned device record for signed local relay uploads."
       },
       {
+        action: "relay-manifest",
+        method: "POST",
+        path: "/api/cameras/relay-manifests",
+        purpose: "Create an account-owned local relay manifest without camera passwords or private stream URLs."
+      },
+      {
         action: "relay-upload",
         method: "POST",
         path: "/api/cameras/relay-uploads",
         purpose: "Accept signed clip metadata and review records from the local relay."
       }
     ],
-    capabilities: ["rtsp", "onvif", "signed-relay-upload", "motion-window-import"],
+    capabilities: ["rtsp", "onvif", "relay-manifest", "signed-relay-upload", "motion-window-import"],
     requiredEnv: [
       env("FLOCK_RELAY_SIGNING_SECRET", "Relay upload signing secret"),
       env("FLOCK_CLIP_STORAGE_BUCKET", "Private clip storage bucket", "server-only-production")
@@ -254,13 +260,19 @@ export const cameraProviderAdapters = {
         purpose: "Register a redacted, user-owned device record for signed local relay uploads."
       },
       {
+        action: "relay-manifest",
+        method: "POST",
+        path: "/api/cameras/relay-manifests",
+        purpose: "Create an account-owned local relay manifest without camera accounts or private stream URLs."
+      },
+      {
         action: "relay-upload",
         method: "POST",
         path: "/api/cameras/relay-uploads",
         purpose: "Accept signed clip metadata and review records from the local relay."
       }
     ],
-    capabilities: ["rtsp", "onvif", "signed-relay-upload", "motion-window-import"],
+    capabilities: ["rtsp", "onvif", "relay-manifest", "signed-relay-upload", "motion-window-import"],
     requiredEnv: [
       env("FLOCK_RELAY_SIGNING_SECRET", "Relay upload signing secret"),
       env("FLOCK_CLIP_STORAGE_BUCKET", "Private clip storage bucket", "server-only-production")
@@ -288,9 +300,15 @@ export const cameraProviderAdapters = {
         method: "POST",
         path: "/api/cameras/wyze/model-check",
         purpose: "Confirm whether a Wyze model is eligible for the local relay RTSP path."
+      },
+      {
+        action: "relay-manifest",
+        method: "POST",
+        path: "/api/cameras/relay-manifests",
+        purpose: "Create a relay setup manifest after a supported RTSP model is confirmed."
       }
     ],
-    capabilities: ["rtsp-model-check", "signed-relay-upload", "manual-upload-fallback"],
+    capabilities: ["rtsp-model-check", "relay-manifest", "signed-relay-upload", "manual-upload-fallback"],
     requiredEnv: [
       env("FLOCK_RELAY_SIGNING_SECRET", "Relay upload signing secret", "server-only-production"),
       env("FLOCK_CLIP_STORAGE_BUCKET", "Private clip storage bucket", "server-only-production")
@@ -411,7 +429,7 @@ export function getNextAdapterStep(adapter, missingEnv = getAdapterMissingEnv(ad
   }
 
   if (adapter.adapterKind.includes("local-relay")) {
-    return "Install the local relay near the camera and upload only signed clips to the cloud API.";
+    return "Register the camera, create a relay manifest, then upload only signed clips to the cloud API.";
   }
 
   return "Use manual upload and private review.";

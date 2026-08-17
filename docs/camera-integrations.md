@@ -126,8 +126,9 @@ The current Day 4 slice adds cloud-safe adapter contracts rather than fake vendo
 - `POST /api/cameras/birdfy/partner-request`
 - `POST /api/cameras/bird-buddy/partner-request`
 - `POST /api/cameras/wyze/model-check`
+- `POST /api/cameras/relay-manifests`
 
-Reolink and Tapo continue through the local relay registration/upload routes because Vercel cannot safely connect to private LAN streams.
+Reolink, Tapo, and supported Wyze models continue through the local relay registration, relay-manifest, and signed-upload routes because Vercel cannot safely connect to private LAN streams.
 
 See `docs/camera-provider-adapters.md` for the full route and environment checklist.
 

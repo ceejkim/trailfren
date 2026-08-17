@@ -364,7 +364,7 @@ export function getConnectionRequestStatus(provider) {
 
 export function getConnectionCallbackPath(provider) {
   if (provider.mode === "official-oauth") return `/api/cameras/${provider.id}/oauth/callback`;
-  if (provider.mode === "local-relay") return `/api/cameras/${provider.id}/relay/connect`;
+  if (provider.mode === "local-relay") return "/api/cameras/relay-manifests";
   if (provider.mode === "partner-request") return `/api/cameras/${provider.id}/partner-request`;
   return "/api/cameras/manual-upload";
 }
@@ -479,6 +479,104 @@ export function createDeviceRegistration(body) {
     device,
     relay,
     reviewMessage: getRegistrationMessage(provider)
+  };
+}
+
+function requireCleanField(body, key, message) {
+  const value = typeof body[key] === "string" && body[key].trim() ? body[key].trim() : "";
+  if (!value) throw new Error(message);
+  return value;
+}
+
+function getProviderEventStrategy(provider) {
+  if (provider.transports.includes("onvif")) return "onvif-events-or-rtsp-motion-windows";
+  if (provider.transports.includes("rtsp")) return "rtsp-motion-windows";
+  return "provider-motion-windows";
+}
+
+export function createRelayManifest(body) {
+  const provider = getProvider(body.providerId);
+  if (!provider.requiresLocalRelay) {
+    throw new Error("Relay manifests are only available for local-relay camera providers.");
+  }
+
+  const deviceId = requireCleanField(body, "deviceId", "A registered deviceId is required for relay manifest creation.");
+  const relayId = requireCleanField(body, "relayId", "A registered relayId is required for relay manifest creation.");
+  const displayName = typeof body.displayName === "string" && body.displayName.trim() ? body.displayName.trim() : `${provider.name} feeder`;
+  const redactedEndpoint =
+    typeof body.redactedEndpoint === "string" && body.redactedEndpoint.trim()
+      ? body.redactedEndpoint.trim()
+      : "rtsp://[redacted]@camera.local/stream";
+  rejectUnredactedEndpoint(redactedEndpoint);
+
+  const privacyMode = getPrivacyMode(body.privacyMode);
+  const motionOnly = body.motionUploadsEnabled !== false;
+  const sampleMotionEventId = "motion-<event-id>";
+  const signatureMode = process.env.FLOCK_RELAY_SIGNING_SECRET ? "server-hmac" : "demo-prefix";
+  const signatureFormat = process.env.FLOCK_RELAY_SIGNING_SECRET
+    ? "sha256=<hmac(deviceId.relayId.motionEventId)>"
+    : "demo-<deviceId>-<motionEventId>";
+
+  return {
+    id: createId("manifest"),
+    version: 1,
+    status: "ready-for-local-relay",
+    providerId: provider.id,
+    providerName: provider.name,
+    deviceId,
+    relayId,
+    displayName,
+    privacyMode,
+    motionUploadsEnabled: motionOnly,
+    generatedAt: new Date().toISOString(),
+    relayRuntime: {
+      supportedTransports: provider.transports,
+      eventStrategy: getProviderEventStrategy(provider),
+      cameraCredentialsBoundary: "local-only",
+      clipPolicy: motionOnly ? "bird-or-motion-events-only" : "user-approved-events-only"
+    },
+    cloudUpload: {
+      method: "POST",
+      path: "/api/cameras/relay-uploads",
+      signatureHeader: "x-flock-relay-signature",
+      signatureMode,
+      signatureFormat,
+      signaturePayload: "deviceId.relayId.motionEventId",
+      requiredJsonFields: ["providerId", "deviceId", "relayId", "motionEventId", "cameraName", "capturedAt", "durationSeconds"],
+      optionalJsonFields: ["thumbnailUrl", "clipUrl", "privacyMode"]
+    },
+    health: {
+      method: "GET",
+      path: `/api/cameras/${deviceId}/status`,
+      requiredQueryFields: ["userId", "providerId"],
+      expectedAfterUpload: "connected"
+    },
+    localSecrets: {
+      boundary: "keep-inside-user-relay",
+      requiredLocalFields: ["camera username", "camera password", "RTSP or ONVIF endpoint"],
+      forbiddenCloudFields: ["password", "secret", "token", "apiKey", "refreshToken", "unredactedEndpoint"],
+      redactedEndpoint
+    },
+    samplePayload: {
+      providerId: provider.id,
+      deviceId,
+      relayId,
+      motionEventId: sampleMotionEventId,
+      cameraName: displayName,
+      capturedAt: "<iso-timestamp>",
+      durationSeconds: 14,
+      privacyMode
+    },
+    sampleSignature: process.env.FLOCK_RELAY_SIGNING_SECRET
+      ? "sha256=<server-generated-hmac>"
+      : `demo-${deviceId}-${sampleMotionEventId}`,
+    installSteps: [
+      "Register the device in BirdWatch.",
+      "Store the real camera endpoint and camera credentials only in the local relay.",
+      "Use this manifest to sign motion uploads to BirdWatch.",
+      "Confirm device status after the first accepted upload."
+    ],
+    hardGates: provider.hardGates
   };
 }
 

@@ -10,6 +10,7 @@ The camera sync system now has the product/API shape needed for a beta connectio
 - one-tap sync wizard
 - account-owned sync sessions
 - account-owned device and relay records
+- account-owned relay manifests for local camera agents
 - relay upload and clip ingest records
 - private review items before scoring or sharing
 - frontend reconciliation from `GET /api/cameras/account-state`
@@ -78,6 +79,7 @@ Before calling camera sync production-ready:
 - Live `GET /api/cameras/account-state?userId=<test>` returns `storage.durable: true`.
 - A sync session survives browser reload.
 - A device record survives browser reload.
+- A relay manifest is created for local relay providers and survives browser reload.
 - A relay upload creates a review item.
 - `GET /api/cameras/:deviceId/status?userId=<test>` returns the persisted device.
 - Cross-account reads do not expose another account's devices or uploads.

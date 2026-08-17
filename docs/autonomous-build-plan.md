@@ -63,6 +63,7 @@ Updated: August 17, 2026
 - Added a Device Relay panel for account-bound local relay registration and signed relay upload previews.
 - Verified the live API rejects sensitive fields such as `password`.
 - Added the bird intelligence review pipeline for relay/manual clips, including species suggestions and manual corrections.
+- Added account-owned relay manifests so Reolink, Tapo, and supported Wyze users have a concrete local-agent handoff before signed uploads.
 
 ## Current App Shape
 
@@ -78,13 +79,13 @@ The app is a compact Vite + React + TypeScript MVP with:
 - Affiliate-style gear recommendations
 - Camera provider onboarding for Birdfy/Netvue, Bird Buddy, Ring, Nest, Reolink, Tapo, supported Wyze, and manual upload
 - One-tap account-aware camera sync wizard
-- Camera sync session, connection request, device registration, relay upload, and clip ingest contracts
-- Account-scoped API routes for camera sync sessions, connection requests, device registration, relay uploads, clip ingest previews, account state, and device status
+- Camera sync session, connection request, device registration, relay manifest, relay upload, and clip ingest contracts
+- Account-scoped API routes for camera sync sessions, connection requests, device registration, relay manifests, relay uploads, clip ingest previews, account state, and device status
 - Shared server-side provider registry and camera sync architecture core
 - Server-side camera sync store with cloud REST, local JSON, and explicit volatile fallback modes
 - Frontend camera state reconciliation from `GET /api/cameras/account-state`
 - Bird review queue, analysis, and correction APIs for camera clips
-- Provider adapter contract routes for Ring, Nest, Birdfy, Bird Buddy, and Wyze
+- Provider adapter contract routes for Ring, Nest, Birdfy, Bird Buddy, Reolink, Tapo, and Wyze
 - Camera API smoke script for account/store/relay verification
 
 The app does not yet have:
