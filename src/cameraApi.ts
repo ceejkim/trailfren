@@ -18,6 +18,23 @@ function createId(prefix: string) {
   return `${prefix}-${randomPart}`;
 }
 
+async function postJson<T>(path: string, payload: unknown): Promise<T | null> {
+  if (typeof fetch !== "function") return null;
+
+  try {
+    const response = await fetch(path, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) return null;
+    return (await response.json()) as T;
+  } catch {
+    return null;
+  }
+}
+
 function getConnectionMode(provider: CameraProvider): CameraConnectionMode {
   if (provider.phase === "official-cloud") return "official-oauth";
   if (provider.phase === "local-relay") return "local-relay";
@@ -67,8 +84,7 @@ export function createCameraConnectionRequest(input: {
 }): CameraConnectionRequest {
   const mode = getConnectionMode(input.provider);
   const status = getConnectionStatus(mode);
-
-  return {
+  const connectionRequest = {
     id: createId("conn"),
     userId: input.userId,
     providerId: input.provider.id,
@@ -80,7 +96,16 @@ export function createCameraConnectionRequest(input: {
     motionUploadsEnabled: input.motionUploadsEnabled,
     nextStep: getNextStep(mode, input.provider),
     callbackPath: getCallbackPath(mode, input.provider)
-  };
+  } satisfies CameraConnectionRequest;
+
+  void postJson<{ connectionRequest: CameraConnectionRequest }>("/api/cameras/connection-requests", {
+    userId: input.userId,
+    providerId: input.provider.id,
+    privacyMode: input.privacyMode,
+    motionUploadsEnabled: input.motionUploadsEnabled
+  });
+
+  return connectionRequest;
 }
 
 function formatDuration(seconds: number) {
@@ -111,7 +136,7 @@ export function createDemoCameraClipIngest(input: {
     privacyMode: input.privacyMode
   };
 
-  return {
+  const ingestResult = {
     ingestId: ingestRequest.id,
     status: "needs-review",
     clip: {
@@ -140,5 +165,20 @@ export function createDemoCameraClipIngest(input: {
       points
     },
     reviewMessage: `Received ${input.provider.name} motion clip as a private ${input.privacyMode} item pending bird review.`
-  };
+  } satisfies CameraClipIngestResult;
+
+  void postJson<{ ingestResult: CameraClipIngestResult }>("/api/cameras/clip-ingests", {
+    userId: ingestRequest.userId,
+    providerId: ingestRequest.providerId,
+    providerName: ingestRequest.providerName,
+    deviceId: ingestRequest.deviceId,
+    cameraName: ingestRequest.cameraName,
+    capturedAt: ingestRequest.capturedAt,
+    durationSeconds: ingestRequest.durationSeconds,
+    motionEventId: ingestRequest.motionEventId,
+    thumbnailUrl: ingestRequest.thumbnailUrl,
+    privacyMode: ingestRequest.privacyMode
+  });
+
+  return ingestResult;
 }
