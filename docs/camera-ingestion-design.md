@@ -1,6 +1,6 @@
 # Flock Real Camera Ingestion Design
 
-Updated: August 16, 2026
+Updated: August 17, 2026
 
 ## Architecture Decision
 
@@ -29,13 +29,30 @@ This avoids pretending Vercel can directly open private home-network streams lik
 4. For local cameras, the relay validates stream reachability locally.
 5. Relay sends sanitized metadata to Flock:
    - device id
+   - relay id
+   - motion event id
    - motion event timestamp
    - clip duration
    - thumbnail or uploaded clip URL
    - optional frame samples for bird intelligence
-6. Flock turns clip metadata into feed items.
-7. Bird intelligence pipeline classifies/reviews clips.
-8. League scoring uses verified sightings, not raw motion.
+6. Flock requires a relay upload signature before accepting the payload.
+7. Flock turns clip metadata into private feed items.
+8. Bird intelligence pipeline classifies/reviews clips.
+9. League scoring uses verified sightings, not raw motion.
+
+## Implemented Boundary
+
+The current deployed boundary has stateless Vercel routes for:
+
+- `POST /api/cameras/connection-requests`
+- `POST /api/cameras/devices`
+- `POST /api/cameras/clip-ingests`
+- `POST /api/cameras/relay-uploads`
+- `GET /api/cameras/:deviceId/status`
+
+The front end has a Device Relay panel that registers a device record and previews a signed relay upload. The result is added to the local demo feed as a private, needs-review clip.
+
+This is not durable account storage yet. It is the API and UX contract that durable storage and real relay signing should attach to.
 
 ## Data Model Sketch
 
@@ -44,20 +61,27 @@ export type CameraDevice = {
   id: string;
   ownerId: string;
   providerId: CameraProviderId;
+  providerName: string;
   displayName: string;
   locationLabel: string;
   privacyMode: CameraPrivacyMode;
-  connectionStatus: "not-started" | "needs-relay" | "needs-oauth" | "connected" | "paused" | "error";
+  connectionStatus: "needs-relay" | "needs-oauth" | "partner-review" | "manual-ready" | "connected" | "paused";
+  transport: "rtsp" | "onvif" | "cloud-oauth" | "partner-export" | "manual-upload";
+  motionOnly: boolean;
+  redactedEndpoint?: string;
+  relayId?: string;
+  registeredAt: string;
   lastSeenAt?: string;
 };
 
-export type CameraStreamConfig = {
+export type CameraRelayEnrollment = {
+  relayId: string;
   deviceId: string;
-  transport: StreamTransport;
-  relayId?: string;
-  cloudAccountId?: string;
-  redactedEndpoint?: string;
-  motionOnly: boolean;
+  uploadUrl: string;
+  healthUrl: string;
+  signatureHeader: "x-flock-relay-signature";
+  signingKeyStatus: "demo-required" | "server-secret-required";
+  instructions: string[];
 };
 
 export type MotionEvent = {
@@ -69,15 +93,17 @@ export type MotionEvent = {
   confidence?: number;
 };
 
-export type CameraClipAsset = {
-  id: string;
+export type CameraRelayUploadRequest = {
+  userId: string;
+  providerId: CameraProviderId;
   deviceId: string;
-  motionEventId?: string;
-  status: "uploading" | "processing" | "ready" | "rejected" | "needs-review";
+  relayId: string;
+  motionEventId: string;
+  capturedAt: string;
+  durationSeconds: number;
+  cameraName: string;
   thumbnailUrl?: string;
   clipUrl?: string;
-  durationSeconds?: number;
-  capturedAt: string;
   privacyMode: CameraPrivacyMode;
 };
 ```
@@ -92,6 +118,7 @@ Allowed:
 - privacy preference
 - onboarding step
 - redacted endpoint labels
+- device id, relay id, and non-secret route URLs
 
 Not allowed:
 
@@ -100,25 +127,28 @@ Not allowed:
 - Ring/Nest refresh tokens
 - webhook secrets
 - signed private media URLs meant to stay secret
+- raw private LAN stream URLs
 
 ## Local Relay MVP Boundary
 
-The first implementation should create the interface, not a full always-on relay.
+The first implementation creates the interface, not a full always-on relay.
 
-Suggested initial files:
+Implemented files:
 
-- `src/integrations/camera/providers.ts`
-- `src/integrations/camera/types.ts`
-- `src/integrations/camera/relayContract.ts`
+- `src/types.ts`
+- `src/cameraApi.ts`
+- `src/CameraRelayPanel.tsx`
+- `api/cameras/devices.js`
+- `api/cameras/relay-uploads.js`
 - `docs/local-camera-relay.md`
 
-The relay contract should support:
+The relay contract supports:
 
 - device registration
-- connectivity test result
-- motion event payload
-- clip upload payload
-- health heartbeat
+- relay enrollment metadata
+- signed motion event payload
+- signed clip upload payload
+- health status route shape
 
 ## Relay API Sketch
 
@@ -141,11 +171,13 @@ export type RelayConnectivityTest = {
 
 export type RelayClipUpload = {
   deviceId: string;
+  relayId: string;
   motionEventId: string;
   capturedAt: string;
   durationSeconds: number;
   thumbnailObjectKey?: string;
   clipObjectKey?: string;
+  signatureHeader: "x-flock-relay-signature";
 };
 ```
 
@@ -173,3 +205,7 @@ For Ring/Nest setup, the UI should say:
 - Docs explain local relay limitations and deployment responsibilities.
 - App builds.
 - No private camera feed is connected yet.
+
+## Remaining Day 2 Gap
+
+The next non-blocked implementation should add durable authenticated persistence for device registrations and relay upload records. Real relay signing secrets, camera credentials, and private clip storage remain approval-gated.
