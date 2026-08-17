@@ -5,8 +5,14 @@ import type {
   CameraConnectionMode,
   CameraConnectionRequest,
   CameraConnectionStatus,
+  CameraDevice,
+  CameraDeviceConnectionStatus,
+  CameraDeviceRegistrationResult,
   CameraPrivacyMode,
   CameraProvider,
+  CameraRelayUploadRequest,
+  CameraRelayUploadResult,
+  CameraStreamTransport,
   CameraSyncStatus
 } from "./types";
 
@@ -18,13 +24,13 @@ function createId(prefix: string) {
   return `${prefix}-${randomPart}`;
 }
 
-async function postJson<T>(path: string, payload: unknown): Promise<T | null> {
+async function postJson<T>(path: string, payload: unknown, headers: Record<string, string> = {}): Promise<T | null> {
   if (typeof fetch !== "function") return null;
 
   try {
     const response = await fetch(path, {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: { "content-type": "application/json", ...headers },
       body: JSON.stringify(payload)
     });
 
@@ -49,6 +55,20 @@ function getConnectionStatus(mode: CameraConnectionMode): CameraConnectionStatus
   return "manual-ready";
 }
 
+function getDeviceConnectionStatus(provider: CameraProvider): CameraDeviceConnectionStatus {
+  if (provider.requiresLocalRelay) return "needs-relay";
+  if (provider.requiresOAuth) return "needs-oauth";
+  if (provider.phase === "partner-export") return "partner-review";
+  return "manual-ready";
+}
+
+function getStreamTransport(provider: CameraProvider): CameraStreamTransport {
+  if (provider.requiresLocalRelay) return "rtsp";
+  if (provider.requiresOAuth) return "cloud-oauth";
+  if (provider.phase === "partner-export") return "partner-export";
+  return "manual-upload";
+}
+
 function getCallbackPath(mode: CameraConnectionMode, provider: CameraProvider) {
   if (mode === "official-oauth") return `/api/cameras/${provider.id}/oauth/callback`;
   if (mode === "local-relay") return `/api/cameras/${provider.id}/relay/connect`;
@@ -67,6 +87,19 @@ function getNextStep(mode: CameraConnectionMode, provider: CameraProvider) {
     return `Queue a ${provider.name} partner/export request and keep manual import available until official access exists.`;
   }
   return "Open the manual upload flow and run the same private review pipeline as synced cameras.";
+}
+
+function getRegistrationMessage(provider: CameraProvider) {
+  if (provider.requiresLocalRelay) {
+    return `Registered ${provider.name} as a local-relay device. Camera credentials stay in the relay, and only signed motion uploads reach Flock.`;
+  }
+  if (provider.requiresOAuth) {
+    return `Prepared ${provider.name} device ownership record for official account linking. Tokens must be stored server-side after approval.`;
+  }
+  if (provider.phase === "partner-export") {
+    return `Prepared ${provider.name} import record. Flock will use user-approved exports or partner access, not private app credentials.`;
+  }
+  return "Prepared manual upload source for private review and scoring.";
 }
 
 export function getSyncStatusForConnectionRequest(request: CameraConnectionRequest): CameraSyncStatus {
@@ -106,6 +139,64 @@ export function createCameraConnectionRequest(input: {
   });
 
   return connectionRequest;
+}
+
+export function createCameraDeviceRegistration(input: {
+  userId: string;
+  provider: CameraProvider;
+  privacyMode: CameraPrivacyMode;
+  motionUploadsEnabled: boolean;
+  locationLabel: string;
+}): CameraDeviceRegistrationResult {
+  const deviceId = createId("device");
+  const relayId = input.provider.requiresLocalRelay ? createId("relay") : undefined;
+  const device = {
+    id: deviceId,
+    ownerId: input.userId,
+    providerId: input.provider.id,
+    providerName: input.provider.name,
+    displayName: `${input.provider.name} feeder`,
+    locationLabel: input.locationLabel,
+    privacyMode: input.privacyMode,
+    connectionStatus: getDeviceConnectionStatus(input.provider),
+    transport: getStreamTransport(input.provider),
+    motionOnly: input.motionUploadsEnabled,
+    redactedEndpoint: input.provider.requiresLocalRelay ? "rtsp://[redacted]@camera.local/stream" : undefined,
+    relayId,
+    registeredAt: "Just now"
+  } satisfies CameraDevice;
+  const relay = relayId
+    ? {
+        relayId,
+        deviceId,
+        uploadUrl: "/api/cameras/relay-uploads",
+        healthUrl: `/api/cameras/${deviceId}/status`,
+        signatureHeader: "x-flock-relay-signature" as const,
+        signingKeyStatus: "demo-required" as const,
+        instructions: [
+          "Run the relay on the same local network as the camera.",
+          "Keep RTSP/ONVIF credentials inside the relay, not in the browser.",
+          "Upload only signed motion metadata, thumbnails, and clips to Flock."
+        ]
+      }
+    : undefined;
+  const registrationResult = {
+    device,
+    relay,
+    reviewMessage: getRegistrationMessage(input.provider)
+  } satisfies CameraDeviceRegistrationResult;
+
+  void postJson<{ registrationResult: CameraDeviceRegistrationResult }>("/api/cameras/devices", {
+    userId: input.userId,
+    providerId: input.provider.id,
+    displayName: device.displayName,
+    locationLabel: input.locationLabel,
+    privacyMode: input.privacyMode,
+    motionUploadsEnabled: input.motionUploadsEnabled,
+    redactedEndpoint: device.redactedEndpoint
+  });
+
+  return registrationResult;
 }
 
 function formatDuration(seconds: number) {
@@ -181,4 +272,71 @@ export function createDemoCameraClipIngest(input: {
   });
 
   return ingestResult;
+}
+
+export function createDemoRelayUpload(input: {
+  userId: string;
+  provider: CameraProvider;
+  device: CameraDevice;
+  privacyMode: CameraPrivacyMode;
+}): CameraRelayUploadResult {
+  const relayId = input.device.relayId ?? createId("relay");
+  const motionEventId = createId("motion");
+  const bird = "Northern cardinal";
+  const rarity = "Uncommon";
+  const points = rarityPoints[rarity];
+  const relayUploadRequest = {
+    userId: input.userId,
+    providerId: input.provider.id,
+    deviceId: input.device.id,
+    relayId,
+    motionEventId,
+    capturedAt: "Just now",
+    durationSeconds: 14,
+    cameraName: input.device.displayName,
+    thumbnailUrl: "https://images.unsplash.com/photo-1549608276-5786777e6587?auto=format&fit=crop&w=1000&q=80",
+    privacyMode: input.privacyMode
+  } satisfies CameraRelayUploadRequest;
+  const relayUpload = {
+    uploadId: createId("upload"),
+    status: "needs-review",
+    deviceId: input.device.id,
+    relayId,
+    motionEventId,
+    acceptedAt: "Just now",
+    clip: {
+      id: createId("clip"),
+      cameraName: relayUploadRequest.cameraName,
+      bird,
+      rarity,
+      location: input.device.locationLabel,
+      capturedAt: relayUploadRequest.capturedAt,
+      imageUrl: relayUploadRequest.thumbnailUrl ?? "https://images.unsplash.com/photo-1516233758813-a38d024919c5?auto=format&fit=crop&w=1000&q=80",
+      duration: formatDuration(relayUploadRequest.durationSeconds),
+      confidence: 79,
+      motionOnly: true,
+      owner: "Charlie",
+      points,
+      reactions: 0,
+      comments: []
+    },
+    sighting: {
+      id: createId("sighting"),
+      bird,
+      rarity,
+      location: input.device.locationLabel,
+      source: relayUploadRequest.cameraName,
+      loggedAt: "Needs review",
+      points
+    },
+    reviewMessage: `Accepted signed relay upload ${motionEventId} from ${input.device.displayName} for private review.`
+  } satisfies CameraRelayUploadResult;
+
+  void postJson<{ relayUpload: CameraRelayUploadResult }>(
+    "/api/cameras/relay-uploads",
+    relayUploadRequest,
+    { "x-flock-relay-signature": `demo-${input.device.id}-${motionEventId}` }
+  );
+
+  return relayUpload;
 }
