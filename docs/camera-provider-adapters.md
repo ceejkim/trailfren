@@ -18,6 +18,8 @@ It returns:
 - official source audit
 - cloud policy for official cloud, local relay, partner/export, and manual fallback paths
 
+The environment checklist includes shared account-safety requirements such as `FLOCK_SESSION_SIGNING_SECRET` and durable camera-store variables, plus provider-specific OAuth, webhook, relay, and storage requirements.
+
 ## Adapter Routes
 
 | Provider | Route | Status Today | Why |

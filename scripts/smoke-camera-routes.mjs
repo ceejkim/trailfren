@@ -94,6 +94,14 @@ assert(
   adapters.payload.envChecklist.requirements.some((requirement) => requirement.name === "FLOCK_RING_CLIENT_ID"),
   "expected Ring env checklist"
 );
+assert(
+  adapters.payload.envChecklist.requirements.some((requirement) => requirement.name === "FLOCK_SESSION_SIGNING_SECRET"),
+  "expected signed account ownership env checklist"
+);
+assert(
+  adapters.payload.envChecklist.missingRequired.includes("FLOCK_SESSION_SIGNING_SECRET"),
+  "expected unsigned preview mode to report account signing gate"
+);
 assert(ringStart.statusCode === 501, `expected gated Ring OAuth 501, got ${ringStart.statusCode}`);
 assert(ringStart.payload.adapterAction.status.match(/configuration|required|vendor-review/), "expected gated Ring OAuth status");
 assert(ringWebhook.statusCode === 501, `expected gated Ring webhook 501, got ${ringWebhook.statusCode}`);

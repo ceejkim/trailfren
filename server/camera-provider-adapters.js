@@ -7,6 +7,12 @@ import {
 
 const env = (name, label, scope = "server-only") => ({ name, label, scope });
 
+export const cameraSyncCoreEnvRequirements = [
+  env("FLOCK_SESSION_SIGNING_SECRET", "Signed account ownership or equivalent auth seam"),
+  env("FLOCK_CAMERA_STORE_REST_URL", "Durable camera account store endpoint"),
+  env("FLOCK_CAMERA_STORE_REST_TOKEN", "Durable camera account store server token")
+];
+
 export const cameraProviderSourceAudit = [
   {
     providerId: "ring",
@@ -425,7 +431,16 @@ export function listCameraProviderAdapters() {
 }
 
 export function getVercelCameraEnvChecklist(sourceEnv = process.env) {
-  const allRequirements = listCameraProviderAdapters().flatMap((adapter) => {
+  const coreRequirements = cameraSyncCoreEnvRequirements.map((item) => ({
+    providerId: "shared",
+    adapterId: "camera-sync-core",
+    name: item.name,
+    label: item.label,
+    scope: item.scope,
+    configured: configured(sourceEnv[item.name])
+  }));
+
+  const adapterRequirements = listCameraProviderAdapters().flatMap((adapter) => {
     return adapter.requiredEnv.map((item) => ({
       providerId: adapter.providerId,
       adapterId: adapter.id,
@@ -435,6 +450,7 @@ export function getVercelCameraEnvChecklist(sourceEnv = process.env) {
       configured: configured(sourceEnv[item.name])
     }));
   });
+  const allRequirements = [...coreRequirements, ...adapterRequirements];
 
   const uniqueByName = new Map();
   for (const requirement of allRequirements) {
