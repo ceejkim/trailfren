@@ -85,6 +85,19 @@ export type CameraSyncSession = {
   oauthRequired: boolean;
   partnerAccessRequired: boolean;
   checklist: string[];
+  architecture?: {
+    triggerSource: string;
+    uploadPath: string;
+    credentialBoundary: string;
+    transports: string[];
+    launchStatus: string;
+    hardGates: string[];
+    sourceUrl: string;
+  };
+  storage?: {
+    mode: string;
+    next: string;
+  };
   createdAt: string;
   expiresAt: string;
 };
