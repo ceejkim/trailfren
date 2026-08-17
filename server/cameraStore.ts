@@ -172,13 +172,9 @@ function getPrivacyMode(value: unknown): CameraPrivacyMode {
 }
 
 export function json(data: unknown, init?: ResponseInit) {
-  return Response.json(data, {
-    ...init,
-    headers: {
-      "cache-control": "no-store",
-      ...(init?.headers ?? {})
-    }
-  });
+  const headers = new Headers(init?.headers);
+  headers.set("cache-control", "no-store");
+  return Response.json(data, { ...init, headers });
 }
 
 export async function readJson(request: Request) {
