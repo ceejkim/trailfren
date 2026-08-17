@@ -17,6 +17,7 @@ Updated: August 17, 2026
 - Merged camera account sync wizard PR: `https://github.com/ceejkim/trailfren/pull/19`
 - Merged camera sync backend architecture PR: `https://github.com/ceejkim/trailfren/pull/20`
 - Merged account-scoped camera sync persistence PR: `https://github.com/ceejkim/trailfren/pull/22`
+- Merged bird intelligence review pipeline PR: `https://github.com/ceejkim/trailfren/pull/24`
 - Latest shipped slice: shared camera sync backend architecture, provider discovery, one-tap sync sessions, device registration, relay signature verification, account-scoped camera persistence, and frontend account-state reconciliation
 - Current working slice: durable cloud store/auth provider configuration and production readiness gates
 - GitHub tracking issues:
@@ -161,7 +162,7 @@ Definition of done:
 
 Goal: Create the intelligence layer that makes camera footage useful.
 
-Status: architecture boundary shipped locally on August 17, 2026. The next run should harden scoring permissions and background processing, not rebuild the basic contract.
+Status: merged via PR #24 on August 17, 2026. The next run should harden scoring permissions and background processing, not rebuild the basic contract.
 
 Deliverables:
 
