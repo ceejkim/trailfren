@@ -11,7 +11,9 @@ Updated: August 17, 2026
 - Merged docs/agent PR: `https://github.com/ceejkim/trailfren/pull/10`
 - Merged camera sync UX PR: `https://github.com/ceejkim/trailfren/pull/11`
 - Merged camera connection/ingest contract PR: `https://github.com/ceejkim/trailfren/pull/12`
-- Active build slice: stateless Vercel camera API routes and browser API mirroring
+- Merged stateless camera API PR: `https://github.com/ceejkim/trailfren/pull/13`
+- Merged camera API runtime fixes: `https://github.com/ceejkim/trailfren/pull/14` and `https://github.com/ceejkim/trailfren/pull/15`
+- Latest shipped slice: live-tested stateless Vercel camera API routes and browser API mirroring
 - GitHub tracking issues:
   - Day 1: `https://github.com/ceejkim/trailfren/issues/4`
   - Day 2: `https://github.com/ceejkim/trailfren/issues/5`
@@ -41,7 +43,8 @@ Updated: August 17, 2026
 - Merged the autonomous build docs and agent briefs into `main`.
 - Added camera provider selection, privacy defaults, and provider-specific approval CTAs.
 - Added connection request and clip ingest TypeScript contracts.
-- Added a safe stateless backend boundary for connection requests, clip ingest previews, and generic device status.
+- Added live-tested stateless Vercel routes for connection requests, clip ingest previews, and generic device status.
+- Verified the live API rejects sensitive fields such as `password`.
 
 ## Current App Shape
 
@@ -114,7 +117,7 @@ Definition of done:
 
 Goal: Add the first real ingestion path without overcommitting cloud complexity.
 
-Status: In progress. Contracts and stateless API boundary are in place; durable auth/storage and relay upload auth are next.
+Status: In progress. Contracts and the live-tested stateless API boundary are in place; durable auth/storage and relay upload auth are next.
 
 Deliverables:
 
@@ -214,6 +217,8 @@ These should stay blocked until the user explicitly says yes:
 
 If a future run cannot edit, push, deploy, or authenticate, it should still make progress by:
 
+- Adding durable authenticated camera/device persistence.
+- Adding signed relay upload contracts for RTSP/ONVIF clips.
 - Updating docs and integration matrices.
 - Adding local TypeScript contracts.
 - Building mockable adapter interfaces.
