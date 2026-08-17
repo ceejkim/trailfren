@@ -1054,6 +1054,23 @@ function App() {
                 <p>{selectedProvider.motionFlow}</p>
                 {state.cameraSync.nextStep && <p className="sync-next-step">{state.cameraSync.nextStep}</p>}
               </div>
+              <div className={`adapter-contract-strip adapter-${selectedProvider.adapterStatus}`}>
+                <div>
+                  <span>Adapter</span>
+                  <strong>{selectedProvider.adapterStatusLabel}</strong>
+                </div>
+                <code>{selectedProvider.adapterPath}</code>
+              </div>
+              {selectedProvider.setupGates.length > 0 && (
+                <div className="adapter-gate-list">
+                  {selectedProvider.setupGates.slice(0, 3).map((gate) => (
+                    <p key={gate}>
+                      <ShieldCheck size={15} />
+                      {gate}
+                    </p>
+                  ))}
+                </div>
+              )}
               <button className="primary-button" onClick={startCameraSync} type="button">
                 <RotateCw size={17} />
                 {selectedProvider.primaryAction}

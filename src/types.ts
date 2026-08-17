@@ -16,6 +16,13 @@ export type CameraConnectionMode = "partner-request" | "official-oauth" | "local
 
 export type CameraConnectionStatus = "queued" | "oauth-started" | "relay-required" | "partner-review" | "manual-ready";
 
+export type CameraProviderAdapterStatus =
+  | "available-now"
+  | "model-check-required"
+  | "partner-or-export"
+  | "relay-required"
+  | "vendor-setup-required";
+
 export type CameraClipIngestStatus = "received" | "processing" | "needs-review" | "ready";
 
 export type CameraSyncStatus = "not-started" | "needs-approval" | "waiting-on-provider" | "relay-required" | "synced";
@@ -164,6 +171,10 @@ export type CameraProvider = {
   supportsMotionClips: boolean;
   requiresOAuth: boolean;
   requiresLocalRelay: boolean;
+  adapterPath: string;
+  adapterStatus: CameraProviderAdapterStatus;
+  adapterStatusLabel: string;
+  setupGates: string[];
   docsUrl: string;
 };
 
@@ -203,6 +214,9 @@ export type CameraSyncSession = {
     credentialBoundary: string;
     transports: string[];
     launchStatus: string;
+    adapterPath?: string;
+    adapterStatus?: CameraProviderAdapterStatus;
+    adapterStatusLabel?: string;
     hardGates: string[];
     sourceUrl: string;
   };

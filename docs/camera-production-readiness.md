@@ -13,6 +13,10 @@ The camera sync system now has the product/API shape needed for a beta connectio
 - relay upload and clip ingest records
 - private review items before scoring or sharing
 - frontend reconciliation from `GET /api/cameras/account-state`
+- provider adapter contracts exposed by `GET /api/cameras/provider-adapters`
+- Ring/Nest gated OAuth and event/webhook route placeholders
+- Birdfy/Bird Buddy partner/export request routes
+- Wyze RTSP model-check route
 
 The remaining production work is configuration and hard-gated integrations, not private API guessing.
 
@@ -32,12 +36,18 @@ Core account/store variables:
 
 Future gated variables:
 
-| Variable Group | Required For | Gate |
+| Variable | Required For | Gate |
 |---|---|---|
-| Ring OAuth and webhook secrets | official Ring adapter | Requires developer setup and approval. |
-| Google/Nest OAuth credentials | official Nest adapter | Requires Device Access project setup and approval. |
-| Clip object storage credentials | private clip assets | Requires storage choice and privacy review. |
-| Birdfy/Bird Buddy partner credentials | partner/export import | Requires partner/export permission. |
+| `FLOCK_RING_CLIENT_ID` | official Ring adapter | Requires developer setup and approval. |
+| `FLOCK_RING_CLIENT_SECRET` | official Ring adapter | Server-only OAuth secret. |
+| `FLOCK_RING_REDIRECT_URI` | official Ring adapter | Must match the Vercel callback URL registered with Ring. |
+| `FLOCK_RING_WEBHOOK_SECRET` | official Ring adapter | Required before accepting Ring motion webhooks. |
+| `FLOCK_GOOGLE_CLIENT_ID` | official Nest adapter | Requires Device Access project setup and approval. |
+| `FLOCK_GOOGLE_CLIENT_SECRET` | official Nest adapter | Server-only OAuth secret. |
+| `FLOCK_NEST_REDIRECT_URI` | official Nest adapter | Must match the Vercel callback URL registered with Google. |
+| `FLOCK_NEST_DEVICE_ACCESS_PROJECT_ID` | official Nest adapter | Required for Device Access commands/events. |
+| `FLOCK_GOOGLE_PUBSUB_TOPIC` | official Nest adapter | Required for production event ingestion. |
+| `FLOCK_CLIP_STORAGE_BUCKET` | private clip assets | Requires storage choice and privacy review. |
 
 ## Vercel Setup Notes
 
@@ -64,6 +74,7 @@ Before calling camera sync production-ready:
 
 - `npm run build`
 - `npm run smoke:camera`
+- `GET /api/cameras/provider-adapters` returns adapter contracts and the Vercel env checklist.
 - Live `GET /api/cameras/account-state?userId=<test>` returns `storage.durable: true`.
 - A sync session survives browser reload.
 - A device record survives browser reload.

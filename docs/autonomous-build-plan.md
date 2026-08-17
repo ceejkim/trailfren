@@ -18,8 +18,8 @@ Updated: August 17, 2026
 - Merged camera sync backend architecture PR: `https://github.com/ceejkim/trailfren/pull/20`
 - Merged account-scoped camera sync persistence PR: `https://github.com/ceejkim/trailfren/pull/22`
 - Merged bird intelligence review pipeline PR: `https://github.com/ceejkim/trailfren/pull/24`
-- Latest shipped slice: shared camera sync backend architecture, provider discovery, one-tap sync sessions, device registration, relay signature verification, account-scoped camera persistence, and frontend account-state reconciliation
-- Current working slice: durable cloud store/auth provider configuration and production readiness gates
+- Latest shipped slice: bird intelligence review queue, analysis route, manual correction route, and review-state persistence
+- Current working slice: Day 4 hard popular camera adapter contracts for Ring, Nest, Birdfy, Bird Buddy, Reolink, Tapo, and Wyze
 - GitHub tracking issues:
   - Day 1: `https://github.com/ceejkim/trailfren/issues/4`
   - Day 2: `https://github.com/ceejkim/trailfren/issues/5`
@@ -36,6 +36,7 @@ Updated: August 17, 2026
   - `docs/camera-account-sync-wizard.md`
   - `docs/camera-sync-architecture.md`
   - `docs/camera-sync-persistence.md`
+  - `docs/camera-provider-adapters.md`
   - `docs/camera-production-readiness.md`
   - `docs/agents/README.md`
 
@@ -61,6 +62,7 @@ Updated: August 17, 2026
 - Added `npm run smoke:camera` for repeatable camera API persistence verification.
 - Added a Device Relay panel for account-bound local relay registration and signed relay upload previews.
 - Verified the live API rejects sensitive fields such as `password`.
+- Added the bird intelligence review pipeline for relay/manual clips, including species suggestions and manual corrections.
 
 ## Current App Shape
 
@@ -81,6 +83,8 @@ The app is a compact Vite + React + TypeScript MVP with:
 - Shared server-side provider registry and camera sync architecture core
 - Server-side camera sync store with cloud REST, local JSON, and explicit volatile fallback modes
 - Frontend camera state reconciliation from `GET /api/cameras/account-state`
+- Bird review queue, analysis, and correction APIs for camera clips
+- Provider adapter contract routes for Ring, Nest, Birdfy, Bird Buddy, and Wyze
 - Camera API smoke script for account/store/relay verification
 
 The app does not yet have:
@@ -190,6 +194,8 @@ Remaining hard gates:
 ### Day 4: Hard Popular Camera Integrations
 
 Goal: Add official adapter skeletons for the popular but challenging cameras.
+
+Implementation status: active in the current `work` branch.
 
 Deliverables:
 

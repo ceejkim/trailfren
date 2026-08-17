@@ -1,6 +1,6 @@
 # Flock Camera Integration Matrix
 
-Updated: August 16, 2026
+Updated: August 17, 2026
 
 ## Product Principle
 
@@ -114,16 +114,33 @@ export type CameraProvider = {
 - OAuth providers need environment variables and redirect URL configuration.
 - Webhook providers need signature validation and event replay protection.
 
+## Day 4 Adapter Contracts
+
+The current Day 4 slice adds cloud-safe adapter contracts rather than fake vendor integrations:
+
+- `GET /api/cameras/provider-adapters`
+- `GET /api/cameras/ring/oauth/start`
+- `POST /api/cameras/ring/webhooks`
+- `GET /api/cameras/nest/oauth/start`
+- `POST /api/cameras/nest/events`
+- `POST /api/cameras/birdfy/partner-request`
+- `POST /api/cameras/bird-buddy/partner-request`
+- `POST /api/cameras/wyze/model-check`
+
+Reolink and Tapo continue through the local relay registration/upload routes because Vercel cannot safely connect to private LAN streams.
+
+See `docs/camera-provider-adapters.md` for the full route and environment checklist.
+
 ## Source Notes
 
 - Nest Device Access camera events/live stream: https://developers.google.com/nest/device-access/api/camera-wired
 - Nest camera sharing limitations: https://support.google.com/googlehome/answer/9227530
-- Ring developer APIs: https://developer.ring.com/
-- Ring developer getting started: https://developer.amazon.com/docs/ring/get-started.html
-- Reolink CGI/RTSP/ONVIF support: https://support.reolink.com/hc/en-us/articles/900000617826/
+- Ring partner API documentation: https://developer.amazon.com/docs/ring/api-documentation.html
+- Reolink CGI/RTSP/ONVIF support: https://support.reolink.com/articles/900000617826-Which-Reolink-Products-Support-CGI-RTSP-ONVIF/
 - Reolink RTSP setup: https://support.reolink.com/articles/360007010473-How-to-Live-View-Reolink-Cameras-via-VLC-Media-Player/
-- Tapo RTSP/ONVIF FAQ: https://www.tapo.com/us/faq/34/
-- Wyze RTSP firmware notes: https://forums.wyze.com/t/wyze-firmware-updates-2-2-2026/340669
-- Birdfy support center: https://support.netvue.com/hc/en-us/sections/30651811906585-Birdfy-APP-User-Guide
-- Bird Buddy quick start: https://support.mybirdbuddy.com/hc/en-us/articles/13076331322385-Quick-Start-Guide
+- Tapo RTSP/ONVIF FAQ: https://www.tp-link.com/us/support/faq/2680/
+- Wyze Cam RTSP support: https://support.wyze.com/hc/en-us/articles/360026245231-Wyze-Cam-RTSP
+- Birdfy app introduction: https://support.birdfy.com/help/birdfy-app/Introduction-BirdfyApp/
+- Bird Buddy postcards: https://support.mybirdbuddy.com/hc/en-us/articles/9175854254865-Postcards-Collecting-Photos-and-Videos
+- Bird Buddy sharing: https://support.mybirdbuddy.com/hc/en-us/articles/4406551221521-Sharing-photos-and-videos
 - Bird Buddy EULA: https://mybirdbuddy.com/app-eula/

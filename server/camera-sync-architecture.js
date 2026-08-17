@@ -10,6 +10,9 @@ export const cameraProviderRegistry = {
     mode: "partner-request",
     phase: "partner-export",
     approvalPath: "/api/cameras/birdfy/partner-request",
+    adapterPath: "/api/cameras/birdfy/partner-request",
+    adapterStatus: "partner-or-export",
+    adapterStatusLabel: "Partner/export path",
     transports: ["partner-export", "share-import", "manual-upload"],
     triggerSource: "vendor-cloud-motion",
     uploadPath: "user-approved-export",
@@ -35,6 +38,9 @@ export const cameraProviderRegistry = {
     mode: "partner-request",
     phase: "partner-export",
     approvalPath: "/api/cameras/bird-buddy/partner-request",
+    adapterPath: "/api/cameras/bird-buddy/partner-request",
+    adapterStatus: "partner-or-export",
+    adapterStatusLabel: "Partner/export path",
     transports: ["partner-export", "share-import", "manual-upload"],
     triggerSource: "vendor-cloud-motion",
     uploadPath: "user-approved-export",
@@ -49,7 +55,7 @@ export const cameraProviderRegistry = {
       "Keep manual upload available until official partner access exists."
     ],
     hardGates: ["Partner access or explicit export/import permission for automatic cloud sync."],
-    sourceUrl: "https://mybirdbuddy.com/app-eula/"
+    sourceUrl: "https://support.mybirdbuddy.com/hc/en-us/articles/9175854254865-Postcards-Collecting-Photos-and-Videos"
   },
   reolink: {
     id: "reolink",
@@ -60,6 +66,9 @@ export const cameraProviderRegistry = {
     mode: "local-relay",
     phase: "local-relay",
     approvalPath: "/api/cameras/devices",
+    adapterPath: "/api/cameras/devices",
+    adapterStatus: "relay-required",
+    adapterStatusLabel: "Local relay ready",
     transports: ["rtsp", "onvif"],
     triggerSource: "relay-motion-or-onvif",
     uploadPath: "signed-relay-upload",
@@ -85,6 +94,9 @@ export const cameraProviderRegistry = {
     mode: "local-relay",
     phase: "local-relay",
     approvalPath: "/api/cameras/devices",
+    adapterPath: "/api/cameras/devices",
+    adapterStatus: "relay-required",
+    adapterStatusLabel: "Local relay ready",
     transports: ["rtsp", "onvif"],
     triggerSource: "relay-motion-or-onvif",
     uploadPath: "signed-relay-upload",
@@ -99,7 +111,7 @@ export const cameraProviderRegistry = {
       "Accept only signed relay uploads from that device."
     ],
     hardGates: ["Real camera account and RTSP URL must stay in the user-owned relay."],
-    sourceUrl: "https://www.tp-link.com/pe/support/faq/4465/"
+    sourceUrl: "https://www.tp-link.com/us/support/faq/2680/"
   },
   wyze: {
     id: "wyze",
@@ -110,6 +122,9 @@ export const cameraProviderRegistry = {
     mode: "local-relay",
     phase: "local-relay",
     approvalPath: "/api/cameras/devices",
+    adapterPath: "/api/cameras/wyze/model-check",
+    adapterStatus: "model-check-required",
+    adapterStatusLabel: "RTSP model check",
     transports: ["rtsp"],
     triggerSource: "relay-motion",
     uploadPath: "signed-relay-upload",
@@ -124,7 +139,7 @@ export const cameraProviderRegistry = {
       "Accept only signed relay uploads from that device."
     ],
     hardGates: ["Unsupported Wyze models fall back to manual upload."],
-    sourceUrl: "https://forums.wyze.com/t/wyze-firmware-updates-2-2-2026/340669"
+    sourceUrl: "https://support.wyze.com/hc/en-us/articles/360026245231-Wyze-Cam-RTSP"
   },
   ring: {
     id: "ring",
@@ -135,6 +150,9 @@ export const cameraProviderRegistry = {
     mode: "official-oauth",
     phase: "official-cloud",
     approvalPath: "/api/cameras/ring/oauth/start",
+    adapterPath: "/api/cameras/ring/oauth/start",
+    adapterStatus: "vendor-setup-required",
+    adapterStatusLabel: "Official API setup required",
     transports: ["vendor-webhook", "vendor-clip"],
     triggerSource: "vendor-motion-webhook",
     uploadPath: "official-cloud-import",
@@ -149,7 +167,7 @@ export const cameraProviderRegistry = {
       "Accept motion webhooks only after signature verification."
     ],
     hardGates: ["Ring developer setup, OAuth credentials, webhook verification, and certification."],
-    sourceUrl: "https://developer.ring.com/"
+    sourceUrl: "https://developer.amazon.com/docs/ring/api-documentation.html"
   },
   nest: {
     id: "nest",
@@ -160,6 +178,9 @@ export const cameraProviderRegistry = {
     mode: "official-oauth",
     phase: "official-cloud",
     approvalPath: "/api/cameras/nest/oauth/start",
+    adapterPath: "/api/cameras/nest/oauth/start",
+    adapterStatus: "vendor-setup-required",
+    adapterStatusLabel: "Device Access setup required",
     transports: ["vendor-event", "webrtc"],
     triggerSource: "device-access-motion-event",
     uploadPath: "official-cloud-import",
@@ -174,7 +195,7 @@ export const cameraProviderRegistry = {
       "Accept motion events through official Device Access scopes."
     ],
     hardGates: ["Google Device Access setup, OAuth credentials, supported camera traits, and review."],
-    sourceUrl: "https://developers.google.com/nest/device-access/api/camera"
+    sourceUrl: "https://developers.google.com/nest/device-access/api/camera-wired"
   },
   "manual-upload": {
     id: "manual-upload",
@@ -185,6 +206,9 @@ export const cameraProviderRegistry = {
     mode: "manual-upload",
     phase: "manual",
     approvalPath: "/api/cameras/clip-ingests",
+    adapterPath: "/api/cameras/clip-ingests",
+    adapterStatus: "available-now",
+    adapterStatusLabel: "Available now",
     transports: ["manual-upload"],
     triggerSource: "user-upload",
     uploadPath: "manual-clip-review",
@@ -378,6 +402,9 @@ export function createSyncSession(body) {
       credentialBoundary: provider.credentialBoundary,
       transports: provider.transports,
       launchStatus: provider.launchStatus,
+      adapterPath: provider.adapterPath,
+      adapterStatus: provider.adapterStatus,
+      adapterStatusLabel: provider.adapterStatusLabel,
       hardGates: provider.hardGates,
       sourceUrl: provider.sourceUrl
     },
