@@ -30,9 +30,22 @@ The current app now has:
 - Callback paths for official OAuth, local relay, partner/export request, and manual upload modes.
 - A next-step message for each integration mode.
 - A demo `CameraClipIngestRequest` flow that creates a private clip and sighting pending review.
+- Best-effort POST calls from the browser boundary to the deployed camera API routes.
 - Persistent local demo state for the latest request and latest ingest result.
 
 This proves the user flow and API shape without collecting real camera credentials or pretending that unsupported vendor APIs exist.
+
+## Implemented Back-End Boundary
+
+The current backend boundary is implemented as stateless Vercel functions:
+
+- `POST /api/cameras/connection-requests`
+- `POST /api/cameras/clip-ingests`
+- `GET /api/cameras/:deviceId/status`
+
+The routes intentionally do not persist or list user camera records yet. They validate the supported provider, reject sensitive fields such as passwords, secrets, tokens, API keys, and refresh values, and return safe demo objects that match the front-end contracts.
+
+This is the correct bridge between the mock app and a real integration system: it gives Vercel a deployable API surface while avoiding private-feed storage, credential collection, or vendor API claims that have not been approved.
 
 ## Integration Modes
 
@@ -116,7 +129,7 @@ The current front-end does not collect secrets or connect to real cameras yet.
 
 ## Back-End Contract
 
-Implemented in `src/types.ts` and `src/cameraApi.ts` as a mockable browser boundary. These shapes should become API route payloads when a backend is added.
+Implemented in `src/types.ts`, `src/cameraApi.ts`, `server/cameraStore.ts`, and the root `api/` routes.
 
 ```ts
 export type CameraConnectionRequest = {
@@ -151,11 +164,13 @@ export type CameraClipIngestRequest = {
 
 ## Next Back-End Slice
 
-Turn the mock browser boundary into server-backed routes:
+Turn the stateless API boundary into authenticated durable state:
 
-- `POST /api/cameras/connection-requests`
-- `POST /api/cameras/clip-ingests`
-- `GET /api/cameras/:deviceId/status`
+- Add account/auth ownership checks before any camera data is stored.
+- Store camera device records, connection requests, and clip ingest records in a database.
+- Add a signed relay upload contract for RTSP/ONVIF cameras.
+- Add provider-specific OAuth handoff routes only after credentials and vendor setup are approved.
+- Add loading/error UI that reconciles the front-end state with server responses.
 
 The routes should still avoid real credentials until the user explicitly approves credentials/provider setup.
 
@@ -165,3 +180,4 @@ The routes should still avoid real credentials until the user explicitly approve
 - Bird Buddy EULA restricts commercial use, reverse engineering, unauthorized access, and app redistribution while allowing user content sharing within terms: https://mybirdbuddy.com/app-eula/
 - Ring Developer docs describe official account linking, motion events, webhooks, live video, clips, and certification requirements: https://developer.ring.com/
 - Google Nest Device Access docs describe camera motion events and WebRTC live stream traits: https://developers.google.com/nest/device-access/api/camera-wired
+- Vercel Node.js Functions support TypeScript functions in the root `api` directory: https://vercel.com/docs/functions/runtimes/node-js
