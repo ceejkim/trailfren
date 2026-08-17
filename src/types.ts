@@ -22,6 +22,18 @@ export type CameraSyncStatus = "not-started" | "needs-approval" | "waiting-on-pr
 
 export type CameraPrivacyMode = "private" | "friends" | "league";
 
+export type CameraStreamTransport = "rtsp" | "onvif" | "cloud-oauth" | "partner-export" | "manual-upload";
+
+export type CameraDeviceConnectionStatus =
+  | "needs-relay"
+  | "needs-oauth"
+  | "partner-review"
+  | "manual-ready"
+  | "connected"
+  | "paused";
+
+export type RelayUploadStatus = "signature-required" | "accepted" | "needs-review" | "rejected";
+
 export type CameraProvider = {
   id: CameraProviderId;
   name: string;
@@ -52,6 +64,39 @@ export type CameraConnectionRequest = {
   callbackPath: string;
 };
 
+export type CameraDevice = {
+  id: string;
+  ownerId: string;
+  providerId: CameraProviderId;
+  providerName: string;
+  displayName: string;
+  locationLabel: string;
+  privacyMode: CameraPrivacyMode;
+  connectionStatus: CameraDeviceConnectionStatus;
+  transport: CameraStreamTransport;
+  motionOnly: boolean;
+  redactedEndpoint?: string;
+  relayId?: string;
+  registeredAt: string;
+  lastSeenAt?: string;
+};
+
+export type CameraRelayEnrollment = {
+  relayId: string;
+  deviceId: string;
+  uploadUrl: string;
+  healthUrl: string;
+  signatureHeader: "x-flock-relay-signature";
+  signingKeyStatus: "demo-required" | "server-secret-required";
+  instructions: string[];
+};
+
+export type CameraDeviceRegistrationResult = {
+  device: CameraDevice;
+  relay?: CameraRelayEnrollment;
+  reviewMessage: string;
+};
+
 export type CameraClipIngestRequest = {
   id: string;
   userId: string;
@@ -75,6 +120,32 @@ export type CameraClipIngestResult = {
   reviewMessage: string;
 };
 
+export type CameraRelayUploadRequest = {
+  userId: string;
+  providerId: CameraProviderId;
+  deviceId: string;
+  relayId: string;
+  motionEventId: string;
+  capturedAt: string;
+  durationSeconds: number;
+  cameraName: string;
+  thumbnailUrl?: string;
+  clipUrl?: string;
+  privacyMode: CameraPrivacyMode;
+};
+
+export type CameraRelayUploadResult = {
+  uploadId: string;
+  status: RelayUploadStatus;
+  deviceId: string;
+  relayId: string;
+  motionEventId: string;
+  acceptedAt: string;
+  clip: Clip;
+  sighting: Sighting;
+  reviewMessage: string;
+};
+
 export type CameraSyncState = {
   providerId: CameraProviderId;
   status: CameraSyncStatus;
@@ -82,9 +153,13 @@ export type CameraSyncState = {
   privacyMode: CameraPrivacyMode;
   motionUploadsEnabled: boolean;
   connectionRequestId?: string;
-  nextStep?: string;
+  registeredDeviceId?: string;
+  relayId?: string;
+  relayUploadUrl?: string;
   latestIngestId?: string;
+  latestRelayUploadId?: string;
   latestIngestAt?: string;
+  nextStep?: string;
   lastSyncedAt?: string;
 };
 
