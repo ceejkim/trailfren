@@ -17,8 +17,9 @@ A user should be able to create a Flock account, choose the camera they own, app
    - Local relay setup for RTSP/ONVIF cameras such as Reolink, Tapo, and supported Wyze models.
    - Partner/export/share/import path for Birdfy and Bird Buddy until official developer access exists.
    - Manual upload fallback for every provider.
-6. New clips default to private.
-7. Motion-triggered clips enter the bird review pipeline before scoring or sharing.
+6. Register a camera device record owned by the user's account.
+7. New clips default to private.
+8. Motion-triggered clips enter the bird review pipeline before scoring or sharing.
 
 ## Implemented Front-End Boundary
 
@@ -29,9 +30,11 @@ The current app now has:
 - A `CameraConnectionRequest` contract created by the sync button.
 - Callback paths for official OAuth, local relay, partner/export request, and manual upload modes.
 - A next-step message for each integration mode.
-- A demo `CameraClipIngestRequest` flow that creates a private clip and sighting pending review.
+- A device relay panel that registers an account-bound camera device record.
+- A relay enrollment preview for local RTSP/ONVIF cameras.
+- A signed relay upload preview that creates a private clip and sighting pending review.
 - Best-effort POST calls from the browser boundary to the deployed camera API routes.
-- Persistent local demo state for the latest request and latest ingest result.
+- Persistent local demo state for the latest request, device registration, relay upload, and latest ingest result.
 
 This proves the user flow and API shape without collecting real camera credentials or pretending that unsupported vendor APIs exist.
 
@@ -40,10 +43,14 @@ This proves the user flow and API shape without collecting real camera credentia
 The current backend boundary is implemented as stateless Vercel functions:
 
 - `POST /api/cameras/connection-requests`
+- `POST /api/cameras/devices`
 - `POST /api/cameras/clip-ingests`
+- `POST /api/cameras/relay-uploads`
 - `GET /api/cameras/:deviceId/status`
 
-The route files are self-contained JavaScript functions under `api/` so Vercel packages one clear runtime implementation for each endpoint. The routes intentionally do not persist or list user camera records yet. They validate the supported provider, reject sensitive fields such as passwords, secrets, tokens, API keys, and refresh values, and return safe demo objects that match the front-end contracts.
+The route files are self-contained JavaScript functions under `api/` so Vercel packages one clear runtime implementation for each endpoint. The routes intentionally do not persist or list user camera records yet. They validate the supported provider, reject sensitive fields such as passwords, secrets, tokens, API keys, and refresh values, reject unredacted RTSP/ONVIF endpoints, and return safe demo objects that match the front-end contracts.
+
+The relay upload endpoint requires the `x-flock-relay-signature` header in demo mode. Production signing must move to a server-held relay secret after real account persistence exists.
 
 This is the correct bridge between the mock app and a real integration system: it gives Vercel a deployable API surface while avoiding private-feed storage, credential collection, or vendor API claims that have not been approved.
 
@@ -119,6 +126,9 @@ The current front-end exposes:
 - Provider list
 - Provider-specific sync CTA
 - Connection status
+- Device registration
+- Relay enrollment for local cameras
+- Signed relay upload preview
 - Privacy default
 - Motion auto-upload preference
 - Provider limitations
@@ -132,30 +142,42 @@ The current front-end does not collect secrets or connect to real cameras yet.
 Implemented in `src/types.ts`, `src/cameraApi.ts`, and the self-contained JavaScript functions in the root `api/` routes.
 
 ```ts
-export type CameraConnectionRequest = {
+export type CameraDevice = {
   id: string;
-  userId: string;
+  ownerId: string;
   providerId: CameraProviderId;
   providerName: string;
-  mode: "partner-request" | "official-oauth" | "local-relay" | "manual-upload";
-  status: "queued" | "oauth-started" | "relay-required" | "partner-review" | "manual-ready";
-  requestedAt: string;
+  displayName: string;
+  locationLabel: string;
   privacyMode: CameraPrivacyMode;
-  motionUploadsEnabled: boolean;
-  nextStep: string;
-  callbackPath: string;
+  connectionStatus: CameraDeviceConnectionStatus;
+  transport: CameraStreamTransport;
+  motionOnly: boolean;
+  redactedEndpoint?: string;
+  relayId?: string;
+  registeredAt: string;
+  lastSeenAt?: string;
 };
 
-export type CameraClipIngestRequest = {
-  id: string;
+export type CameraRelayEnrollment = {
+  relayId: string;
+  deviceId: string;
+  uploadUrl: string;
+  healthUrl: string;
+  signatureHeader: "x-flock-relay-signature";
+  signingKeyStatus: "demo-required" | "server-secret-required";
+  instructions: string[];
+};
+
+export type CameraRelayUploadRequest = {
   userId: string;
   providerId: CameraProviderId;
-  providerName: string;
   deviceId: string;
-  cameraName: string;
+  relayId: string;
+  motionEventId: string;
   capturedAt: string;
   durationSeconds: number;
-  motionEventId?: string;
+  cameraName: string;
   thumbnailUrl?: string;
   clipUrl?: string;
   privacyMode: CameraPrivacyMode;
@@ -167,8 +189,8 @@ export type CameraClipIngestRequest = {
 Turn the stateless API boundary into authenticated durable state:
 
 - Add account/auth ownership checks before any camera data is stored.
-- Store camera device records, connection requests, and clip ingest records in a database.
-- Add a signed relay upload contract for RTSP/ONVIF cameras.
+- Store camera device records, connection requests, relay enrollments, and clip ingest records in a database.
+- Replace demo relay signatures with server-held relay signing secrets.
 - Add provider-specific OAuth handoff routes only after credentials and vendor setup are approved.
 - Add loading/error UI that reconciles the front-end state with server responses.
 
