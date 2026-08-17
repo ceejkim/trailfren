@@ -45,10 +45,25 @@ import {
   cameraProviders,
   defaultCameraSync,
   getCameraProvider,
-  getNextSyncStatus,
   syncStatusLabel
 } from "./cameraSync";
-import type { CameraPrivacyMode, CameraProviderId, CameraSyncState, Clip, Friend, Rarity, Sighting, UserProfile } from "./types";
+import {
+  createCameraConnectionRequest,
+  createDemoCameraClipIngest,
+  getSyncStatusForConnectionRequest
+} from "./cameraApi";
+import type {
+  CameraClipIngestResult,
+  CameraConnectionRequest,
+  CameraPrivacyMode,
+  CameraProviderId,
+  CameraSyncState,
+  Clip,
+  Friend,
+  Rarity,
+  Sighting,
+  UserProfile
+} from "./types";
 
 const storageKey = "flock-birdwatch-state";
 const rarityOptions: Rarity[] = ["Common", "Uncommon", "Rare", "Legendary"];
@@ -59,6 +74,8 @@ type AppState = {
   clips: Clip[];
   sightings: Sighting[];
   cameraSync: CameraSyncState;
+  lastConnectionRequest?: CameraConnectionRequest;
+  lastIngestResult?: CameraClipIngestResult;
 };
 
 function getInitialState(): AppState {
@@ -83,7 +100,9 @@ function loadState(): AppState {
       friends: parsed.friends ?? fallback.friends,
       clips: parsed.clips ?? fallback.clips,
       sightings: parsed.sightings ?? fallback.sightings,
-      cameraSync: { ...fallback.cameraSync, ...(parsed.cameraSync ?? {}) }
+      cameraSync: { ...fallback.cameraSync, ...(parsed.cameraSync ?? {}) },
+      lastConnectionRequest: parsed.lastConnectionRequest,
+      lastIngestResult: parsed.lastIngestResult
     };
   } catch {
     return fallback;
@@ -247,23 +266,62 @@ function App() {
         providerId,
         status: "not-started",
         approvalLabel: provider.primaryAction,
+        connectionRequestId: undefined,
+        nextStep: undefined,
+        latestIngestId: undefined,
+        latestIngestAt: undefined,
         lastSyncedAt: undefined
-      }
+      },
+      lastConnectionRequest: undefined,
+      lastIngestResult: undefined
     });
   }
 
   function startCameraSync() {
-    const nextStatus = getNextSyncStatus(selectedProvider);
+    const connectionRequest = createCameraConnectionRequest({
+      userId: state.profile.id,
+      provider: selectedProvider,
+      privacyMode: state.cameraSync.privacyMode,
+      motionUploadsEnabled: state.cameraSync.motionUploadsEnabled
+    });
+    const nextStatus = getSyncStatusForConnectionRequest(connectionRequest);
+
     commit({
       ...state,
       cameraSync: {
         ...state.cameraSync,
         status: nextStatus,
         approvalLabel: selectedProvider.primaryAction,
+        connectionRequestId: connectionRequest.id,
+        nextStep: connectionRequest.nextStep,
         lastSyncedAt: nextStatus === "synced" ? "Just now" : state.cameraSync.lastSyncedAt
-      }
+      },
+      lastConnectionRequest: connectionRequest
     });
     setActiveTab("cameras");
+  }
+
+  function previewMotionUpload() {
+    const ingestResult = createDemoCameraClipIngest({
+      userId: state.profile.id,
+      provider: selectedProvider,
+      privacyMode: state.cameraSync.privacyMode
+    });
+
+    commit({
+      ...state,
+      clips: [ingestResult.clip, ...state.clips],
+      sightings: [ingestResult.sighting, ...state.sightings],
+      cameraSync: {
+        ...state.cameraSync,
+        status: "synced",
+        latestIngestId: ingestResult.ingestId,
+        latestIngestAt: "Just now",
+        lastSyncedAt: "Just now"
+      },
+      lastIngestResult: ingestResult
+    });
+    setActiveTab("feed");
   }
 
   function setPrivacyMode(privacyMode: CameraPrivacyMode) {
@@ -405,7 +463,7 @@ function App() {
                         <div>
                           <h3>{clip.bird}</h3>
                           <p>
-                            {clip.cameraName} • {clip.location}
+                            {clip.cameraName} - {clip.location}
                           </p>
                         </div>
                         <span className={`rarity rarity-${clip.rarity.toLowerCase()}`}>{clip.rarity}</span>
@@ -569,11 +627,19 @@ function App() {
                 <span>{syncStatusLabel[state.cameraSync.status]}</span>
                 <strong>{selectedProvider.connectionLabel}</strong>
                 <p>{selectedProvider.motionFlow}</p>
+                {state.cameraSync.nextStep && <p className="sync-next-step">{state.cameraSync.nextStep}</p>}
               </div>
               <button className="primary-button" onClick={startCameraSync} type="button">
                 <RotateCw size={17} />
                 {selectedProvider.primaryAction}
               </button>
+              {state.lastConnectionRequest && (
+                <div className="request-record">
+                  <strong>Request {state.lastConnectionRequest.id}</strong>
+                  <span>{state.lastConnectionRequest.status}</span>
+                  <span>{state.lastConnectionRequest.callbackPath}</span>
+                </div>
+              )}
               <label className="sync-control">
                 <span>Default privacy</span>
                 <select value={state.cameraSync.privacyMode} onChange={(event) => setPrivacyMode(event.target.value as CameraPrivacyMode)}>
@@ -642,6 +708,23 @@ function App() {
                   </div>
                 </article>
               </div>
+              <div className="ingest-review-card">
+                <div>
+                  <strong>Mock ingest boundary</strong>
+                  <p>Preview the exact clip-ingest contract that a vendor webhook, local relay, or export importer will call.</p>
+                </div>
+                <button className="secondary-button" disabled={!state.lastConnectionRequest} onClick={previewMotionUpload} type="button">
+                  <UploadCloud size={17} />
+                  Preview approved motion upload
+                </button>
+              </div>
+              {state.lastIngestResult && (
+                <div className="request-record ingest-record">
+                  <strong>Ingest {state.lastIngestResult.ingestId}</strong>
+                  <span>{state.lastIngestResult.status}</span>
+                  <span>{state.lastIngestResult.reviewMessage}</span>
+                </div>
+              )}
             </section>
           </div>
         )}
@@ -664,7 +747,7 @@ function App() {
                     <div>
                       <strong>{member.name}</strong>
                       <span>
-                        {member.handle} • {member.location}
+                        {member.handle} - {member.location}
                       </span>
                     </div>
                     <em>{member.points.toLocaleString()} pts</em>
@@ -764,7 +847,7 @@ function App() {
                     <div>
                       <h3>{friend.name}</h3>
                       <p>
-                        {friend.handle} • {friend.location}
+                        {friend.handle} - {friend.location}
                       </p>
                       <span>{friend.clips} clips</span>
                     </div>
