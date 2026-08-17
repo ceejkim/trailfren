@@ -1,6 +1,6 @@
 # Flock / BirdWatch Autonomous Build Plan
 
-Updated: August 16, 2026
+Updated: August 17, 2026
 
 ## Current State
 
@@ -9,7 +9,9 @@ Updated: August 16, 2026
 - Automation working branch: `work`
 - Merged MVP PR: `https://github.com/ceejkim/trailfren/pull/3`
 - Merged docs/agent PR: `https://github.com/ceejkim/trailfren/pull/10`
-- Latest docs merge commit: `1e164e2` (`Add Flock autonomous build docs and agent briefs`)
+- Merged camera sync UX PR: `https://github.com/ceejkim/trailfren/pull/11`
+- Merged camera connection/ingest contract PR: `https://github.com/ceejkim/trailfren/pull/12`
+- Active build slice: stateless Vercel camera API routes and browser API mirroring
 - GitHub tracking issues:
   - Day 1: `https://github.com/ceejkim/trailfren/issues/4`
   - Day 2: `https://github.com/ceejkim/trailfren/issues/5`
@@ -22,6 +24,7 @@ Updated: August 16, 2026
 - Canonical project docs:
   - `docs/camera-integrations.md`
   - `docs/camera-ingestion-design.md`
+  - `docs/camera-sync-ux.md`
   - `docs/agents/README.md`
 
 ## What Is Done
@@ -36,6 +39,9 @@ Updated: August 16, 2026
 - Added Day 1 camera integration matrix seed to issue #4.
 - Added Day 2 real camera ingestion architecture seed to issue #5.
 - Merged the autonomous build docs and agent briefs into `main`.
+- Added camera provider selection, privacy defaults, and provider-specific approval CTAs.
+- Added connection request and clip ingest TypeScript contracts.
+- Added a safe stateless backend boundary for connection requests, clip ingest previews, and generic device status.
 
 ## Current App Shape
 
@@ -49,18 +55,20 @@ The app is a compact Vite + React + TypeScript MVP with:
 - Rarity-based points
 - Fantasy-style leaderboard and challenges
 - Affiliate-style gear recommendations
-- A placeholder camera provider selector
+- Camera provider onboarding for Birdfy/Netvue, Bird Buddy, Ring, Nest, Reolink, Tapo, supported Wyze, and manual upload
+- Camera connection request and clip ingest contracts
+- Stateless Vercel API routes for camera connection requests, clip ingest previews, and generic device status
 
 The app does not yet have:
 
-- A backend
 - Real authentication
-- Real camera device persistence
-- RTSP/ONVIF ingestion
-- Ring/Nest OAuth or webhooks
+- Durable camera/device persistence
+- RTSP/ONVIF relay upload authentication
+- Ring/Nest OAuth credentials or webhooks
 - Bird Buddy/Birdfy partner/export workflows
-- Vercel environment variable documentation
+- Vercel environment variable documentation for vendor credentials
 - Production privacy controls for camera feeds
+- Real camera feed access or private clip storage
 
 ## Operating Rules For Unattended Work
 
@@ -86,6 +94,8 @@ The app does not yet have:
 
 Goal: Turn the placeholder camera selector into a real integration architecture.
 
+Status: Shipped.
+
 Deliverables:
 
 - Provider model for RTSP/ONVIF, Ring, Nest, Bird Buddy, Birdfy/Netvue, Wyze, Reolink, Tapo, and manual upload.
@@ -103,6 +113,8 @@ Definition of done:
 ### Day 2: Real Camera Ingestion MVP
 
 Goal: Add the first real ingestion path without overcommitting cloud complexity.
+
+Status: In progress. Contracts and stateless API boundary are in place; durable auth/storage and relay upload auth are next.
 
 Deliverables:
 
@@ -197,7 +209,6 @@ These should stay blocked until the user explicitly says yes:
 - Publishing private clips publicly.
 - Paying for API access, partner programs, hosting tiers, or model inference.
 - Completing Ring/Nest developer certification flows.
-- Merging code that changes production behavior if branch protection or deployment state requires a separate yes.
 
 ## Next Best Non-Blocked Tasks
 
