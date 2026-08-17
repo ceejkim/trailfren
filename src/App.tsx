@@ -52,11 +52,13 @@ import {
   createDemoCameraClipIngest,
   getSyncStatusForConnectionRequest
 } from "./cameraApi";
+import { CameraRelayPanel } from "./CameraRelayPanel";
 import type {
   CameraClipIngestResult,
   CameraConnectionRequest,
   CameraPrivacyMode,
   CameraProviderId,
+  CameraRelayUploadResult,
   CameraSyncState,
   Clip,
   Friend,
@@ -156,7 +158,7 @@ function App() {
   const rareClips = state.clips.filter((clip) => clip.rarity === "Rare" || clip.rarity === "Legendary").length;
   const followingCount = state.friends.filter((friend) => friend.status === "following").length;
   const weeklyPoints = state.sightings.reduce((sum, sighting) => sum + sighting.points, 0);
-  const connectedCameraCount = state.cameraSync.status === "synced" ? 1 : 0;
+  const connectedCameraCount = state.cameraSync.registeredDeviceId || state.cameraSync.status === "synced" ? 1 : 0;
 
   function addSighting(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -267,8 +269,12 @@ function App() {
         status: "not-started",
         approvalLabel: provider.primaryAction,
         connectionRequestId: undefined,
+        registeredDeviceId: undefined,
+        relayId: undefined,
+        relayUploadUrl: undefined,
         nextStep: undefined,
         latestIngestId: undefined,
+        latestRelayUploadId: undefined,
         latestIngestAt: undefined,
         lastSyncedAt: undefined
       },
@@ -320,6 +326,29 @@ function App() {
         lastSyncedAt: "Just now"
       },
       lastIngestResult: ingestResult
+    });
+    setActiveTab("feed");
+  }
+
+  function acceptRelayUpload(relayUpload: CameraRelayUploadResult) {
+    commit({
+      ...state,
+      clips: [relayUpload.clip, ...state.clips],
+      sightings: [relayUpload.sighting, ...state.sightings],
+      cameraSync: {
+        ...state.cameraSync,
+        status: "synced",
+        latestRelayUploadId: relayUpload.uploadId,
+        latestIngestAt: "Just now",
+        lastSyncedAt: "Just now"
+      },
+      lastIngestResult: {
+        ingestId: relayUpload.uploadId,
+        status: "needs-review",
+        clip: relayUpload.clip,
+        sighting: relayUpload.sighting,
+        reviewMessage: relayUpload.reviewMessage
+      }
     });
     setActiveTab("feed");
   }
@@ -670,7 +699,16 @@ function App() {
               </div>
             </section>
 
-            <section className="panel wide">
+            <CameraRelayPanel
+              userId={state.profile.id}
+              locationLabel={state.profile.location}
+              provider={selectedProvider}
+              privacyMode={state.cameraSync.privacyMode}
+              motionUploadsEnabled={state.cameraSync.motionUploadsEnabled}
+              onRelayUploadAccepted={acceptRelayUpload}
+            />
+
+            <section className="panel wide motion-pipeline-panel">
               <div className="section-heading">
                 <UploadCloud size={20} />
                 <div>
