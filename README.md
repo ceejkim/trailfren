@@ -22,6 +22,7 @@ Key planning docs:
 - [Camera integration matrix](docs/camera-integrations.md)
 - [Camera ingestion design](docs/camera-ingestion-design.md)
 - [Camera sync UX](docs/camera-sync-ux.md)
+- [Local camera relay handoff](docs/local-camera-relay.md)
 - [Agent operating briefs](docs/agents/README.md)
 
 ## Local Development
