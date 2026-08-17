@@ -43,7 +43,7 @@ The current backend boundary is implemented as stateless Vercel functions:
 - `POST /api/cameras/clip-ingests`
 - `GET /api/cameras/:deviceId/status`
 
-The routes intentionally do not persist or list user camera records yet. They validate the supported provider, reject sensitive fields such as passwords, secrets, tokens, API keys, and refresh values, and return safe demo objects that match the front-end contracts.
+The route files are self-contained JavaScript functions under `api/` so Vercel packages one clear runtime implementation for each endpoint. The routes intentionally do not persist or list user camera records yet. They validate the supported provider, reject sensitive fields such as passwords, secrets, tokens, API keys, and refresh values, and return safe demo objects that match the front-end contracts.
 
 This is the correct bridge between the mock app and a real integration system: it gives Vercel a deployable API surface while avoiding private-feed storage, credential collection, or vendor API claims that have not been approved.
 
@@ -129,7 +129,7 @@ The current front-end does not collect secrets or connect to real cameras yet.
 
 ## Back-End Contract
 
-Implemented in `src/types.ts`, `src/cameraApi.ts`, `server/cameraStore.ts`, and the root `api/` routes.
+Implemented in `src/types.ts`, `src/cameraApi.ts`, and the self-contained JavaScript functions in the root `api/` routes.
 
 ```ts
 export type CameraConnectionRequest = {
@@ -180,4 +180,4 @@ The routes should still avoid real credentials until the user explicitly approve
 - Bird Buddy EULA restricts commercial use, reverse engineering, unauthorized access, and app redistribution while allowing user content sharing within terms: https://mybirdbuddy.com/app-eula/
 - Ring Developer docs describe official account linking, motion events, webhooks, live video, clips, and certification requirements: https://developer.ring.com/
 - Google Nest Device Access docs describe camera motion events and WebRTC live stream traits: https://developers.google.com/nest/device-access/api/camera-wired
-- Vercel Node.js Functions support TypeScript functions in the root `api` directory: https://vercel.com/docs/functions/runtimes/node-js
+- Vercel Functions run from the root `api` directory and support JavaScript/TypeScript function files: https://vercel.com/docs/functions/runtimes/node-js
