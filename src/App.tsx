@@ -56,6 +56,7 @@ import { CameraRelayPanel } from "./CameraRelayPanel";
 import type {
   CameraClipIngestResult,
   CameraConnectionRequest,
+  CameraDeviceRegistrationResult,
   CameraPrivacyMode,
   CameraProviderId,
   CameraRelayUploadResult,
@@ -77,7 +78,9 @@ type AppState = {
   sightings: Sighting[];
   cameraSync: CameraSyncState;
   lastConnectionRequest?: CameraConnectionRequest;
+  lastDeviceRegistration?: CameraDeviceRegistrationResult;
   lastIngestResult?: CameraClipIngestResult;
+  lastRelayUpload?: CameraRelayUploadResult;
 };
 
 function getInitialState(): AppState {
@@ -104,7 +107,9 @@ function loadState(): AppState {
       sightings: parsed.sightings ?? fallback.sightings,
       cameraSync: { ...fallback.cameraSync, ...(parsed.cameraSync ?? {}) },
       lastConnectionRequest: parsed.lastConnectionRequest,
-      lastIngestResult: parsed.lastIngestResult
+      lastDeviceRegistration: parsed.lastDeviceRegistration,
+      lastIngestResult: parsed.lastIngestResult,
+      lastRelayUpload: parsed.lastRelayUpload
     };
   } catch {
     return fallback;
@@ -279,7 +284,9 @@ function App() {
         lastSyncedAt: undefined
       },
       lastConnectionRequest: undefined,
-      lastIngestResult: undefined
+      lastDeviceRegistration: undefined,
+      lastIngestResult: undefined,
+      lastRelayUpload: undefined
     });
   }
 
@@ -330,6 +337,20 @@ function App() {
     setActiveTab("feed");
   }
 
+  function recordDeviceRegistration(registration: CameraDeviceRegistrationResult) {
+    commit({
+      ...state,
+      cameraSync: {
+        ...state.cameraSync,
+        registeredDeviceId: registration.device.id,
+        relayId: registration.relay?.relayId,
+        relayUploadUrl: registration.relay?.uploadUrl
+      },
+      lastDeviceRegistration: registration,
+      lastRelayUpload: undefined
+    });
+  }
+
   function acceptRelayUpload(relayUpload: CameraRelayUploadResult) {
     commit({
       ...state,
@@ -338,6 +359,8 @@ function App() {
       cameraSync: {
         ...state.cameraSync,
         status: "synced",
+        registeredDeviceId: relayUpload.deviceId,
+        relayId: relayUpload.relayId,
         latestRelayUploadId: relayUpload.uploadId,
         latestIngestAt: "Just now",
         lastSyncedAt: "Just now"
@@ -348,7 +371,8 @@ function App() {
         clip: relayUpload.clip,
         sighting: relayUpload.sighting,
         reviewMessage: relayUpload.reviewMessage
-      }
+      },
+      lastRelayUpload: relayUpload
     });
     setActiveTab("feed");
   }
@@ -705,6 +729,9 @@ function App() {
               provider={selectedProvider}
               privacyMode={state.cameraSync.privacyMode}
               motionUploadsEnabled={state.cameraSync.motionUploadsEnabled}
+              registration={state.lastDeviceRegistration}
+              relayUpload={state.lastRelayUpload}
+              onDeviceRegistered={recordDeviceRegistration}
               onRelayUploadAccepted={acceptRelayUpload}
             />
 
