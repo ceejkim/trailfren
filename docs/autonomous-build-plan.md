@@ -14,8 +14,10 @@ Updated: August 17, 2026
 - Merged stateless camera API PR: `https://github.com/ceejkim/trailfren/pull/13`
 - Merged camera API runtime fixes: `https://github.com/ceejkim/trailfren/pull/14` and `https://github.com/ceejkim/trailfren/pull/15`
 - Merged camera device relay upload PR: `https://github.com/ceejkim/trailfren/pull/17`
-- Latest shipped slice: camera device registration and signed relay upload contract
-- Current working slice: one-tap camera account sync wizard and stateless sync-session route
+- Merged camera account sync wizard PR: `https://github.com/ceejkim/trailfren/pull/19`
+- Merged camera sync backend architecture PR: `https://github.com/ceejkim/trailfren/pull/20`
+- Latest shipped slice: shared camera sync backend architecture, provider discovery, one-tap sync sessions, device registration, and relay signature verification
+- Current working slice: durable authenticated persistence for sync sessions, devices, relay enrollments, relay uploads, and clip review state
 - GitHub tracking issues:
   - Day 1: `https://github.com/ceejkim/trailfren/issues/4`
   - Day 2: `https://github.com/ceejkim/trailfren/issues/5`
@@ -76,7 +78,7 @@ The app does not yet have:
 
 - Real authentication
 - Durable camera/device persistence
-- RTSP/ONVIF relay upload authentication
+- Production relay secret configuration
 - Ring/Nest OAuth credentials or webhooks
 - Bird Buddy/Birdfy partner/export workflows
 - Vercel environment variable documentation for vendor credentials
