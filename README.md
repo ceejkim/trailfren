@@ -14,7 +14,7 @@ Flock is a bird-camera social MVP for watching motion-triggered clips, logging s
 
 ## Autonomous Build Lane
 
-The BirdWatch project is managed through the `work` branch, draft PR #3, and a daily Codex automation that commits/pushes completed slices to GitHub so Vercel can deploy from the repository.
+The BirdWatch project is managed with GitHub as the canonical source of truth. The daily Codex automation works from the repo, uses the `work` branch for build slices, pushes completed changes to GitHub, and lets Vercel deploy from the repository.
 
 Key planning docs:
 
