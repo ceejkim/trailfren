@@ -19,6 +19,12 @@ import wyzeModelCheck from "../api/cameras/wyze/model-check.js";
 import status from "../api/cameras/[deviceId]/status.js";
 
 process.env.FLOCK_CAMERA_STORE_FILE = process.env.FLOCK_CAMERA_STORE_FILE || `/tmp/flock-camera-store-${process.pid}.json`;
+delete process.env.FLOCK_CAMERA_STORE_REST_URL;
+delete process.env.FLOCK_CAMERA_STORE_REST_TOKEN;
+delete process.env.KV_REST_API_URL;
+delete process.env.KV_REST_API_TOKEN;
+delete process.env.UPSTASH_REDIS_REST_URL;
+delete process.env.UPSTASH_REDIS_REST_TOKEN;
 delete process.env.FLOCK_SESSION_SIGNING_SECRET;
 delete process.env.FLOCK_RELAY_SIGNING_SECRET;
 
