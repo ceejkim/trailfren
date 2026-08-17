@@ -161,21 +161,30 @@ Definition of done:
 
 Goal: Create the intelligence layer that makes camera footage useful.
 
+Status: architecture boundary shipped locally on August 17, 2026. The next run should harden scoring permissions and background processing, not rebuild the basic contract.
+
 Deliverables:
 
-- Frame extraction pipeline boundary.
-- Bird/no-bird filter adapter interface.
-- Species ID adapter interface.
-- eBird rarity scoring boundary.
-- Manual correction UX.
-- Confidence, review status, and user override fields.
-- Background-job notes for deployment.
+- Frame extraction pipeline boundary. Implemented as an adapter contract in `server/bird-intelligence-pipeline.js`.
+- Bird/no-bird filter adapter interface. Implemented with deterministic fallback scoring and model-provider hard gate.
+- Species ID adapter interface. Implemented with swappable suggestions and confidence fields.
+- eBird rarity scoring boundary. Documented and wired as a future adapter requiring `EBIRD_API_KEY`.
+- Manual correction UX. Implemented in the Cameras tab Bird Review Queue.
+- Confidence, review status, and user override fields. Implemented in `birdAnalyses`, `birdCorrections`, and updated `reviewItems`.
+- Background-job notes for deployment. Added to `docs/bird-intelligence-pipeline.md`.
 
 Definition of done:
 
-- The product can distinguish raw motion clips from verified bird sightings.
+- The product can distinguish raw motion clips from reviewable bird candidates and no-bird events.
 - Manual corrections can improve scoring and feed quality.
 - Future model/provider swaps are possible without rewiring the app.
+
+Remaining hard gates:
+
+- Private clip object storage before real frame extraction.
+- Model provider credentials and quality thresholds.
+- eBird API key, regional scoring policy, and sensitive species handling.
+- Background queue/runtime for larger media processing.
 
 ### Day 4: Hard Popular Camera Integrations
 

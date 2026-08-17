@@ -31,8 +31,12 @@ The store owns these account-scoped collections:
 - `relayUploads`
 - `clipIngests`
 - `reviewItems`
+- `birdAnalyses`
+- `birdCorrections`
 
 Relay and clip uploads also create review records, so bird-triggered camera events land in a private review queue before they become scored sightings or shareable items.
+
+Bird analysis and correction records now attach to those review items. They keep the machine suggestion, bird/no-bird result, confidence, rarity score, and reviewer override in account-owned storage.
 
 ## Frontend Reconciliation
 

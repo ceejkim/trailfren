@@ -44,6 +44,9 @@ This avoids pretending Vercel can directly open private home-network streams lik
 
 The current API boundary has account-scoped Vercel routes for:
 
+- `GET /api/bird-intelligence/reviews`
+- `POST /api/bird-intelligence/reviews`
+- `POST /api/bird-intelligence/corrections`
 - `GET /api/cameras/account-state`
 - `POST /api/cameras/connection-requests`
 - `GET /api/cameras/providers`
@@ -56,6 +59,8 @@ The current API boundary has account-scoped Vercel routes for:
 The front end has a one-tap Camera Sync wizard, plus a Device Relay panel that registers a device record and previews a signed relay upload. The result is added to the local demo feed as a private, needs-review clip.
 
 The backend now has a shared camera sync architecture core in `server/camera-sync-architecture.js` and a persistence layer in `server/camera-sync-store.js`. Together they own provider capabilities, common camera identification, sync-session creation, device registration creation, account-scoped persistence, secret rejection, private endpoint rejection, and relay signature verification.
+
+The bird intelligence boundary lives in `server/bird-intelligence-pipeline.js`. It creates a swappable adapter contract for frame extraction, bird/no-bird detection, species identification, eBird-ready rarity scoring, and manual correction. Current scoring is deterministic and credential-free; live model and eBird calls stay gated until their env vars and policies are configured.
 
 Durability depends on deployment configuration. Local development uses an ignored JSON store, Vercel/serverless production can use the cloud REST store env vars, and unconfigured production responses clearly report `volatile-memory`.
 

@@ -268,6 +268,88 @@
   background: #f0fbf3;
 }
 
+.bird-review-queue {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 14px;
+  border: 1px solid #dce4dd;
+  border-radius: 8px;
+  background: #fbfcfb;
+}
+
+.bird-review-header,
+.bird-review-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.bird-review-header p,
+.bird-review-grid p {
+  margin: 4px 0 0;
+  color: #52635a;
+  font-size: 0.9rem;
+}
+
+.review-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 8px;
+  background: #fff8ec;
+  color: #80560f;
+  font-size: 0.76rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.review-badge.status-ready,
+.review-badge.status-corrected {
+  background: #f0fbf3;
+  color: #266b45;
+}
+
+.review-badge.status-no-bird {
+  background: #f1f3f1;
+  color: #52635a;
+}
+
+.bird-review-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.bird-review-grid > div {
+  min-height: 94px;
+  padding: 11px;
+  border-radius: 8px;
+  background: #f3f7f4;
+}
+
+.bird-review-grid span {
+  display: block;
+  margin-bottom: 5px;
+  color: #5d6f65;
+  font-size: 0.74rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.bird-review-grid strong,
+.bird-review-grid p {
+  overflow-wrap: anywhere;
+}
+
+.bird-review-actions {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
 .sync-flow {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -376,5 +458,18 @@
   .ingest-review-card {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .bird-review-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .bird-review-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .bird-review-actions .secondary-button {
+    width: 100%;
   }
 }

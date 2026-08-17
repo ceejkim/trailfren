@@ -1,5 +1,8 @@
 import { rarityPoints } from "./data";
 import type {
+  BirdIntelligenceAnalysis,
+  BirdManualCorrection,
+  BirdSpeciesSuggestion,
   CameraAccountState,
   CameraClipIngestRequest,
   CameraClipIngestResult,
@@ -13,10 +16,14 @@ import type {
   CameraProvider,
   CameraRelayUploadRequest,
   CameraRelayUploadResult,
+  CameraReviewRecord,
   CameraStreamTransport,
   CameraSyncSession,
   CameraSyncSessionStatus,
-  CameraSyncStatus
+  CameraSyncStatus,
+  Rarity,
+  Sighting,
+  Clip
 } from "./types";
 
 function createId(prefix: string) {
@@ -355,6 +362,35 @@ function formatDuration(seconds: number) {
   return `${minutes}:${remainingSeconds}`;
 }
 
+function buildFallbackReviewRecord(input: {
+  ownerId: string;
+  source: CameraReviewRecord["source"];
+  providerId: CameraProvider["id"];
+  deviceId?: string;
+  relayId?: string;
+  uploadId: string;
+  clipId: string;
+  sightingId: string;
+  privacyMode: CameraPrivacyMode;
+  reviewMessage: string;
+}): CameraReviewRecord {
+  return {
+    id: createId("review"),
+    ownerId: input.ownerId,
+    source: input.source,
+    providerId: input.providerId,
+    deviceId: input.deviceId,
+    relayId: input.relayId,
+    uploadId: input.uploadId,
+    clipId: input.clipId,
+    sightingId: input.sightingId,
+    status: "needs-review",
+    privacyMode: input.privacyMode,
+    reviewMessage: input.reviewMessage,
+    createdAt: "Just now"
+  };
+}
+
 type DemoClipIngestInput = {
   userId: string;
   provider: CameraProvider;
@@ -379,11 +415,14 @@ function buildDemoCameraClipIngest(input: DemoClipIngestInput) {
     privacyMode: input.privacyMode
   };
 
+  const clipId = createId("clip");
+  const sightingId = createId("sighting");
+  const reviewMessage = `Received ${input.provider.name} motion clip as a private ${input.privacyMode} item pending bird review.`;
   const ingestResult = {
     ingestId: ingestRequest.id,
     status: "needs-review",
     clip: {
-      id: createId("clip"),
+      id: clipId,
       cameraName: ingestRequest.cameraName,
       bird,
       rarity,
@@ -399,7 +438,7 @@ function buildDemoCameraClipIngest(input: DemoClipIngestInput) {
       comments: []
     },
     sighting: {
-      id: createId("sighting"),
+      id: sightingId,
       bird,
       rarity,
       location: "Private backyard",
@@ -407,7 +446,18 @@ function buildDemoCameraClipIngest(input: DemoClipIngestInput) {
       loggedAt: "Needs review",
       points
     },
-    reviewMessage: `Received ${input.provider.name} motion clip as a private ${input.privacyMode} item pending bird review.`
+    reviewMessage,
+    reviewRecord: buildFallbackReviewRecord({
+      ownerId: input.userId,
+      source: "clip-ingest",
+      providerId: input.provider.id,
+      deviceId: ingestRequest.deviceId,
+      uploadId: ingestRequest.id,
+      clipId,
+      sightingId,
+      privacyMode: input.privacyMode,
+      reviewMessage
+    })
   } satisfies CameraClipIngestResult;
 
   return { ingestRequest, ingestResult };
@@ -465,15 +515,19 @@ function buildDemoRelayUpload(input: DemoRelayUploadInput) {
     thumbnailUrl: "https://images.unsplash.com/photo-1549608276-5786777e6587?auto=format&fit=crop&w=1000&q=80",
     privacyMode: input.privacyMode
   } satisfies CameraRelayUploadRequest;
+  const uploadId = createId("upload");
+  const clipId = createId("clip");
+  const sightingId = createId("sighting");
+  const reviewMessage = `Accepted signed relay upload ${motionEventId} from ${input.device.displayName} as a ${input.privacyMode} item pending review.`;
   const relayUpload = {
-    uploadId: createId("upload"),
+    uploadId,
     status: "needs-review",
     deviceId: input.device.id,
     relayId,
     motionEventId,
     acceptedAt: "Just now",
     clip: {
-      id: createId("clip"),
+      id: clipId,
       cameraName: relayUploadRequest.cameraName,
       bird,
       rarity,
@@ -489,7 +543,7 @@ function buildDemoRelayUpload(input: DemoRelayUploadInput) {
       comments: []
     },
     sighting: {
-      id: createId("sighting"),
+      id: sightingId,
       bird,
       rarity,
       location: input.device.locationLabel,
@@ -497,7 +551,19 @@ function buildDemoRelayUpload(input: DemoRelayUploadInput) {
       loggedAt: "Needs review",
       points
     },
-    reviewMessage: `Accepted signed relay upload ${motionEventId} from ${input.device.displayName} as a ${input.privacyMode} item pending review.`
+    reviewMessage,
+    reviewRecord: buildFallbackReviewRecord({
+      ownerId: input.userId,
+      source: "relay-upload",
+      providerId: input.provider.id,
+      deviceId: input.device.id,
+      relayId,
+      uploadId,
+      clipId,
+      sightingId,
+      privacyMode: input.privacyMode,
+      reviewMessage
+    })
   } satisfies CameraRelayUploadResult;
 
   return { relayUpload, relayUploadRequest };
@@ -517,4 +583,176 @@ export function createDemoRelayUpload(input: DemoRelayUploadInput): CameraRelayU
     "x-flock-relay-signature": `demo-${input.device.id}-${relayUploadRequest.motionEventId}`
   });
   return relayUpload;
+}
+
+const fallbackSpeciesProfiles: Record<string, { scientificName?: string; rarity: Rarity }> = {
+  "Northern cardinal": { scientificName: "Cardinalis cardinalis", rarity: "Common" },
+  "Tufted titmouse": { scientificName: "Baeolophus bicolor", rarity: "Uncommon" },
+  "Downy woodpecker": { scientificName: "Dryobates pubescens", rarity: "Rare" },
+  "Black-capped chickadee": { scientificName: "Poecile atricapillus", rarity: "Common" },
+  "Eastern bluebird": { scientificName: "Sialia sialis", rarity: "Uncommon" },
+  "Red-bellied woodpecker": { scientificName: "Melanerpes carolinus", rarity: "Rare" }
+};
+
+type BirdReviewAnalysisInput = {
+  userId: string;
+  reviewItem?: CameraReviewRecord;
+  reviewItemId?: string;
+  providerId: CameraProvider["id"];
+  clip: Clip;
+  sighting?: Sighting;
+  privacyMode: CameraPrivacyMode;
+  source?: string;
+};
+
+type BirdCorrectionInput = {
+  userId: string;
+  analysis: BirdIntelligenceAnalysis;
+  action: "approve" | "correct-species" | "mark-no-bird";
+  species?: string;
+  locationLabel?: string;
+};
+
+function getFallbackSpeciesProfile(commonName: string) {
+  return fallbackSpeciesProfiles[commonName] ?? { rarity: "Uncommon" as Rarity };
+}
+
+function getFallbackSuggestions(input: BirdReviewAnalysisInput): BirdSpeciesSuggestion[] {
+  const primaryName = input.clip.bird || "Northern cardinal";
+  const alternatives = [primaryName, "Tufted titmouse", "Northern cardinal"].filter((name, index, names) => names.indexOf(name) === index);
+  return alternatives.slice(0, 3).map((commonName, index) => {
+    const profile = getFallbackSpeciesProfile(commonName);
+    return {
+      commonName,
+      scientificName: profile.scientificName,
+      confidence: Math.max(42, input.clip.confidence - index * 9),
+      rarity: profile.rarity,
+      points: rarityPoints[profile.rarity],
+      source: index === 0 ? "motion-clip-seed" : "provider-prior",
+      rationale: index === 0 ? "Primary candidate from the clip record." : "Likely feeder-camera alternate."
+    };
+  });
+}
+
+function buildBirdAnalysisFallback(input: BirdReviewAnalysisInput): BirdIntelligenceAnalysis {
+  const suggestions = getFallbackSuggestions(input);
+  const bestSuggestion = suggestions[0];
+  const status = bestSuggestion.confidence >= 90 ? "ready" : "needs-review";
+  const now = new Date().toISOString();
+  return {
+    id: createId("analysis"),
+    reviewItemId: input.reviewItemId ?? input.reviewItem?.id ?? createId("review"),
+    clipId: input.clip.id,
+    sightingId: input.sighting?.id,
+    providerId: input.providerId,
+    source: input.source ?? input.reviewItem?.source ?? "camera-review",
+    status,
+    birdDetected: true,
+    confidence: bestSuggestion.confidence,
+    selectedSpecies: bestSuggestion.commonName,
+    speciesSuggestions: suggestions,
+    rarityScore: {
+      rarity: bestSuggestion.rarity,
+      points: bestSuggestion.points,
+      source: "demo-local-frequency-map",
+      futureSource: "ebird-regional-frequency"
+    },
+    needsManualReview: status !== "ready",
+    manualCorrection: null,
+    privacyMode: input.privacyMode,
+    frames: {
+      extractionStatus: "metadata-only",
+      sampleCount: 0
+    },
+    adapters: [
+      { id: "frame-extractor", kind: "frame-extraction", mode: "relay-or-background-job" },
+      { id: "bird-detector", kind: "bird-no-bird", mode: "model-swappable" },
+      { id: "species-identifier", kind: "species-id", mode: "model-swappable" },
+      { id: "rarity-scorer", kind: "rarity-score", mode: "ebird-ready" },
+      { id: "manual-review", kind: "user-correction", mode: "implemented" }
+    ],
+    pipeline: [
+      { step: "capture", status: "complete", owner: "camera-sync" },
+      { step: "frame-extraction", status: "pending-real-media", owner: "background-job" },
+      { step: "bird-detection", status: "candidate-bird", owner: "bird-detector" },
+      { step: "species-id", status: "candidate-ready", owner: "species-identifier" },
+      { step: "rarity-score", status: "demo-scored", owner: "rarity-scorer" },
+      { step: "manual-review", status: status === "ready" ? "optional" : "required", owner: "user" }
+    ],
+    createdAt: now,
+    updatedAt: now
+  };
+}
+
+function getBirdAnalysisPayload(input: BirdReviewAnalysisInput) {
+  return {
+    userId: input.userId,
+    reviewItemId: input.reviewItemId ?? input.reviewItem?.id,
+    providerId: input.providerId,
+    clipId: input.clip.id,
+    sightingId: input.sighting?.id,
+    privacyMode: input.privacyMode,
+    source: input.source ?? input.reviewItem?.source,
+    clip: input.clip,
+    sighting: input.sighting,
+    locationLabel: input.clip.location
+  };
+}
+
+export async function requestBirdIntelligenceAnalysis(input: BirdReviewAnalysisInput): Promise<BirdIntelligenceAnalysis> {
+  const fallback = buildBirdAnalysisFallback(input);
+  const result = await postJson<{ analysis: BirdIntelligenceAnalysis }>("/api/bird-intelligence/reviews", getBirdAnalysisPayload(input));
+  return result?.analysis ?? fallback;
+}
+
+export async function fetchBirdIntelligencePlan(): Promise<unknown | null> {
+  return getJson<{ plan: unknown }>("/api/bird-intelligence/reviews").then((result) => result?.plan ?? null);
+}
+
+function buildBirdCorrectionFallback(input: BirdCorrectionInput): BirdManualCorrection {
+  const speciesName = input.action === "mark-no-bird" ? null : input.species ?? input.analysis.selectedSpecies ?? "Northern cardinal";
+  const profile = speciesName ? getFallbackSpeciesProfile(speciesName) : null;
+  return {
+    id: createId("correction"),
+    analysisId: input.analysis.id,
+    reviewItemId: input.analysis.reviewItemId,
+    reviewerId: input.userId,
+    action: input.action,
+    reviewStatus: input.action === "mark-no-bird" ? "rejected" : "approved",
+    analysisStatus: "corrected",
+    birdDetected: input.action !== "mark-no-bird",
+    species: speciesName
+      ? {
+          commonName: speciesName,
+          scientificName: profile?.scientificName
+        }
+      : null,
+    confidence: 100,
+    rarityScore: profile
+      ? {
+          rarity: profile.rarity,
+          points: rarityPoints[profile.rarity],
+          source: "manual-correction"
+        }
+      : {
+          rarity: null,
+          points: 0,
+          source: "manual-no-bird"
+        },
+    notes: input.action === "mark-no-bird" ? "Reviewer marked this motion event as no bird." : "Reviewer approved bird identity for scoring.",
+    correctedAt: new Date().toISOString()
+  };
+}
+
+export async function requestBirdCorrection(input: BirdCorrectionInput): Promise<BirdManualCorrection> {
+  const fallback = buildBirdCorrectionFallback(input);
+  const result = await postJson<{ correction: BirdManualCorrection }>("/api/bird-intelligence/corrections", {
+    userId: input.userId,
+    analysisId: input.analysis.id,
+    reviewItemId: input.analysis.reviewItemId,
+    action: input.action,
+    species: input.species ?? input.analysis.selectedSpecies,
+    locationLabel: input.locationLabel
+  });
+  return result?.correction ?? fallback;
 }
