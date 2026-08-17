@@ -12,6 +12,17 @@ Flock is a bird-camera social MVP for watching motion-triggered clips, logging s
 - Affiliate-style gear and seed recommendations
 - Birdfy-style camera connection panel for future integrations
 
+## Autonomous Build Lane
+
+The BirdWatch project is managed through the `work` branch, draft PR #3, and a daily Codex automation that commits/pushes completed slices to GitHub so Vercel can deploy from the repository.
+
+Key planning docs:
+
+- [Autonomous build plan](docs/autonomous-build-plan.md)
+- [Camera integration matrix](docs/camera-integrations.md)
+- [Camera ingestion design](docs/camera-ingestion-design.md)
+- [Agent operating briefs](docs/agents/README.md)
+
 ## Local Development
 
 ```bash
