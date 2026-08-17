@@ -158,7 +158,7 @@ export default function handler(request, response) {
           loggedAt: "Needs review",
           points
         },
-        reviewMessage: `Accepted signed relay upload ${motionEventId} from ${cameraName} for private ${privacyMode} review.`
+        reviewMessage: `Accepted signed relay upload ${motionEventId} from ${cameraName} as a ${privacyMode} item pending review.`
       }
     });
   } catch (error) {
