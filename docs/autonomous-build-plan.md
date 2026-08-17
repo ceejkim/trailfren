@@ -16,8 +16,8 @@ Updated: August 17, 2026
 - Merged camera device relay upload PR: `https://github.com/ceejkim/trailfren/pull/17`
 - Merged camera account sync wizard PR: `https://github.com/ceejkim/trailfren/pull/19`
 - Merged camera sync backend architecture PR: `https://github.com/ceejkim/trailfren/pull/20`
-- Latest shipped slice: shared camera sync backend architecture, provider discovery, one-tap sync sessions, device registration, and relay signature verification
-- Current working slice: durable authenticated persistence for sync sessions, devices, relay enrollments, relay uploads, and clip review state
+- Latest shipped slice: shared camera sync backend architecture, provider discovery, one-tap sync sessions, device registration, relay signature verification, and account-scoped camera persistence
+- Current working slice: durable cloud store/auth provider configuration and frontend reconciliation for persisted camera state
 - GitHub tracking issues:
   - Day 1: `https://github.com/ceejkim/trailfren/issues/4`
   - Day 2: `https://github.com/ceejkim/trailfren/issues/5`
@@ -49,8 +49,8 @@ Updated: August 17, 2026
 - Merged the autonomous build docs and agent briefs into `main`.
 - Added camera provider selection, privacy defaults, and provider-specific approval CTAs.
 - Added connection request and clip ingest TypeScript contracts.
-- Added live-tested stateless Vercel routes for connection requests, clip ingest previews, and generic device status.
-- Added stateless Vercel routes for device registration, relay uploads, and sync-session orchestration.
+- Added live-tested Vercel routes for connection requests, clip ingest previews, and generic device status.
+- Added account-scoped Vercel routes for device registration, relay uploads, sync-session orchestration, account state, and review records.
 - Added the account-aware Camera Sync wizard for selecting a camera and pressing one provider-specific sync/approval action.
 - Added a shared backend camera sync architecture core for provider capabilities, common camera identification, sync sessions, device registration, relay signatures, and safe secret rejection.
 - Added a Device Relay panel for account-bound local relay registration and signed relay upload previews.
@@ -71,13 +71,15 @@ The app is a compact Vite + React + TypeScript MVP with:
 - Camera provider onboarding for Birdfy/Netvue, Bird Buddy, Ring, Nest, Reolink, Tapo, supported Wyze, and manual upload
 - One-tap account-aware camera sync wizard
 - Camera sync session, connection request, device registration, relay upload, and clip ingest contracts
-- Stateless Vercel API routes for camera sync sessions, connection requests, device registration, relay uploads, clip ingest previews, and generic device status
+- Account-scoped API routes for camera sync sessions, connection requests, device registration, relay uploads, clip ingest previews, account state, and device status
 - Shared server-side provider registry and camera sync architecture core
+- Server-side camera sync store with cloud REST, local JSON, and explicit volatile fallback modes
 
 The app does not yet have:
 
 - Real authentication
-- Durable camera/device persistence
+- Production auth provider wiring
+- Configured production cloud store credentials
 - Production relay secret configuration
 - Ring/Nest OAuth credentials or webhooks
 - Bird Buddy/Birdfy partner/export workflows
@@ -129,7 +131,7 @@ Definition of done:
 
 Goal: Add the first real ingestion path without overcommitting cloud complexity.
 
-Status: In progress. Contracts, the one-tap wizard, shared provider architecture, and live-tested stateless API boundary are in place; durable auth/storage and production relay secret management are next.
+Status: In progress. Contracts, the one-tap wizard, shared provider architecture, account-scoped persistence boundary, and live-tested API routes are in place; production auth/database configuration and production relay secret management are next.
 
 Deliverables:
 
@@ -231,7 +233,7 @@ These should stay blocked until the user explicitly says yes:
 
 If a future run cannot edit, push, deploy, or authenticate, it should still make progress by:
 
-- Adding durable authenticated camera/device persistence.
+- Connecting the camera persistence seam to the chosen production auth/database service.
 - Adding signed relay upload contracts for RTSP/ONVIF clips.
 - Updating docs and integration matrices.
 - Adding local TypeScript contracts.

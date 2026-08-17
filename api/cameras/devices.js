@@ -1,6 +1,7 @@
 import { createDeviceRegistration, getBody, rejectSecretFields } from "../../server/camera-sync-architecture.js";
+import { persistCameraDeviceRegistration } from "../../server/camera-sync-store.js";
 
-export default function handler(request, response) {
+export default async function handler(request, response) {
   response.setHeader("cache-control", "no-store");
 
   if (request.method !== "POST") {
@@ -11,7 +12,8 @@ export default function handler(request, response) {
   try {
     const body = getBody(request);
     rejectSecretFields(body);
-    return response.status(201).json({ registrationResult: createDeviceRegistration(body) });
+    const registrationResult = await persistCameraDeviceRegistration(request, body, createDeviceRegistration(body));
+    return response.status(201).json({ registrationResult });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to register camera device.";
     return response.status(400).json({ error: message });

@@ -43,7 +43,7 @@ This proves the user flow and API shape without collecting real camera credentia
 
 ## Implemented Back-End Boundary
 
-The current backend boundary is implemented as stateless Vercel functions:
+The current backend boundary is implemented as Vercel functions with account-scoped camera persistence:
 
 - `POST /api/cameras/connection-requests`
 - `GET /api/cameras/providers`
@@ -57,7 +57,7 @@ The route files are self-contained JavaScript functions under `api/` so Vercel p
 
 The relay upload endpoint requires the `x-flock-relay-signature` header in demo mode. Production signing must move to a server-held relay secret after real account persistence exists.
 
-The sync-session endpoint is the stateless orchestration surface for the simple account-to-camera wizard. It returns the safe next path for the selected provider and rejects secrets or private stream URLs.
+The sync-session endpoint is the orchestration surface for the simple account-to-camera wizard. It returns the safe next path for the selected provider, persists the session under the resolved account, and rejects secrets or private stream URLs.
 
 The providers endpoint exposes the backend capability registry that identifies the first supported camera set and the next watchlist. This keeps the UI/provider copy anchored to the real sync architecture rather than a visual-only list.
 
@@ -216,10 +216,10 @@ export type CameraRelayUploadRequest = {
 
 ## Next Back-End Slice
 
-Turn the stateless API boundary into authenticated durable state:
+Turn the account-scoped API boundary into production-authenticated durable state:
 
-- Add account/auth ownership checks before any camera data is stored.
-- Store camera device records, connection requests, relay enrollments, and clip ingest records in a database.
+- Account ownership checks now wrap camera sync storage in `server/camera-sync-store.js`.
+- Store camera device records, connection requests, relay enrollments, relay uploads, clip ingest records, and review items through the camera store.
 - Persist sync sessions and reconcile them in the wizard after reload.
 - Replace demo relay signatures with server-held relay signing secrets.
 - Add provider-specific OAuth handoff routes only after credentials and vendor setup are approved.

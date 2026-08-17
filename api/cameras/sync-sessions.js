@@ -1,6 +1,7 @@
 import { createSyncSession, getBody, rejectSecretFields } from "../../server/camera-sync-architecture.js";
+import { persistCameraSyncSession } from "../../server/camera-sync-store.js";
 
-export default function handler(request, response) {
+export default async function handler(request, response) {
   response.setHeader("cache-control", "no-store");
 
   if (request.method !== "POST") {
@@ -11,7 +12,8 @@ export default function handler(request, response) {
   try {
     const body = getBody(request);
     rejectSecretFields(body);
-    return response.status(202).json({ syncSession: createSyncSession(body) });
+    const syncSession = await persistCameraSyncSession(request, body, createSyncSession(body));
+    return response.status(202).json({ syncSession });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to create camera sync session.";
     return response.status(400).json({ error: message });

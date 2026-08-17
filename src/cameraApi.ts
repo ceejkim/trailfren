@@ -1,5 +1,6 @@
 import { rarityPoints } from "./data";
 import type {
+  CameraAccountState,
   CameraClipIngestRequest,
   CameraClipIngestResult,
   CameraConnectionMode,
@@ -34,6 +35,22 @@ async function postJson<T>(path: string, payload: unknown, headers: Record<strin
       method: "POST",
       headers: { "content-type": "application/json", ...headers },
       body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) return null;
+    return (await response.json()) as T;
+  } catch {
+    return null;
+  }
+}
+
+async function getJson<T>(path: string): Promise<T | null> {
+  if (typeof fetch !== "function") return null;
+
+  try {
+    const response = await fetch(path, {
+      method: "GET",
+      headers: { "content-type": "application/json" }
     });
 
     if (!response.ok) return null;
@@ -148,6 +165,10 @@ export function getSyncStatusForConnectionRequest(request: CameraConnectionReque
   if (request.status === "relay-required") return "relay-required";
   if (request.status === "partner-review") return "needs-approval";
   return "synced";
+}
+
+export function fetchCameraAccountState(userId: string): Promise<CameraAccountState | null> {
+  return getJson<CameraAccountState>(`/api/cameras/account-state?userId=${encodeURIComponent(userId)}`);
 }
 
 export function createCameraSyncSession(input: {
