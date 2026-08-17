@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "smoke:camera": "node scripts/smoke-camera-routes.mjs"
   },
   "dependencies": {
     "@vitejs/plugin-react": "^4.3.4",

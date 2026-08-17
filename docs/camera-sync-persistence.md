@@ -10,6 +10,9 @@ Camera sync has to survive reloads, serverless function instances, and future ve
 
 - `server/camera-sync-store.js`
 - `api/cameras/account-state.js`
+- `scripts/smoke-camera-routes.mjs`
+- `src/App.tsx`
+- `src/CameraSyncWizard.tsx`
 - `api/cameras/sync-sessions.js`
 - `api/cameras/connection-requests.js`
 - `api/cameras/devices.js`
@@ -30,6 +33,19 @@ The store owns these account-scoped collections:
 - `reviewItems`
 
 Relay and clip uploads also create review records, so bird-triggered camera events land in a private review queue before they become scored sightings or shareable items.
+
+## Frontend Reconciliation
+
+The web app calls `GET /api/cameras/account-state?userId=<id>` when the app loads for the current demo account. When records exist, it restores:
+
+- latest sync session
+- latest connection request
+- latest device and relay enrollment
+- latest relay upload or clip ingest
+- clip and sighting records from persisted uploads
+- camera sync status, provider, relay ids, upload ids, and privacy defaults
+
+The Camera Sync wizard also displays the account store state so a preview deployment cannot silently pretend volatile memory is durable.
 
 ## Account Ownership
 
@@ -77,12 +93,14 @@ Production auth should come from the app's real session provider before private 
 
 A durable setup should prove:
 
+- `npm run smoke:camera` passes locally.
 - `POST /api/cameras/sync-sessions` creates an account-owned sync session.
 - `POST /api/cameras/devices` creates an account-owned device and relay enrollment.
 - `POST /api/cameras/relay-uploads` creates a relay upload plus a review item.
 - `GET /api/cameras/account-state?userId=<id>` returns the saved records for that account only.
 - `GET /api/cameras/:deviceId/status?userId=<id>` reflects the persisted device record.
 - Sensitive fields such as `password`, `token`, `secret`, and unredacted RTSP/ONVIF URLs are rejected.
+- A browser reload restores camera sync state from account-state instead of only from localStorage.
 
 ## Still Gated
 

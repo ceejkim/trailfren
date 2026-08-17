@@ -171,15 +171,17 @@ export function fetchCameraAccountState(userId: string): Promise<CameraAccountSt
   return getJson<CameraAccountState>(`/api/cameras/account-state?userId=${encodeURIComponent(userId)}`);
 }
 
-export function createCameraSyncSession(input: {
+type SyncSessionInput = {
   userId: string;
   provider: CameraProvider;
   privacyMode: CameraPrivacyMode;
   motionUploadsEnabled: boolean;
-}): CameraSyncSession {
+};
+
+function buildCameraSyncSession(input: SyncSessionInput): CameraSyncSession {
   const mode = getConnectionMode(input.provider);
   const now = new Date();
-  const syncSession = {
+  return {
     id: createId("sync"),
     userId: input.userId,
     providerId: input.provider.id,
@@ -197,26 +199,40 @@ export function createCameraSyncSession(input: {
     createdAt: "Just now",
     expiresAt: new Date(now.getTime() + 1000 * 60 * 30).toISOString()
   } satisfies CameraSyncSession;
+}
 
-  void postJson<{ syncSession: CameraSyncSession }>("/api/cameras/sync-sessions", {
+function getSyncSessionPayload(input: SyncSessionInput) {
+  return {
     userId: input.userId,
     providerId: input.provider.id,
     privacyMode: input.privacyMode,
     motionUploadsEnabled: input.motionUploadsEnabled
-  });
+  };
+}
 
+export async function requestCameraSyncSession(input: SyncSessionInput): Promise<CameraSyncSession> {
+  const fallback = buildCameraSyncSession(input);
+  const result = await postJson<{ syncSession: CameraSyncSession }>("/api/cameras/sync-sessions", getSyncSessionPayload(input));
+  return result?.syncSession ?? fallback;
+}
+
+export function createCameraSyncSession(input: SyncSessionInput): CameraSyncSession {
+  const syncSession = buildCameraSyncSession(input);
+  void postJson<{ syncSession: CameraSyncSession }>("/api/cameras/sync-sessions", getSyncSessionPayload(input));
   return syncSession;
 }
 
-export function createCameraConnectionRequest(input: {
+type ConnectionRequestInput = {
   userId: string;
   provider: CameraProvider;
   privacyMode: CameraPrivacyMode;
   motionUploadsEnabled: boolean;
-}): CameraConnectionRequest {
+};
+
+function buildCameraConnectionRequest(input: ConnectionRequestInput): CameraConnectionRequest {
   const mode = getConnectionMode(input.provider);
   const status = getConnectionStatus(mode);
-  const connectionRequest = {
+  return {
     id: createId("conn"),
     userId: input.userId,
     providerId: input.provider.id,
@@ -229,24 +245,41 @@ export function createCameraConnectionRequest(input: {
     nextStep: getNextStep(mode, input.provider),
     callbackPath: getCallbackPath(mode, input.provider)
   } satisfies CameraConnectionRequest;
+}
 
-  void postJson<{ connectionRequest: CameraConnectionRequest }>("/api/cameras/connection-requests", {
+function getConnectionRequestPayload(input: ConnectionRequestInput) {
+  return {
     userId: input.userId,
     providerId: input.provider.id,
     privacyMode: input.privacyMode,
     motionUploadsEnabled: input.motionUploadsEnabled
-  });
+  };
+}
 
+export async function requestCameraConnectionRequest(input: ConnectionRequestInput): Promise<CameraConnectionRequest> {
+  const fallback = buildCameraConnectionRequest(input);
+  const result = await postJson<{ connectionRequest: CameraConnectionRequest }>(
+    "/api/cameras/connection-requests",
+    getConnectionRequestPayload(input)
+  );
+  return result?.connectionRequest ?? fallback;
+}
+
+export function createCameraConnectionRequest(input: ConnectionRequestInput): CameraConnectionRequest {
+  const connectionRequest = buildCameraConnectionRequest(input);
+  void postJson<{ connectionRequest: CameraConnectionRequest }>("/api/cameras/connection-requests", getConnectionRequestPayload(input));
   return connectionRequest;
 }
 
-export function createCameraDeviceRegistration(input: {
+type DeviceRegistrationInput = {
   userId: string;
   provider: CameraProvider;
   privacyMode: CameraPrivacyMode;
   motionUploadsEnabled: boolean;
   locationLabel: string;
-}): CameraDeviceRegistrationResult {
+};
+
+function buildCameraDeviceRegistration(input: DeviceRegistrationInput): CameraDeviceRegistrationResult {
   const deviceId = createId("device");
   const relayId = input.provider.requiresLocalRelay ? createId("relay") : undefined;
   const device = {
@@ -279,22 +312,40 @@ export function createCameraDeviceRegistration(input: {
         ]
       }
     : undefined;
-  const registrationResult = {
+  return {
     device,
     relay,
     reviewMessage: getRegistrationMessage(input.provider)
   } satisfies CameraDeviceRegistrationResult;
+}
 
-  void postJson<{ registrationResult: CameraDeviceRegistrationResult }>("/api/cameras/devices", {
+function getDeviceRegistrationPayload(input: DeviceRegistrationInput, registrationResult: CameraDeviceRegistrationResult) {
+  return {
     userId: input.userId,
     providerId: input.provider.id,
-    displayName: device.displayName,
+    displayName: registrationResult.device.displayName,
     locationLabel: input.locationLabel,
     privacyMode: input.privacyMode,
     motionUploadsEnabled: input.motionUploadsEnabled,
-    redactedEndpoint: device.redactedEndpoint
-  });
+    redactedEndpoint: registrationResult.device.redactedEndpoint
+  };
+}
 
+export async function requestCameraDeviceRegistration(input: DeviceRegistrationInput): Promise<CameraDeviceRegistrationResult> {
+  const fallback = buildCameraDeviceRegistration(input);
+  const result = await postJson<{ registrationResult: CameraDeviceRegistrationResult }>(
+    "/api/cameras/devices",
+    getDeviceRegistrationPayload(input, fallback)
+  );
+  return result?.registrationResult ?? fallback;
+}
+
+export function createCameraDeviceRegistration(input: DeviceRegistrationInput): CameraDeviceRegistrationResult {
+  const registrationResult = buildCameraDeviceRegistration(input);
+  void postJson<{ registrationResult: CameraDeviceRegistrationResult }>(
+    "/api/cameras/devices",
+    getDeviceRegistrationPayload(input, registrationResult)
+  );
   return registrationResult;
 }
 
@@ -304,11 +355,13 @@ function formatDuration(seconds: number) {
   return `${minutes}:${remainingSeconds}`;
 }
 
-export function createDemoCameraClipIngest(input: {
+type DemoClipIngestInput = {
   userId: string;
   provider: CameraProvider;
   privacyMode: CameraPrivacyMode;
-}): CameraClipIngestResult {
+};
+
+function buildDemoCameraClipIngest(input: DemoClipIngestInput) {
   const bird = input.provider.id === "birdfy" || input.provider.id === "bird-buddy" ? "Tufted titmouse" : "Downy woodpecker";
   const rarity = input.provider.id === "birdfy" || input.provider.id === "bird-buddy" ? "Uncommon" : "Rare";
   const points = rarityPoints[rarity];
@@ -357,7 +410,11 @@ export function createDemoCameraClipIngest(input: {
     reviewMessage: `Received ${input.provider.name} motion clip as a private ${input.privacyMode} item pending bird review.`
   } satisfies CameraClipIngestResult;
 
-  void postJson<{ ingestResult: CameraClipIngestResult }>("/api/cameras/clip-ingests", {
+  return { ingestRequest, ingestResult };
+}
+
+function getClipIngestPayload(ingestRequest: CameraClipIngestRequest) {
+  return {
     userId: ingestRequest.userId,
     providerId: ingestRequest.providerId,
     providerName: ingestRequest.providerName,
@@ -368,17 +425,29 @@ export function createDemoCameraClipIngest(input: {
     motionEventId: ingestRequest.motionEventId,
     thumbnailUrl: ingestRequest.thumbnailUrl,
     privacyMode: ingestRequest.privacyMode
-  });
+  };
+}
 
+export async function requestDemoCameraClipIngest(input: DemoClipIngestInput): Promise<CameraClipIngestResult> {
+  const { ingestRequest, ingestResult } = buildDemoCameraClipIngest(input);
+  const result = await postJson<{ ingestResult: CameraClipIngestResult }>("/api/cameras/clip-ingests", getClipIngestPayload(ingestRequest));
+  return result?.ingestResult ?? ingestResult;
+}
+
+export function createDemoCameraClipIngest(input: DemoClipIngestInput): CameraClipIngestResult {
+  const { ingestRequest, ingestResult } = buildDemoCameraClipIngest(input);
+  void postJson<{ ingestResult: CameraClipIngestResult }>("/api/cameras/clip-ingests", getClipIngestPayload(ingestRequest));
   return ingestResult;
 }
 
-export function createDemoRelayUpload(input: {
+type DemoRelayUploadInput = {
   userId: string;
   provider: CameraProvider;
   device: CameraDevice;
   privacyMode: CameraPrivacyMode;
-}): CameraRelayUploadResult {
+};
+
+function buildDemoRelayUpload(input: DemoRelayUploadInput) {
   const relayId = input.device.relayId ?? createId("relay");
   const motionEventId = createId("motion");
   const bird = "Northern cardinal";
@@ -431,11 +500,21 @@ export function createDemoRelayUpload(input: {
     reviewMessage: `Accepted signed relay upload ${motionEventId} from ${input.device.displayName} as a ${input.privacyMode} item pending review.`
   } satisfies CameraRelayUploadResult;
 
-  void postJson<{ relayUpload: CameraRelayUploadResult }>(
-    "/api/cameras/relay-uploads",
-    relayUploadRequest,
-    { "x-flock-relay-signature": `demo-${input.device.id}-${motionEventId}` }
-  );
+  return { relayUpload, relayUploadRequest };
+}
 
+export async function requestDemoRelayUpload(input: DemoRelayUploadInput): Promise<CameraRelayUploadResult> {
+  const { relayUpload, relayUploadRequest } = buildDemoRelayUpload(input);
+  const result = await postJson<{ relayUpload: CameraRelayUploadResult }>("/api/cameras/relay-uploads", relayUploadRequest, {
+    "x-flock-relay-signature": `demo-${input.device.id}-${relayUploadRequest.motionEventId}`
+  });
+  return result?.relayUpload ?? relayUpload;
+}
+
+export function createDemoRelayUpload(input: DemoRelayUploadInput): CameraRelayUploadResult {
+  const { relayUpload, relayUploadRequest } = buildDemoRelayUpload(input);
+  void postJson<{ relayUpload: CameraRelayUploadResult }>("/api/cameras/relay-uploads", relayUploadRequest, {
+    "x-flock-relay-signature": `demo-${input.device.id}-${relayUploadRequest.motionEventId}`
+  });
   return relayUpload;
 }

@@ -9,6 +9,12 @@
   gap: 16px;
 }
 
+.wizard-account-stack {
+  display: grid;
+  gap: 8px;
+  min-width: 184px;
+}
+
 .wizard-account {
   display: grid;
   grid-template-columns: 22px minmax(0, 1fr);
@@ -19,6 +25,18 @@
   padding: 9px 11px;
   border: 1px solid #c9ddcf;
   border-radius: 8px;
+  background: #f0fbf3;
+  color: #266b45;
+}
+
+.wizard-store {
+  border-color: #d7dfd9;
+  background: #fbfcfb;
+  color: #52635a;
+}
+
+.wizard-store.durable {
+  border-color: #bce4c9;
   background: #f0fbf3;
   color: #266b45;
 }
@@ -38,6 +56,15 @@
 .wizard-account strong {
   display: block;
   color: #17211d;
+  overflow-wrap: anywhere;
+}
+
+.wizard-account em {
+  display: block;
+  margin-top: 2px;
+  color: #5d6f65;
+  font-size: 0.76rem;
+  font-style: normal;
   overflow-wrap: anywhere;
 }
 
@@ -200,6 +227,7 @@
     flex-direction: column;
   }
 
+  .wizard-account-stack,
   .wizard-account,
   .wizard-primary-button {
     width: 100%;
