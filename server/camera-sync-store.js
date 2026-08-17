@@ -4,8 +4,18 @@ import { dirname, resolve } from "node:path";
 
 import { createId, getHeader } from "./camera-sync-architecture.js";
 
-const STORE_VERSION = 1;
-const COLLECTIONS = ["syncSessions", "connectionRequests", "devices", "relayEnrollments", "relayUploads", "clipIngests", "reviewItems"];
+const STORE_VERSION = 2;
+const COLLECTIONS = [
+  "syncSessions",
+  "connectionRequests",
+  "devices",
+  "relayEnrollments",
+  "relayUploads",
+  "clipIngests",
+  "reviewItems",
+  "birdAnalyses",
+  "birdCorrections"
+];
 const DEFAULT_LOCAL_STORE_PATH = ".flock-camera-store.local.json";
 const DEFAULT_CLOUD_NAMESPACE = "flock:camera-sync-state:v1";
 
@@ -255,6 +265,59 @@ export async function persistCameraClipIngest(request, body, ingestResult) {
   await mutateAccount(account.userId, (accountState) => {
     accountState.clipIngests[record.ingestId] = record;
     accountState.reviewItems[reviewRecord.id] = reviewRecord;
+  });
+
+  return record;
+}
+
+export async function persistBirdAnalysis(request, body, analysis) {
+  const account = getCameraAccountContext(request, body);
+  const storage = describeCameraPersistence("birdAnalyses", account);
+  const record = { ...analysis, ownerId: account.userId, storage };
+
+  await mutateAccount(account.userId, (accountState) => {
+    accountState.birdAnalyses[record.id] = record;
+    const reviewRecord = accountState.reviewItems[record.reviewItemId];
+    if (reviewRecord) {
+      reviewRecord.analysisId = record.id;
+      reviewRecord.analysisStatus = record.status;
+      reviewRecord.birdDetected = record.birdDetected;
+      reviewRecord.confidence = record.confidence;
+      reviewRecord.updatedAt = record.createdAt;
+    }
+  });
+
+  return record;
+}
+
+export async function persistBirdCorrection(request, body, correction) {
+  const account = getCameraAccountContext(request, body);
+  const storage = describeCameraPersistence("birdCorrections", account);
+  const record = { ...correction, ownerId: account.userId, storage };
+
+  await mutateAccount(account.userId, (accountState) => {
+    accountState.birdCorrections[record.id] = record;
+
+    const analysis = accountState.birdAnalyses[record.analysisId];
+    if (analysis) {
+      analysis.status = record.analysisStatus;
+      analysis.birdDetected = record.birdDetected;
+      analysis.needsManualReview = false;
+      analysis.manualCorrection = record;
+      analysis.selectedSpecies = record.species?.commonName ?? null;
+      analysis.rarityScore = record.rarityScore;
+      analysis.updatedAt = record.correctedAt;
+    }
+
+    const reviewRecord = accountState.reviewItems[record.reviewItemId];
+    if (reviewRecord) {
+      reviewRecord.status = record.reviewStatus;
+      reviewRecord.analysisStatus = record.analysisStatus;
+      reviewRecord.correctionId = record.id;
+      reviewRecord.correctedSpecies = record.species?.commonName ?? null;
+      reviewRecord.birdDetected = record.birdDetected;
+      reviewRecord.updatedAt = record.correctedAt;
+    }
   });
 
   return record;

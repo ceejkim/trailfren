@@ -50,6 +50,8 @@ import {
 import {
   fetchCameraAccountState,
   getSyncStatusForConnectionRequest,
+  requestBirdCorrection,
+  requestBirdIntelligenceAnalysis,
   requestCameraConnectionRequest,
   requestCameraDeviceRegistration,
   requestCameraSyncSession,
@@ -59,6 +61,8 @@ import {
 import { CameraRelayPanel } from "./CameraRelayPanel";
 import { CameraSyncWizard } from "./CameraSyncWizard";
 import type {
+  BirdIntelligenceAnalysis,
+  BirdManualCorrection,
   CameraAccountState,
   CameraClipIngestResult,
   CameraConnectionRequest,
@@ -66,6 +70,7 @@ import type {
   CameraPrivacyMode,
   CameraProviderId,
   CameraRelayUploadResult,
+  CameraReviewRecord,
   CameraSyncSession,
   CameraSyncState,
   Clip,
@@ -78,6 +83,7 @@ import type {
 const storageKey = "flock-birdwatch-state";
 const rarityOptions: Rarity[] = ["Common", "Uncommon", "Rare", "Legendary"];
 type CameraAccountLoadStatus = "loading" | "ready" | "offline";
+type BirdReviewActionStatus = "idle" | "analyzing" | "correcting";
 
 type AppState = {
   profile: UserProfile;
@@ -90,6 +96,8 @@ type AppState = {
   lastDeviceRegistration?: CameraDeviceRegistrationResult;
   lastIngestResult?: CameraClipIngestResult;
   lastRelayUpload?: CameraRelayUploadResult;
+  lastBirdAnalysis?: BirdIntelligenceAnalysis;
+  lastBirdCorrection?: BirdManualCorrection;
 };
 
 function getInitialState(): AppState {
@@ -119,7 +127,9 @@ function loadState(): AppState {
       lastConnectionRequest: parsed.lastConnectionRequest,
       lastDeviceRegistration: parsed.lastDeviceRegistration,
       lastIngestResult: parsed.lastIngestResult,
-      lastRelayUpload: parsed.lastRelayUpload
+      lastRelayUpload: parsed.lastRelayUpload,
+      lastBirdAnalysis: parsed.lastBirdAnalysis,
+      lastBirdCorrection: parsed.lastBirdCorrection
     };
   } catch {
     return fallback;
@@ -162,6 +172,20 @@ function mergeById<T extends { id: string }>(incoming: T[], existing: T[]) {
   });
 }
 
+function getReviewClip(current: AppState, reviewItem?: CameraReviewRecord): Clip | undefined {
+  if (!reviewItem) return undefined;
+  if (current.lastRelayUpload?.reviewRecord?.id === reviewItem.id) return current.lastRelayUpload.clip;
+  if (current.lastIngestResult?.reviewRecord?.id === reviewItem.id) return current.lastIngestResult.clip;
+  return current.clips.find((clip) => clip.id === reviewItem.clipId);
+}
+
+function getReviewSighting(current: AppState, reviewItem?: CameraReviewRecord): Sighting | undefined {
+  if (!reviewItem) return undefined;
+  if (current.lastRelayUpload?.reviewRecord?.id === reviewItem.id) return current.lastRelayUpload.sighting;
+  if (current.lastIngestResult?.reviewRecord?.id === reviewItem.id) return current.lastIngestResult.sighting;
+  return current.sightings.find((sighting) => sighting.id === reviewItem.sightingId);
+}
+
 function getSyncStatusFromSession(session?: CameraSyncSession): CameraSyncState["status"] {
   if (!session) return "not-started";
   if (session.relayRequired) return "relay-required";
@@ -181,6 +205,8 @@ function reconcileCameraAccountState(current: AppState, accountState: CameraAcco
       : getLatest(records.relayEnrollments, ["enrolledAt"]);
   const relayUpload = getLatest(records.relayUploads, ["acceptedAt"]);
   const clipIngest = getLatest(records.clipIngests, ["reviewRecord.createdAt"]);
+  const birdAnalysis = getLatest(records.birdAnalyses ?? [], ["updatedAt", "createdAt"]);
+  const birdCorrection = getLatest(records.birdCorrections ?? [], ["correctedAt"]);
   const providerId = syncSession?.providerId ?? connectionRequest?.providerId ?? device?.providerId ?? current.cameraSync.providerId;
   const provider = getCameraProvider(providerId);
   const hasAccountRecords =
@@ -256,7 +282,9 @@ function reconcileCameraAccountState(current: AppState, accountState: CameraAcco
     lastConnectionRequest: connectionRequest ?? current.lastConnectionRequest,
     lastDeviceRegistration: registration,
     lastIngestResult,
-    lastRelayUpload: relayUpload ?? current.lastRelayUpload
+    lastRelayUpload: relayUpload ?? current.lastRelayUpload,
+    lastBirdAnalysis: birdAnalysis ?? current.lastBirdAnalysis,
+    lastBirdCorrection: birdCorrection ?? current.lastBirdCorrection
   };
 }
 
@@ -279,6 +307,7 @@ function App() {
   const [copiedInvite, setCopiedInvite] = useState(false);
   const [cameraAccountState, setCameraAccountState] = useState<CameraAccountState | null>(null);
   const [cameraAccountStatus, setCameraAccountStatus] = useState<CameraAccountLoadStatus>("loading");
+  const [birdReviewStatus, setBirdReviewStatus] = useState<BirdReviewActionStatus>("idle");
 
   const selectedProvider = getCameraProvider(state.cameraSync.providerId);
 
@@ -347,6 +376,23 @@ function App() {
   const followingCount = state.friends.filter((friend) => friend.status === "following").length;
   const weeklyPoints = state.sightings.reduce((sum, sighting) => sum + sighting.points, 0);
   const connectedCameraCount = state.cameraSync.registeredDeviceId || state.cameraSync.status === "synced" ? 1 : 0;
+  const fallbackReviewItems = [state.lastRelayUpload?.reviewRecord, state.lastIngestResult?.reviewRecord].filter(
+    Boolean
+  ) as CameraReviewRecord[];
+  const reviewItems = cameraAccountState?.records.reviewItems?.length ? cameraAccountState.records.reviewItems : fallbackReviewItems;
+  const birdAnalyses = state.lastBirdAnalysis
+    ? mergeById(cameraAccountState?.records.birdAnalyses ?? [], [state.lastBirdAnalysis])
+    : cameraAccountState?.records.birdAnalyses ?? [];
+  const birdCorrections = state.lastBirdCorrection
+    ? mergeById(cameraAccountState?.records.birdCorrections ?? [], [state.lastBirdCorrection])
+    : cameraAccountState?.records.birdCorrections ?? [];
+  const latestReviewItem = getLatest(reviewItems, ["updatedAt", "createdAt"]);
+  const latestReviewClip = getReviewClip(state, latestReviewItem);
+  const latestReviewSighting = getReviewSighting(state, latestReviewItem);
+  const latestBirdAnalysis = getLatest(birdAnalyses, ["updatedAt", "createdAt"]) ?? state.lastBirdAnalysis;
+  const latestBirdCorrection = getLatest(birdCorrections, ["correctedAt"]) ?? state.lastBirdCorrection;
+  const latestSuggestion = latestBirdAnalysis?.speciesSuggestions[0];
+  const pendingReviewCount = reviewItems.filter((item) => item.status === "needs-review").length;
 
   function addSighting(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -470,7 +516,9 @@ function App() {
       lastConnectionRequest: undefined,
       lastDeviceRegistration: undefined,
       lastIngestResult: undefined,
-      lastRelayUpload: undefined
+      lastRelayUpload: undefined,
+      lastBirdAnalysis: undefined,
+      lastBirdCorrection: undefined
     });
   }
 
@@ -543,7 +591,9 @@ function App() {
         latestIngestAt: "Just now",
         lastSyncedAt: "Just now"
       },
-      lastIngestResult: ingestResult
+      lastIngestResult: ingestResult,
+      lastBirdAnalysis: undefined,
+      lastBirdCorrection: undefined
     });
     setActiveTab("feed");
     void refreshCameraAccountState();
@@ -582,11 +632,99 @@ function App() {
         status: "needs-review",
         clip: relayUpload.clip,
         sighting: relayUpload.sighting,
-        reviewMessage: relayUpload.reviewMessage
+        reviewMessage: relayUpload.reviewMessage,
+        reviewRecord: relayUpload.reviewRecord
       },
-      lastRelayUpload: relayUpload
+      lastRelayUpload: relayUpload,
+      lastBirdAnalysis: undefined,
+      lastBirdCorrection: undefined
     });
     setActiveTab("feed");
+  }
+
+  async function analyzeLatestBirdReview() {
+    if (!latestReviewItem || !latestReviewClip) return;
+
+    setBirdReviewStatus("analyzing");
+    try {
+      const analysis = await requestBirdIntelligenceAnalysis({
+        userId: state.profile.id,
+        reviewItem: latestReviewItem,
+        providerId: latestReviewItem.providerId,
+        clip: latestReviewClip,
+        sighting: latestReviewSighting,
+        privacyMode: latestReviewItem.privacyMode,
+        source: latestReviewItem.source
+      });
+
+      commit({
+        ...state,
+        lastBirdAnalysis: analysis
+      });
+      void refreshCameraAccountState();
+    } finally {
+      setBirdReviewStatus("idle");
+    }
+  }
+
+  async function applyBirdCorrection(action: "approve" | "correct-species" | "mark-no-bird", species?: string) {
+    if (!latestBirdAnalysis) return;
+
+    setBirdReviewStatus("correcting");
+    try {
+      const correction = await requestBirdCorrection({
+        userId: state.profile.id,
+        analysis: latestBirdAnalysis,
+        action,
+        species,
+        locationLabel: latestReviewClip?.location ?? state.profile.location
+      });
+      const nextBird = correction.species?.commonName ?? "No bird detected";
+      const nextRarity = correction.rarityScore.rarity ?? "Common";
+      const nextPoints = correction.rarityScore.points;
+      const nextAnalysis = {
+        ...latestBirdAnalysis,
+        status: "corrected" as const,
+        birdDetected: correction.birdDetected,
+        needsManualReview: false,
+        selectedSpecies: correction.species?.commonName ?? null,
+        confidence: correction.confidence,
+        rarityScore: correction.rarityScore,
+        manualCorrection: correction,
+        updatedAt: correction.correctedAt
+      };
+
+      commit({
+        ...state,
+        clips: state.clips.map((clip) =>
+          clip.id === latestBirdAnalysis.clipId
+            ? {
+                ...clip,
+                bird: nextBird,
+                rarity: nextRarity,
+                points: nextPoints,
+                confidence: correction.confidence
+              }
+            : clip
+        ),
+        sightings: state.sightings.map((sighting) =>
+          sighting.id === latestBirdAnalysis.sightingId
+            ? {
+                ...sighting,
+                bird: nextBird,
+                rarity: nextRarity,
+                points: nextPoints,
+                loggedAt: correction.birdDetected ? "Reviewed" : "Rejected"
+              }
+            : sighting
+        ),
+        lastBirdAnalysis: nextAnalysis,
+        lastBirdCorrection: correction
+      });
+      void refreshCameraAccountState();
+    } finally {
+      setBirdReviewStatus("idle");
+    }
   }
 
   function setPrivacyMode(privacyMode: CameraPrivacyMode) {
@@ -1024,6 +1162,76 @@ function App() {
                   <span>{state.lastIngestResult.reviewMessage}</span>
                 </div>
               )}
+              <div className="bird-review-queue">
+                <div className="bird-review-header">
+                  <div>
+                    <strong>Bird Review Queue</strong>
+                    <p>
+                      {pendingReviewCount} pending / {reviewItems.length} total / {birdAnalyses.length} analyzed
+                    </p>
+                  </div>
+                  <span className={`review-badge status-${latestBirdAnalysis?.status ?? "needs-review"}`}>
+                    {latestBirdCorrection?.reviewStatus ?? latestBirdAnalysis?.status ?? "needs-review"}
+                  </span>
+                </div>
+                <div className="bird-review-grid">
+                  <div>
+                    <span>Clip</span>
+                    <strong>{latestReviewClip?.cameraName ?? "No clip queued"}</strong>
+                    <p>{latestReviewItem?.reviewMessage ?? "No review item yet."}</p>
+                  </div>
+                  <div>
+                    <span>Candidate</span>
+                    <strong>{latestSuggestion?.commonName ?? latestBirdAnalysis?.selectedSpecies ?? "Waiting"}</strong>
+                    <p>
+                      {latestBirdAnalysis
+                        ? `${latestBirdAnalysis.confidence}% confidence / ${latestBirdAnalysis.rarityScore.points} pts`
+                        : "No analysis yet."}
+                    </p>
+                  </div>
+                  <div>
+                    <span>Correction</span>
+                    <strong>{latestBirdCorrection?.species?.commonName ?? latestBirdCorrection?.reviewStatus ?? "Open"}</strong>
+                    <p>{latestBirdCorrection?.notes ?? "No correction yet."}</p>
+                  </div>
+                </div>
+                <div className="bird-review-actions">
+                  <button
+                    className="secondary-button"
+                    disabled={!latestReviewItem || !latestReviewClip || birdReviewStatus !== "idle"}
+                    onClick={analyzeLatestBirdReview}
+                    type="button"
+                  >
+                    <Sparkles size={17} />
+                    {birdReviewStatus === "analyzing" ? "Analyzing" : "Analyze latest clip"}
+                  </button>
+                  <button
+                    className="secondary-button"
+                    disabled={!latestBirdAnalysis || birdReviewStatus !== "idle"}
+                    onClick={() => applyBirdCorrection("approve", latestSuggestion?.commonName ?? latestBirdAnalysis?.selectedSpecies ?? undefined)}
+                    type="button"
+                  >
+                    <Check size={17} />
+                    Approve ID
+                  </button>
+                  <button
+                    className="secondary-button"
+                    disabled={!latestBirdAnalysis || birdReviewStatus !== "idle"}
+                    onClick={() => applyBirdCorrection("correct-species", "Northern cardinal")}
+                    type="button"
+                  >
+                    Cardinal
+                  </button>
+                  <button
+                    className="secondary-button"
+                    disabled={!latestBirdAnalysis || birdReviewStatus !== "idle"}
+                    onClick={() => applyBirdCorrection("mark-no-bird")}
+                    type="button"
+                  >
+                    No bird
+                  </button>
+                </div>
+              </div>
             </section>
           </div>
         )}

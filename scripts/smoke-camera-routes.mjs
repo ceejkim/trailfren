@@ -1,5 +1,7 @@
 import { createHmac } from "node:crypto";
 
+import birdCorrections from "../api/bird-intelligence/corrections.js";
+import birdReviews from "../api/bird-intelligence/reviews.js";
 import accountState from "../api/cameras/account-state.js";
 import clipIngests from "../api/cameras/clip-ingests.js";
 import connectionRequests from "../api/cameras/connection-requests.js";
@@ -86,6 +88,40 @@ const clipIngest = await call(
 assert(relayUpload.statusCode === 202, `expected relay upload 202, got ${relayUpload.statusCode}`);
 assert(clipIngest.statusCode === 201, `expected clip ingest 201, got ${clipIngest.statusCode}`);
 
+const reviewItem = relayUpload.payload.relayUpload.reviewRecord;
+const birdPlan = await call(birdReviews, get({}, "/api/bird-intelligence/reviews"));
+const birdAnalysis = await call(
+  birdReviews,
+  post({
+    userId,
+    providerId: "reolink",
+    reviewItemId: reviewItem.id,
+    clipId: reviewItem.clipId,
+    sightingId: reviewItem.sightingId,
+    privacyMode: "private",
+    source: reviewItem.source,
+    clip: relayUpload.payload.relayUpload.clip,
+    sighting: relayUpload.payload.relayUpload.sighting
+  })
+);
+const birdCorrection = await call(
+  birdCorrections,
+  post({
+    userId,
+    analysisId: birdAnalysis.payload.analysis.id,
+    reviewItemId: reviewItem.id,
+    action: "correct-species",
+    species: "Northern cardinal"
+  })
+);
+
+assert(birdPlan.statusCode === 200, `expected bird intelligence plan 200, got ${birdPlan.statusCode}`);
+assert(birdPlan.payload.plan.adapters.length >= 5, "expected bird intelligence adapter plan");
+assert(birdAnalysis.statusCode === 202, `expected bird analysis 202, got ${birdAnalysis.statusCode}`);
+assert(birdAnalysis.payload.analysis.speciesSuggestions.length > 0, "expected species suggestions");
+assert(birdCorrection.statusCode === 200, `expected bird correction 200, got ${birdCorrection.statusCode}`);
+assert(birdCorrection.payload.correction.reviewStatus === "approved", "expected approved correction");
+
 const account = await call(accountState, get({ userId }, `/api/cameras/account-state?userId=${userId}`));
 const deviceStatus = await call(status, get({ userId, deviceId: device.id, providerId: "reolink" }, `/api/cameras/${device.id}/status?userId=${userId}`));
 
@@ -97,14 +133,22 @@ assert(account.payload.counts.relayEnrollments === 1, "expected one relay enroll
 assert(account.payload.counts.relayUploads === 1, "expected one relay upload");
 assert(account.payload.counts.clipIngests === 1, "expected one clip ingest");
 assert(account.payload.counts.reviewItems === 2, "expected two review items");
+assert(account.payload.counts.birdAnalyses === 1, "expected one bird analysis");
+assert(account.payload.counts.birdCorrections === 1, "expected one bird correction");
+assert(
+  account.payload.records.reviewItems.find((item) => item.id === reviewItem.id)?.analysisStatus === "corrected",
+  "expected corrected review item status"
+);
 assert(deviceStatus.payload.device.persisted === true, "expected persisted device status");
 assert(deviceStatus.payload.device.status === "connected", "expected connected device after relay upload");
 
 const sensitive = await call(syncSessions, post({ userId, providerId: "birdfy", password: "nope" }));
 const endpoint = await call(devices, post({ userId, providerId: "reolink", redactedEndpoint: "rtsp://admin:pass@192.168.1.5/stream" }));
+const sensitiveAnalysis = await call(birdReviews, post({ userId, providerId: "reolink", reviewItemId: reviewItem.id, token: "nope" }));
 
 assert(sensitive.statusCode === 400, "expected sensitive field rejection");
 assert(endpoint.statusCode === 400, "expected unredacted endpoint rejection");
+assert(sensitiveAnalysis.statusCode === 400, "expected sensitive bird analysis rejection");
 
 process.env.FLOCK_SESSION_SIGNING_SECRET = "test-session-secret";
 const missingHeader = await call(syncSessions, post({ userId: "signed-user", providerId: "birdfy" }));
@@ -124,6 +168,8 @@ console.log(
       storeFile: process.env.FLOCK_CAMERA_STORE_FILE,
       counts: account.payload.counts,
       deviceStatus: deviceStatus.payload.device.status,
+      birdAnalysisStatus: birdAnalysis.payload.analysis.status,
+      birdCorrectionStatus: birdCorrection.payload.correction.reviewStatus,
       signedAuthMode: signed.payload.syncSession.storage.authMode
     },
     null,

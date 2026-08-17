@@ -40,6 +40,84 @@ export type CameraDeviceConnectionStatus =
 
 export type RelayUploadStatus = "signature-required" | "accepted" | "needs-review" | "rejected";
 
+export type BirdReviewStatus = "needs-review" | "ready" | "no-bird" | "corrected";
+
+export type BirdSpeciesSuggestion = {
+  commonName: string;
+  scientificName?: string;
+  confidence: number;
+  rarity: Rarity;
+  points: number;
+  source: "motion-clip-seed" | "provider-prior" | "manual-correction";
+  rationale: string;
+};
+
+export type BirdManualCorrection = {
+  id: string;
+  ownerId?: string;
+  analysisId: string;
+  reviewItemId: string;
+  reviewerId: string;
+  action: "approve" | "correct-species" | "mark-no-bird";
+  reviewStatus: "approved" | "rejected";
+  analysisStatus: "corrected";
+  birdDetected: boolean;
+  species: {
+    commonName: string;
+    scientificName?: string;
+  } | null;
+  confidence: number;
+  rarityScore: {
+    rarity: Rarity | null;
+    points: number;
+    source: "manual-correction" | "manual-no-bird";
+  };
+  notes: string;
+  correctedAt: string;
+  storage?: CameraPersistenceMetadata;
+};
+
+export type BirdIntelligenceAnalysis = {
+  id: string;
+  ownerId?: string;
+  reviewItemId: string;
+  clipId: string;
+  sightingId?: string;
+  providerId: CameraProviderId;
+  source: string;
+  status: BirdReviewStatus;
+  birdDetected: boolean;
+  confidence: number;
+  selectedSpecies: string | null;
+  speciesSuggestions: BirdSpeciesSuggestion[];
+  rarityScore: {
+    rarity: Rarity | null;
+    points: number;
+    source: string;
+    futureSource?: string;
+  };
+  needsManualReview: boolean;
+  manualCorrection: BirdManualCorrection | null;
+  privacyMode: CameraPrivacyMode;
+  frames: {
+    extractionStatus: "sampled" | "metadata-only";
+    sampleCount: number;
+  };
+  adapters: {
+    id: string;
+    kind: string;
+    mode: string;
+  }[];
+  pipeline: {
+    step: string;
+    status: string;
+    owner: string;
+  }[];
+  createdAt: string;
+  updatedAt: string;
+  storage?: CameraPersistenceMetadata;
+};
+
 export type CameraPersistenceMetadata = {
   mode: string;
   durable: boolean;
@@ -61,9 +139,16 @@ export type CameraReviewRecord = {
   clipId: string;
   sightingId: string;
   status: "needs-review" | "approved" | "rejected";
+  analysisId?: string;
+  analysisStatus?: BirdReviewStatus;
+  birdDetected?: boolean;
+  confidence?: number;
+  correctionId?: string;
+  correctedSpecies?: string | null;
   privacyMode: CameraPrivacyMode;
   reviewMessage: string;
   createdAt: string;
+  updatedAt?: string;
 };
 
 export type CameraProvider = {
@@ -243,6 +328,8 @@ export type CameraAccountState = {
     relayUploads: CameraRelayUploadResult[];
     clipIngests: CameraClipIngestResult[];
     reviewItems: CameraReviewRecord[];
+    birdAnalyses: BirdIntelligenceAnalysis[];
+    birdCorrections: BirdManualCorrection[];
   };
 };
 
