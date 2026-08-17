@@ -13,6 +13,8 @@ import type {
   CameraRelayUploadRequest,
   CameraRelayUploadResult,
   CameraStreamTransport,
+  CameraSyncSession,
+  CameraSyncSessionStatus,
   CameraSyncStatus
 } from "./types";
 
@@ -76,6 +78,45 @@ function getCallbackPath(mode: CameraConnectionMode, provider: CameraProvider) {
   return `/api/cameras/manual-upload`;
 }
 
+function getApprovalPath(mode: CameraConnectionMode, provider: CameraProvider) {
+  if (mode === "official-oauth") return `/api/cameras/${provider.id}/oauth/start`;
+  if (mode === "local-relay") return "/api/cameras/devices";
+  if (mode === "partner-request") return `/api/cameras/${provider.id}/partner-request`;
+  return "/api/cameras/clip-ingests";
+}
+
+function getSessionStatus(mode: CameraConnectionMode): CameraSyncSessionStatus {
+  if (mode === "official-oauth") return "approval-required";
+  if (mode === "local-relay") return "device-registration-required";
+  if (mode === "partner-request") return "export-approval-required";
+  return "manual-ready";
+}
+
+function getSessionChecklist(mode: CameraConnectionMode) {
+  if (mode === "official-oauth") {
+    return [
+      "Open the official vendor approval screen.",
+      "Store OAuth tokens server-side only after credentials are configured.",
+      "Accept motion webhooks only after signature verification."
+    ];
+  }
+  if (mode === "local-relay") {
+    return [
+      "Register a user-owned camera device record.",
+      "Run the relay on the same local network as the camera.",
+      "Accept only signed relay uploads from that device."
+    ];
+  }
+  if (mode === "partner-request") {
+    return [
+      "Do not collect vendor account passwords.",
+      "Use user-approved exports, share links, email imports, or partner access.",
+      "Keep manual upload available until official partner access exists."
+    ];
+  }
+  return ["Open manual clip upload.", "Default clips to private review.", "Run the same bird scoring pipeline after review."];
+}
+
 function getNextStep(mode: CameraConnectionMode, provider: CameraProvider) {
   if (mode === "official-oauth") {
     return `Open the official ${provider.name} account approval flow, then store vendor tokens server-side only.`;
@@ -107,6 +148,43 @@ export function getSyncStatusForConnectionRequest(request: CameraConnectionReque
   if (request.status === "relay-required") return "relay-required";
   if (request.status === "partner-review") return "needs-approval";
   return "synced";
+}
+
+export function createCameraSyncSession(input: {
+  userId: string;
+  provider: CameraProvider;
+  privacyMode: CameraPrivacyMode;
+  motionUploadsEnabled: boolean;
+}): CameraSyncSession {
+  const mode = getConnectionMode(input.provider);
+  const now = new Date();
+  const syncSession = {
+    id: createId("sync"),
+    userId: input.userId,
+    providerId: input.provider.id,
+    providerName: input.provider.name,
+    mode,
+    status: getSessionStatus(mode),
+    approvalPath: getApprovalPath(mode, input.provider),
+    privacyMode: input.privacyMode,
+    motionUploadsEnabled: input.motionUploadsEnabled,
+    deviceRegistrationRequired: mode === "local-relay",
+    relayRequired: mode === "local-relay",
+    oauthRequired: mode === "official-oauth",
+    partnerAccessRequired: mode === "partner-request",
+    checklist: getSessionChecklist(mode),
+    createdAt: "Just now",
+    expiresAt: new Date(now.getTime() + 1000 * 60 * 30).toISOString()
+  } satisfies CameraSyncSession;
+
+  void postJson<{ syncSession: CameraSyncSession }>("/api/cameras/sync-sessions", {
+    userId: input.userId,
+    providerId: input.provider.id,
+    privacyMode: input.privacyMode,
+    motionUploadsEnabled: input.motionUploadsEnabled
+  });
+
+  return syncSession;
 }
 
 export function createCameraConnectionRequest(input: {
@@ -329,7 +407,7 @@ export function createDemoRelayUpload(input: {
       loggedAt: "Needs review",
       points
     },
-    reviewMessage: `Accepted signed relay upload ${motionEventId} from ${input.device.displayName} for private review.`
+    reviewMessage: `Accepted signed relay upload ${motionEventId} from ${input.device.displayName} as a ${input.privacyMode} item pending review.`
   } satisfies CameraRelayUploadResult;
 
   void postJson<{ relayUpload: CameraRelayUploadResult }>(

@@ -13,7 +13,9 @@ Updated: August 17, 2026
 - Merged camera connection/ingest contract PR: `https://github.com/ceejkim/trailfren/pull/12`
 - Merged stateless camera API PR: `https://github.com/ceejkim/trailfren/pull/13`
 - Merged camera API runtime fixes: `https://github.com/ceejkim/trailfren/pull/14` and `https://github.com/ceejkim/trailfren/pull/15`
-- Latest shipped slice: live-tested stateless Vercel camera API routes and browser API mirroring
+- Merged camera device relay upload PR: `https://github.com/ceejkim/trailfren/pull/17`
+- Latest shipped slice: camera device registration and signed relay upload contract
+- Current working slice: one-tap camera account sync wizard and stateless sync-session route
 - GitHub tracking issues:
   - Day 1: `https://github.com/ceejkim/trailfren/issues/4`
   - Day 2: `https://github.com/ceejkim/trailfren/issues/5`
@@ -27,6 +29,7 @@ Updated: August 17, 2026
   - `docs/camera-integrations.md`
   - `docs/camera-ingestion-design.md`
   - `docs/camera-sync-ux.md`
+  - `docs/camera-account-sync-wizard.md`
   - `docs/agents/README.md`
 
 ## What Is Done
@@ -44,6 +47,9 @@ Updated: August 17, 2026
 - Added camera provider selection, privacy defaults, and provider-specific approval CTAs.
 - Added connection request and clip ingest TypeScript contracts.
 - Added live-tested stateless Vercel routes for connection requests, clip ingest previews, and generic device status.
+- Added stateless Vercel routes for device registration, relay uploads, and sync-session orchestration.
+- Added the account-aware Camera Sync wizard for selecting a camera and pressing one provider-specific sync/approval action.
+- Added a Device Relay panel for account-bound local relay registration and signed relay upload previews.
 - Verified the live API rejects sensitive fields such as `password`.
 
 ## Current App Shape
@@ -59,8 +65,9 @@ The app is a compact Vite + React + TypeScript MVP with:
 - Fantasy-style leaderboard and challenges
 - Affiliate-style gear recommendations
 - Camera provider onboarding for Birdfy/Netvue, Bird Buddy, Ring, Nest, Reolink, Tapo, supported Wyze, and manual upload
-- Camera connection request and clip ingest contracts
-- Stateless Vercel API routes for camera connection requests, clip ingest previews, and generic device status
+- One-tap account-aware camera sync wizard
+- Camera sync session, connection request, device registration, relay upload, and clip ingest contracts
+- Stateless Vercel API routes for camera sync sessions, connection requests, device registration, relay uploads, clip ingest previews, and generic device status
 
 The app does not yet have:
 
@@ -117,11 +124,12 @@ Definition of done:
 
 Goal: Add the first real ingestion path without overcommitting cloud complexity.
 
-Status: In progress. Contracts and the live-tested stateless API boundary are in place; durable auth/storage and relay upload auth are next.
+Status: In progress. Contracts, the one-tap wizard, and the live-tested stateless API boundary are in place; durable auth/storage and real relay upload auth are next.
 
 Deliverables:
 
 - Local RTSP/ONVIF connector skeleton.
+- One-tap camera sync session boundary.
 - Stream registration data model.
 - Motion-event data flow.
 - Clip metadata shape.

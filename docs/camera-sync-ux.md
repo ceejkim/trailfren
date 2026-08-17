@@ -10,23 +10,26 @@ A user should be able to create a Flock account, choose the camera they own, app
 
 1. Create or sign in to Flock.
 2. Open Cameras.
-3. Select camera provider.
-4. Click the provider-specific sync button.
-5. Flock routes the user to the correct connection path:
+3. Confirm the account shown in the Camera Sync wizard.
+4. Select camera provider.
+5. Click the single provider-specific sync or approval button.
+6. Flock creates a sync session and routes the user to the correct connection path:
    - Official account link for Ring and Nest.
    - Local relay setup for RTSP/ONVIF cameras such as Reolink, Tapo, and supported Wyze models.
    - Partner/export/share/import path for Birdfy and Bird Buddy until official developer access exists.
    - Manual upload fallback for every provider.
-6. Register a camera device record owned by the user's account.
-7. New clips default to private.
-8. Motion-triggered clips enter the bird review pipeline before scoring or sharing.
+7. Register a camera device record owned by the user's account.
+8. New clips default to private.
+9. Motion-triggered clips enter the bird review pipeline before scoring or sharing.
 
 ## Implemented Front-End Boundary
 
 The current app now has:
 
 - Provider selection in the Cameras tab.
+- A one-tap Camera Sync wizard that shows account, provider path, privacy default, motion upload preference, and setup status.
 - A provider-specific sync/approval CTA.
+- A `CameraSyncSession` contract created by the wizard sync action.
 - A `CameraConnectionRequest` contract created by the sync button.
 - Callback paths for official OAuth, local relay, partner/export request, and manual upload modes.
 - A next-step message for each integration mode.
@@ -43,6 +46,7 @@ This proves the user flow and API shape without collecting real camera credentia
 The current backend boundary is implemented as stateless Vercel functions:
 
 - `POST /api/cameras/connection-requests`
+- `POST /api/cameras/sync-sessions`
 - `POST /api/cameras/devices`
 - `POST /api/cameras/clip-ingests`
 - `POST /api/cameras/relay-uploads`
@@ -51,6 +55,8 @@ The current backend boundary is implemented as stateless Vercel functions:
 The route files are self-contained JavaScript functions under `api/` so Vercel packages one clear runtime implementation for each endpoint. The routes intentionally do not persist or list user camera records yet. They validate the supported provider, reject sensitive fields such as passwords, secrets, tokens, API keys, and refresh values, reject unredacted RTSP/ONVIF endpoints, and return safe demo objects that match the front-end contracts.
 
 The relay upload endpoint requires the `x-flock-relay-signature` header in demo mode. Production signing must move to a server-held relay secret after real account persistence exists.
+
+The sync-session endpoint is the stateless orchestration surface for the simple account-to-camera wizard. It returns the safe next path for the selected provider and rejects secrets or private stream URLs.
 
 This is the correct bridge between the mock app and a real integration system: it gives Vercel a deployable API surface while avoiding private-feed storage, credential collection, or vendor API claims that have not been approved.
 
@@ -124,7 +130,9 @@ Requirements:
 The current front-end exposes:
 
 - Provider list
+- Account-aware one-tap sync wizard
 - Provider-specific sync CTA
+- Sync session status
 - Connection status
 - Device registration
 - Relay enrollment for local cameras
@@ -142,6 +150,25 @@ The current front-end does not collect secrets or connect to real cameras yet.
 Implemented in `src/types.ts`, `src/cameraApi.ts`, and the self-contained JavaScript functions in the root `api/` routes.
 
 ```ts
+export type CameraSyncSession = {
+  id: string;
+  userId: string;
+  providerId: CameraProviderId;
+  providerName: string;
+  mode: CameraConnectionMode;
+  status: "approval-required" | "device-registration-required" | "export-approval-required" | "manual-ready";
+  approvalPath: string;
+  privacyMode: CameraPrivacyMode;
+  motionUploadsEnabled: boolean;
+  deviceRegistrationRequired: boolean;
+  relayRequired: boolean;
+  oauthRequired: boolean;
+  partnerAccessRequired: boolean;
+  checklist: string[];
+  createdAt: string;
+  expiresAt: string;
+};
+
 export type CameraDevice = {
   id: string;
   ownerId: string;
@@ -190,6 +217,7 @@ Turn the stateless API boundary into authenticated durable state:
 
 - Add account/auth ownership checks before any camera data is stored.
 - Store camera device records, connection requests, relay enrollments, and clip ingest records in a database.
+- Persist sync sessions and reconcile them in the wizard after reload.
 - Replace demo relay signatures with server-held relay signing secrets.
 - Add provider-specific OAuth handoff routes only after credentials and vendor setup are approved.
 - Add loading/error UI that reconciles the front-end state with server responses.
