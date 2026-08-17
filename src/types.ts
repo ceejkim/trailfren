@@ -1,5 +1,46 @@
 export type Rarity = "Common" | "Uncommon" | "Rare" | "Legendary";
 
+export type CameraProviderId =
+  | "birdfy"
+  | "bird-buddy"
+  | "ring"
+  | "nest"
+  | "reolink"
+  | "tapo"
+  | "wyze"
+  | "manual-upload";
+
+export type CameraIntegrationPhase = "partner-export" | "official-cloud" | "local-relay" | "manual";
+
+export type CameraSyncStatus = "not-started" | "needs-approval" | "waiting-on-provider" | "relay-required" | "synced";
+
+export type CameraPrivacyMode = "private" | "friends" | "league";
+
+export type CameraProvider = {
+  id: CameraProviderId;
+  name: string;
+  category: string;
+  phase: CameraIntegrationPhase;
+  connectionLabel: string;
+  primaryAction: string;
+  syncSummary: string;
+  motionFlow: string;
+  limitations: string[];
+  supportsMotionClips: boolean;
+  requiresOAuth: boolean;
+  requiresLocalRelay: boolean;
+  docsUrl: string;
+};
+
+export type CameraSyncState = {
+  providerId: CameraProviderId;
+  status: CameraSyncStatus;
+  approvalLabel: string;
+  privacyMode: CameraPrivacyMode;
+  motionUploadsEnabled: boolean;
+  lastSyncedAt?: string;
+};
+
 export type UserProfile = {
   id: string;
   name: string;
