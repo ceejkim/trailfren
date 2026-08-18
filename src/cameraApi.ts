@@ -14,6 +14,7 @@ import type {
   CameraDeviceRegistrationResult,
   CameraPrivacyMode,
   CameraProvider,
+  CameraRelayManifest,
   CameraRelayUploadRequest,
   CameraRelayUploadResult,
   CameraReviewRecord,
@@ -97,7 +98,7 @@ function getStreamTransport(provider: CameraProvider): CameraStreamTransport {
 
 function getCallbackPath(mode: CameraConnectionMode, provider: CameraProvider) {
   if (mode === "official-oauth") return `/api/cameras/${provider.id}/oauth/callback`;
-  if (mode === "local-relay") return `/api/cameras/${provider.id}/relay/connect`;
+  if (mode === "local-relay") return "/api/cameras/relay-manifests";
   if (mode === "partner-request") return `/api/cameras/${provider.id}/partner-request`;
   return `/api/cameras/manual-upload`;
 }
@@ -354,6 +355,98 @@ export function createCameraDeviceRegistration(input: DeviceRegistrationInput): 
     getDeviceRegistrationPayload(input, registrationResult)
   );
   return registrationResult;
+}
+
+type RelayManifestInput = {
+  userId: string;
+  provider: CameraProvider;
+  registration: CameraDeviceRegistrationResult;
+  privacyMode: CameraPrivacyMode;
+  motionUploadsEnabled: boolean;
+};
+
+function buildCameraRelayManifest(input: RelayManifestInput): CameraRelayManifest {
+  const relayId = input.registration.relay?.relayId ?? input.registration.device.relayId ?? createId("relay");
+  const redactedEndpoint = input.registration.device.redactedEndpoint ?? "rtsp://[redacted]@camera.local/stream";
+  const supportedTransports = input.provider.id === "wyze" ? ["rtsp"] : input.provider.requiresLocalRelay ? ["rtsp", "onvif"] : ["manual-upload"];
+  return {
+    id: createId("manifest"),
+    version: 1,
+    status: "ready-for-local-relay",
+    providerId: input.provider.id,
+    providerName: input.provider.name,
+    deviceId: input.registration.device.id,
+    relayId,
+    displayName: input.registration.device.displayName,
+    privacyMode: input.privacyMode,
+    motionUploadsEnabled: input.motionUploadsEnabled,
+    generatedAt: "Just now",
+    relayRuntime: {
+      supportedTransports,
+      eventStrategy: supportedTransports.includes("onvif") ? "onvif-events-or-rtsp-motion-windows" : "rtsp-motion-windows",
+      cameraCredentialsBoundary: "local-only",
+      clipPolicy: input.motionUploadsEnabled ? "bird-or-motion-events-only" : "user-approved-events-only"
+    },
+    cloudUpload: {
+      method: "POST",
+      path: "/api/cameras/relay-uploads",
+      signatureHeader: "x-flock-relay-signature",
+      signatureMode: "demo-prefix",
+      signatureFormat: "demo-<deviceId>-<motionEventId>",
+      signaturePayload: "deviceId.relayId.motionEventId",
+      requiredJsonFields: ["providerId", "deviceId", "relayId", "motionEventId", "cameraName", "capturedAt", "durationSeconds"],
+      optionalJsonFields: ["thumbnailUrl", "clipUrl", "privacyMode"]
+    },
+    health: {
+      method: "GET",
+      path: `/api/cameras/${input.registration.device.id}/status`,
+      requiredQueryFields: ["userId", "providerId"],
+      expectedAfterUpload: "connected"
+    },
+    localSecrets: {
+      boundary: "keep-inside-user-relay",
+      requiredLocalFields: ["camera username", "camera password", "RTSP or ONVIF endpoint"],
+      forbiddenCloudFields: ["password", "secret", "token", "apiKey", "refreshToken", "unredactedEndpoint"],
+      redactedEndpoint
+    },
+    samplePayload: {
+      providerId: input.provider.id,
+      deviceId: input.registration.device.id,
+      relayId,
+      motionEventId: "motion-<event-id>",
+      cameraName: input.registration.device.displayName,
+      capturedAt: "<iso-timestamp>",
+      durationSeconds: 14,
+      privacyMode: input.privacyMode
+    },
+    sampleSignature: `demo-${input.registration.device.id}-motion-<event-id>`,
+    installSteps: [
+      "Register the device in BirdWatch.",
+      "Store the real camera endpoint and camera credentials only in the local relay.",
+      "Use this manifest to sign motion uploads to BirdWatch.",
+      "Confirm device status after the first accepted upload."
+    ],
+    hardGates: input.provider.limitations
+  } satisfies CameraRelayManifest;
+}
+
+function getRelayManifestPayload(input: RelayManifestInput) {
+  return {
+    userId: input.userId,
+    providerId: input.provider.id,
+    deviceId: input.registration.device.id,
+    relayId: input.registration.relay?.relayId ?? input.registration.device.relayId,
+    displayName: input.registration.device.displayName,
+    redactedEndpoint: input.registration.device.redactedEndpoint,
+    privacyMode: input.privacyMode,
+    motionUploadsEnabled: input.motionUploadsEnabled
+  };
+}
+
+export async function requestCameraRelayManifest(input: RelayManifestInput): Promise<CameraRelayManifest> {
+  const fallback = buildCameraRelayManifest(input);
+  const result = await postJson<{ relayManifest: CameraRelayManifest }>("/api/cameras/relay-manifests", getRelayManifestPayload(input));
+  return result?.relayManifest ?? fallback;
 }
 
 function formatDuration(seconds: number) {

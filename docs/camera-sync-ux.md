@@ -233,6 +233,6 @@ The routes should still avoid real credentials until the user explicitly approve
 
 - Birdfy support describes motion detection, cloud-saved recorded clips, app settings, and third-party live streaming options: https://support.birdfy.com/help/birdfy-app/Introduction-BirdfyApp/
 - Bird Buddy EULA restricts commercial use, reverse engineering, unauthorized access, and app redistribution while allowing user content sharing within terms: https://mybirdbuddy.com/app-eula/
-- Ring Developer docs describe official account linking, motion events, webhooks, live video, clips, and certification requirements: https://developer.ring.com/
+- Ring Developer docs describe official account linking, motion events, webhooks, live video, clips, and certification requirements: https://developer.amazon.com/docs/ring/api-documentation.html
 - Google Nest Device Access docs describe camera motion events and WebRTC live stream traits: https://developers.google.com/nest/device-access/api/camera-wired
 - Vercel Functions run from the root `api` directory and support JavaScript/TypeScript function files: https://vercel.com/docs/functions/runtimes/node-js

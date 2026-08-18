@@ -147,6 +147,79 @@
   background: #f0fbf3;
 }
 
+.adapter-contract-strip {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #dce4dd;
+  border-radius: 8px;
+  background: #fbfcfb;
+}
+
+.adapter-contract-strip div {
+  display: grid;
+  gap: 3px;
+}
+
+.adapter-contract-strip span {
+  color: #52635a;
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.adapter-contract-strip strong {
+  color: #17211d;
+  font-size: 0.92rem;
+}
+
+.adapter-contract-strip code {
+  justify-self: end;
+  max-width: 100%;
+  padding: 5px 7px;
+  overflow-wrap: anywhere;
+  border-radius: 6px;
+  background: #edf2ee;
+  color: #265f4c;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-align: right;
+}
+
+.adapter-contract-strip.adapter-vendor-setup-required {
+  border-color: #f0d3a4;
+  background: #fffaf1;
+}
+
+.adapter-contract-strip.adapter-relay-required,
+.adapter-contract-strip.adapter-model-check-required {
+  border-color: #c6ddf0;
+  background: #f4f9fd;
+}
+
+.adapter-gate-list {
+  display: grid;
+  gap: 7px;
+}
+
+.adapter-gate-list p {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  color: #52635a;
+  font-size: 0.86rem;
+}
+
+.adapter-gate-list svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: #537d6a;
+}
+
 .sync-next-step {
   padding-top: 8px;
   border-top: 1px solid rgba(83, 125, 106, 0.2);
@@ -231,6 +304,38 @@
   background: #eef7ff;
   color: #26372e;
   font-size: 0.86rem;
+}
+
+.relay-manifest-card {
+  display: grid;
+  gap: 7px;
+  padding: 11px;
+  border: 1px solid #d8dfc5;
+  border-radius: 8px;
+  background: #fbfdee;
+  color: #26372e;
+  font-size: 0.86rem;
+}
+
+.relay-manifest-card div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.relay-manifest-card span,
+.relay-manifest-card code {
+  overflow-wrap: anywhere;
+  color: #52635a;
+}
+
+.relay-manifest-card code {
+  padding: 5px 7px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.72);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.78rem;
+  font-weight: 800;
 }
 
 .relay-contract-card div {
@@ -448,6 +553,15 @@
 
   .provider-card {
     min-height: auto;
+  }
+
+  .adapter-contract-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .adapter-contract-strip code {
+    justify-self: start;
+    text-align: left;
   }
 
   .sync-flow article,

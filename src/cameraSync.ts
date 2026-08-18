@@ -28,6 +28,14 @@ export const cameraProviders: CameraProvider[] = [
     supportsMotionClips: true,
     requiresOAuth: false,
     requiresLocalRelay: false,
+    adapterPath: "/api/cameras/birdfy/partner-request",
+    adapterStatus: "partner-or-export",
+    adapterStatusLabel: "Partner/export path",
+    setupGates: [
+      "No public developer API is documented.",
+      "No vendor passwords in Flock.",
+      "Automatic sync needs partner access or user-approved export/share."
+    ],
     docsUrl: "https://support.birdfy.com/help/birdfy-app/Introduction-BirdfyApp/"
   },
   {
@@ -49,7 +57,15 @@ export const cameraProviders: CameraProvider[] = [
     supportsMotionClips: true,
     requiresOAuth: false,
     requiresLocalRelay: false,
-    docsUrl: "https://mybirdbuddy.com/app-eula/"
+    adapterPath: "/api/cameras/bird-buddy/partner-request",
+    adapterStatus: "partner-or-export",
+    adapterStatusLabel: "Partner/export path",
+    setupGates: [
+      "No private app automation.",
+      "Automatic sync needs partner access or explicit export/share permission.",
+      "Manual upload remains the fallback."
+    ],
+    docsUrl: "https://support.mybirdbuddy.com/hc/en-us/articles/9175854254865-Postcards-Collecting-Photos-and-Videos"
   },
   {
     id: "ring",
@@ -70,7 +86,15 @@ export const cameraProviders: CameraProvider[] = [
     supportsMotionClips: true,
     requiresOAuth: true,
     requiresLocalRelay: false,
-    docsUrl: "https://developer.ring.com/"
+    adapterPath: "/api/cameras/ring/oauth/start",
+    adapterStatus: "vendor-setup-required",
+    adapterStatusLabel: "Official API setup required",
+    setupGates: [
+      "Ring partner/developer setup is required.",
+      "OAuth tokens and webhook secrets are server-only.",
+      "Webhook signatures must be verified before accepting events."
+    ],
+    docsUrl: "https://developer.amazon.com/docs/ring/api-documentation.html"
   },
   {
     id: "nest",
@@ -91,6 +115,14 @@ export const cameraProviders: CameraProvider[] = [
     supportsMotionClips: true,
     requiresOAuth: true,
     requiresLocalRelay: false,
+    adapterPath: "/api/cameras/nest/oauth/start",
+    adapterStatus: "vendor-setup-required",
+    adapterStatusLabel: "Device Access setup required",
+    setupGates: [
+      "Google Device Access project setup is required.",
+      "Supported traits vary by camera model.",
+      "OAuth tokens and events are handled server-side."
+    ],
     docsUrl: "https://developers.google.com/nest/device-access/api/camera-wired"
   },
   {
@@ -112,7 +144,15 @@ export const cameraProviders: CameraProvider[] = [
     supportsMotionClips: true,
     requiresOAuth: false,
     requiresLocalRelay: true,
-    docsUrl: "https://support.reolink.com/hc/en-us/articles/900000617826/"
+    adapterPath: "/api/cameras/devices",
+    adapterStatus: "relay-required",
+    adapterStatusLabel: "Local relay ready",
+    setupGates: [
+      "Confirm model-level RTSP/ONVIF support.",
+      "Keep camera credentials in the local relay.",
+      "Upload signed clip records to Vercel only."
+    ],
+    docsUrl: "https://support.reolink.com/articles/900000617826-Which-Reolink-Products-Support-CGI-RTSP-ONVIF/"
   },
   {
     id: "tapo",
@@ -133,7 +173,15 @@ export const cameraProviders: CameraProvider[] = [
     supportsMotionClips: true,
     requiresOAuth: false,
     requiresLocalRelay: true,
-    docsUrl: "https://www.tapo.com/us/faq/34/"
+    adapterPath: "/api/cameras/devices",
+    adapterStatus: "relay-required",
+    adapterStatusLabel: "Local relay ready",
+    setupGates: [
+      "Confirm RTSP/ONVIF support for the exact camera.",
+      "Keep camera account credentials in the local relay.",
+      "Vercel receives signed clip uploads, not LAN streams."
+    ],
+    docsUrl: "https://www.tp-link.com/us/support/faq/2680/"
   },
   {
     id: "wyze",
@@ -154,7 +202,15 @@ export const cameraProviders: CameraProvider[] = [
     supportsMotionClips: true,
     requiresOAuth: false,
     requiresLocalRelay: true,
-    docsUrl: "https://forums.wyze.com/t/wyze-firmware-updates-2-2-2026/340669"
+    adapterPath: "/api/cameras/wyze/model-check",
+    adapterStatus: "model-check-required",
+    adapterStatusLabel: "RTSP model check",
+    setupGates: [
+      "Only documented RTSP models are eligible.",
+      "Confirm firmware before relay setup.",
+      "Unsupported models fall back to manual upload."
+    ],
+    docsUrl: "https://support.wyze.com/hc/en-us/articles/360026245231-Wyze-Cam-RTSP"
   },
   {
     id: "manual-upload",
@@ -171,6 +227,10 @@ export const cameraProviders: CameraProvider[] = [
     supportsMotionClips: false,
     requiresOAuth: false,
     requiresLocalRelay: false,
+    adapterPath: "/api/cameras/clip-ingests",
+    adapterStatus: "available-now",
+    adapterStatusLabel: "Available now",
+    setupGates: [],
     docsUrl: "docs/camera-ingestion-design.md"
   }
 ];

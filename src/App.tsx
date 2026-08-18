@@ -54,6 +54,7 @@ import {
   requestBirdIntelligenceAnalysis,
   requestCameraConnectionRequest,
   requestCameraDeviceRegistration,
+  requestCameraRelayManifest,
   requestCameraSyncSession,
   requestDemoCameraClipIngest,
   requestDemoRelayUpload
@@ -69,6 +70,7 @@ import type {
   CameraDeviceRegistrationResult,
   CameraPrivacyMode,
   CameraProviderId,
+  CameraRelayManifest,
   CameraRelayUploadResult,
   CameraReviewRecord,
   CameraSyncSession,
@@ -94,6 +96,7 @@ type AppState = {
   lastSyncSession?: CameraSyncSession;
   lastConnectionRequest?: CameraConnectionRequest;
   lastDeviceRegistration?: CameraDeviceRegistrationResult;
+  lastRelayManifest?: CameraRelayManifest;
   lastIngestResult?: CameraClipIngestResult;
   lastRelayUpload?: CameraRelayUploadResult;
   lastBirdAnalysis?: BirdIntelligenceAnalysis;
@@ -126,6 +129,7 @@ function loadState(): AppState {
       lastSyncSession: parsed.lastSyncSession,
       lastConnectionRequest: parsed.lastConnectionRequest,
       lastDeviceRegistration: parsed.lastDeviceRegistration,
+      lastRelayManifest: parsed.lastRelayManifest,
       lastIngestResult: parsed.lastIngestResult,
       lastRelayUpload: parsed.lastRelayUpload,
       lastBirdAnalysis: parsed.lastBirdAnalysis,
@@ -203,6 +207,11 @@ function reconcileCameraAccountState(current: AppState, accountState: CameraAcco
     device?.relayId && records.relayEnrollments.find((candidate) => candidate.relayId === device.relayId)
       ? records.relayEnrollments.find((candidate) => candidate.relayId === device.relayId)
       : getLatest(records.relayEnrollments, ["enrolledAt"]);
+  const relayManifests = records.relayManifests ?? [];
+  const relayManifest =
+    relay?.relayId && relayManifests.find((candidate) => candidate.relayId === relay.relayId)
+      ? relayManifests.find((candidate) => candidate.relayId === relay.relayId)
+      : getLatest(relayManifests, ["generatedAt"]);
   const relayUpload = getLatest(records.relayUploads, ["acceptedAt"]);
   const clipIngest = getLatest(records.clipIngests, ["reviewRecord.createdAt"]);
   const birdAnalysis = getLatest(records.birdAnalyses ?? [], ["updatedAt", "createdAt"]);
@@ -213,6 +222,7 @@ function reconcileCameraAccountState(current: AppState, accountState: CameraAcco
     records.syncSessions.length +
       records.connectionRequests.length +
       records.devices.length +
+      relayManifests.length +
       records.relayUploads.length +
       records.clipIngests.length >
     0;
@@ -281,6 +291,7 @@ function reconcileCameraAccountState(current: AppState, accountState: CameraAcco
     lastSyncSession: syncSession ?? current.lastSyncSession,
     lastConnectionRequest: connectionRequest ?? current.lastConnectionRequest,
     lastDeviceRegistration: registration,
+    lastRelayManifest: relayManifest ?? current.lastRelayManifest,
     lastIngestResult,
     lastRelayUpload: relayUpload ?? current.lastRelayUpload,
     lastBirdAnalysis: birdAnalysis ?? current.lastBirdAnalysis,
@@ -515,6 +526,7 @@ function App() {
       lastSyncSession: undefined,
       lastConnectionRequest: undefined,
       lastDeviceRegistration: undefined,
+      lastRelayManifest: undefined,
       lastIngestResult: undefined,
       lastRelayUpload: undefined,
       lastBirdAnalysis: undefined,
@@ -558,6 +570,19 @@ function App() {
       locationLabel: state.profile.location
     });
     recordDeviceRegistration(registration);
+    void refreshCameraAccountState();
+  }
+
+  async function createRelayManifestForRegisteredDevice() {
+    if (!state.lastDeviceRegistration?.relay) return;
+    const relayManifest = await requestCameraRelayManifest({
+      userId: state.profile.id,
+      provider: selectedProvider,
+      registration: state.lastDeviceRegistration,
+      privacyMode: state.cameraSync.privacyMode,
+      motionUploadsEnabled: state.cameraSync.motionUploadsEnabled
+    });
+    recordRelayManifest(relayManifest);
     void refreshCameraAccountState();
   }
 
@@ -609,7 +634,21 @@ function App() {
         relayUploadUrl: registration.relay?.uploadUrl
       },
       lastDeviceRegistration: registration,
+      lastRelayManifest: undefined,
       lastRelayUpload: undefined
+    });
+  }
+
+  function recordRelayManifest(relayManifest: CameraRelayManifest) {
+    commit({
+      ...state,
+      lastRelayManifest: relayManifest,
+      cameraSync: {
+        ...state.cameraSync,
+        relayId: relayManifest.relayId,
+        relayUploadUrl: relayManifest.cloudUpload.path,
+        nextStep: "Relay manifest is ready for the local camera agent."
+      }
     });
   }
 
@@ -1004,6 +1043,7 @@ function App() {
               syncSession={state.lastSyncSession}
               connectionRequest={state.lastConnectionRequest}
               registration={state.lastDeviceRegistration}
+              relayManifest={state.lastRelayManifest}
               ingestResult={state.lastIngestResult}
               relayUpload={state.lastRelayUpload}
               onProviderChange={selectCameraProvider}
@@ -1011,6 +1051,7 @@ function App() {
               onMotionUploadsChange={setMotionUploadsEnabled}
               onStartConnection={startCameraSync}
               onRegisterDevice={registerSelectedCameraDevice}
+              onCreateRelayManifest={createRelayManifestForRegisteredDevice}
               onPreviewMotionUpload={previewMotionUpload}
               onPreviewRelayUpload={previewSignedRelayUpload}
             />
@@ -1054,6 +1095,23 @@ function App() {
                 <p>{selectedProvider.motionFlow}</p>
                 {state.cameraSync.nextStep && <p className="sync-next-step">{state.cameraSync.nextStep}</p>}
               </div>
+              <div className={`adapter-contract-strip adapter-${selectedProvider.adapterStatus}`}>
+                <div>
+                  <span>Adapter</span>
+                  <strong>{selectedProvider.adapterStatusLabel}</strong>
+                </div>
+                <code>{selectedProvider.adapterPath}</code>
+              </div>
+              {selectedProvider.setupGates.length > 0 && (
+                <div className="adapter-gate-list">
+                  {selectedProvider.setupGates.slice(0, 3).map((gate) => (
+                    <p key={gate}>
+                      <ShieldCheck size={15} />
+                      {gate}
+                    </p>
+                  ))}
+                </div>
+              )}
               <button className="primary-button" onClick={startCameraSync} type="button">
                 <RotateCw size={17} />
                 {selectedProvider.primaryAction}
@@ -1102,8 +1160,10 @@ function App() {
               privacyMode={state.cameraSync.privacyMode}
               motionUploadsEnabled={state.cameraSync.motionUploadsEnabled}
               registration={state.lastDeviceRegistration}
+              relayManifest={state.lastRelayManifest}
               relayUpload={state.lastRelayUpload}
               onDeviceRegistered={recordDeviceRegistration}
+              onCreateRelayManifest={createRelayManifestForRegisteredDevice}
               onRelayUploadAccepted={acceptRelayUpload}
             />
 

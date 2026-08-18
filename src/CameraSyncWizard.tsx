@@ -18,6 +18,7 @@ import type {
   CameraPrivacyMode,
   CameraProvider,
   CameraProviderId,
+  CameraRelayManifest,
   CameraRelayUploadResult,
   CameraSyncSession,
   CameraSyncState
@@ -34,6 +35,7 @@ type CameraSyncWizardProps = {
   syncSession?: CameraSyncSession;
   connectionRequest?: CameraConnectionRequest;
   registration?: CameraDeviceRegistrationResult;
+  relayManifest?: CameraRelayManifest;
   ingestResult?: CameraClipIngestResult;
   relayUpload?: CameraRelayUploadResult;
   onProviderChange: (providerId: CameraProviderId) => void;
@@ -41,6 +43,7 @@ type CameraSyncWizardProps = {
   onMotionUploadsChange: (enabled: boolean) => void;
   onStartConnection: () => void;
   onRegisterDevice: () => void;
+  onCreateRelayManifest: () => void;
   onPreviewMotionUpload: () => void;
   onPreviewRelayUpload: () => void;
 };
@@ -70,9 +73,11 @@ function getPrimaryAction({
   provider,
   connectionRequest,
   registration,
+  relayManifest,
   relayUpload,
   onStartConnection,
   onRegisterDevice,
+  onCreateRelayManifest,
   onPreviewMotionUpload,
   onPreviewRelayUpload
 }: Pick<
@@ -80,9 +85,11 @@ function getPrimaryAction({
   | "provider"
   | "connectionRequest"
   | "registration"
+  | "relayManifest"
   | "relayUpload"
   | "onStartConnection"
   | "onRegisterDevice"
+  | "onCreateRelayManifest"
   | "onPreviewMotionUpload"
   | "onPreviewRelayUpload"
 >): WizardAction {
@@ -99,6 +106,14 @@ function getPrimaryAction({
       label: "Register relay device",
       icon: KeyRound,
       onClick: onRegisterDevice
+    };
+  }
+
+  if (provider.requiresLocalRelay && !relayManifest) {
+    return {
+      label: "Create relay manifest",
+      icon: RadioTower,
+      onClick: onCreateRelayManifest
     };
   }
 
@@ -128,6 +143,7 @@ export function CameraSyncWizard({
   syncSession,
   connectionRequest,
   registration,
+  relayManifest,
   ingestResult,
   relayUpload,
   onProviderChange,
@@ -135,6 +151,7 @@ export function CameraSyncWizard({
   onMotionUploadsChange,
   onStartConnection,
   onRegisterDevice,
+  onCreateRelayManifest,
   onPreviewMotionUpload,
   onPreviewRelayUpload
 }: CameraSyncWizardProps) {
@@ -142,9 +159,11 @@ export function CameraSyncWizard({
     provider,
     connectionRequest,
     registration,
+    relayManifest,
     relayUpload,
     onStartConnection,
     onRegisterDevice,
+    onCreateRelayManifest,
     onPreviewMotionUpload,
     onPreviewRelayUpload
   });
@@ -251,6 +270,7 @@ export function CameraSyncWizard({
             <WizardStatus label="Session" value={syncSession?.status ?? "Not started"} complete={Boolean(syncSession)} />
             <WizardStatus label="Request" value={connectionRequest?.status ?? "Waiting"} complete={Boolean(connectionRequest)} />
             <WizardStatus label="Device" value={registration?.device.connectionStatus ?? "Not registered"} complete={Boolean(registration)} />
+            <WizardStatus label="Manifest" value={relayManifest?.status ?? "Waiting"} complete={Boolean(relayManifest)} />
             <WizardStatus label="Upload" value={activeUpload?.status ?? "Waiting"} complete={Boolean(activeUpload)} />
           </div>
         </div>

@@ -3,14 +3,29 @@ import { createHmac } from "node:crypto";
 import birdCorrections from "../api/bird-intelligence/corrections.js";
 import birdReviews from "../api/bird-intelligence/reviews.js";
 import accountState from "../api/cameras/account-state.js";
+import birdBuddyPartnerRequest from "../api/cameras/bird-buddy/partner-request.js";
+import birdfyPartnerRequest from "../api/cameras/birdfy/partner-request.js";
 import clipIngests from "../api/cameras/clip-ingests.js";
 import connectionRequests from "../api/cameras/connection-requests.js";
 import devices from "../api/cameras/devices.js";
+import nestEvents from "../api/cameras/nest/events.js";
+import nestOAuthStart from "../api/cameras/nest/oauth/start.js";
+import providerAdapters from "../api/cameras/provider-adapters.js";
+import relayManifests from "../api/cameras/relay-manifests.js";
 import relayUploads from "../api/cameras/relay-uploads.js";
+import ringOAuthStart from "../api/cameras/ring/oauth/start.js";
+import ringWebhooks from "../api/cameras/ring/webhooks.js";
 import syncSessions from "../api/cameras/sync-sessions.js";
+import wyzeModelCheck from "../api/cameras/wyze/model-check.js";
 import status from "../api/cameras/[deviceId]/status.js";
 
 process.env.FLOCK_CAMERA_STORE_FILE = process.env.FLOCK_CAMERA_STORE_FILE || `/tmp/flock-camera-store-${process.pid}.json`;
+delete process.env.FLOCK_CAMERA_STORE_REST_URL;
+delete process.env.FLOCK_CAMERA_STORE_REST_TOKEN;
+delete process.env.KV_REST_API_URL;
+delete process.env.KV_REST_API_TOKEN;
+delete process.env.UPSTASH_REDIS_REST_URL;
+delete process.env.UPSTASH_REDIS_REST_TOKEN;
 delete process.env.FLOCK_SESSION_SIGNING_SECRET;
 delete process.env.FLOCK_RELAY_SIGNING_SECRET;
 
@@ -58,12 +73,62 @@ const registration = await call(
   devices,
   post({ userId, providerId: "reolink", privacyMode: "private", redactedEndpoint: "rtsp://[redacted]@camera.local/stream" })
 );
+const adapters = await call(providerAdapters, get({}, "/api/cameras/provider-adapters"));
+const ringStart = await call(ringOAuthStart, get({ userId }, "/api/cameras/ring/oauth/start"));
+const ringWebhook = await call(ringWebhooks, post({ userId, providerId: "ring", eventType: "motion" }));
+const nestStart = await call(nestOAuthStart, get({ userId }, "/api/cameras/nest/oauth/start"));
+const nestEvent = await call(nestEvents, post({ userId, providerId: "nest", eventType: "cameraMotion" }));
+const birdfyPartner = await call(birdfyPartnerRequest, post({ userId, providerId: "birdfy", importMode: "share-import" }));
+const birdBuddyPartner = await call(
+  birdBuddyPartnerRequest,
+  post({ userId, providerId: "bird-buddy", importMode: "postcard-export" })
+);
+const wyzeSupported = await call(wyzeModelCheck, post({ userId, model: "Wyze Cam v3" }));
+const wyzeUnsupported = await call(wyzeModelCheck, post({ userId, model: "Wyze Cam Outdoor" }));
 
 assert(sync.statusCode === 202, `expected sync session 202, got ${sync.statusCode}`);
 assert(connection.statusCode === 201, `expected connection request 201, got ${connection.statusCode}`);
 assert(registration.statusCode === 201, `expected device registration 201, got ${registration.statusCode}`);
+assert(adapters.statusCode === 200, `expected provider adapters 200, got ${adapters.statusCode}`);
+assert(adapters.payload.adapters.length >= 8, "expected camera provider adapter contracts");
+assert(
+  adapters.payload.envChecklist.requirements.some((requirement) => requirement.name === "FLOCK_RING_CLIENT_ID"),
+  "expected Ring env checklist"
+);
+assert(
+  adapters.payload.envChecklist.requirements.some((requirement) => requirement.name === "FLOCK_SESSION_SIGNING_SECRET"),
+  "expected signed account ownership env checklist"
+);
+assert(
+  adapters.payload.envChecklist.missingRequired.includes("FLOCK_SESSION_SIGNING_SECRET"),
+  "expected unsigned preview mode to report account signing gate"
+);
+assert(ringStart.statusCode === 501, `expected gated Ring OAuth 501, got ${ringStart.statusCode}`);
+assert(ringStart.payload.adapterAction.status.match(/configuration|required|vendor-review/), "expected gated Ring OAuth status");
+assert(ringWebhook.statusCode === 501, `expected gated Ring webhook 501, got ${ringWebhook.statusCode}`);
+assert(nestStart.statusCode === 501, `expected gated Nest OAuth 501, got ${nestStart.statusCode}`);
+assert(nestEvent.statusCode === 501, `expected gated Nest event 501, got ${nestEvent.statusCode}`);
+assert(birdfyPartner.statusCode === 202, `expected Birdfy partner request 202, got ${birdfyPartner.statusCode}`);
+assert(birdfyPartner.payload.adapterAction.passwordCollection === "forbidden", "expected Birdfy password collection gate");
+assert(birdBuddyPartner.statusCode === 202, `expected Bird Buddy partner request 202, got ${birdBuddyPartner.statusCode}`);
+assert(wyzeSupported.payload.modelCheck.localRelayEligible === true, "expected Wyze Cam v3 RTSP eligibility");
+assert(wyzeUnsupported.payload.modelCheck.localRelayEligible === false, "expected unsupported Wyze fallback");
+assert(wyzeUnsupported.payload.modelCheck.fallbackProviderId === "manual-upload", "expected unsupported Wyze manual fallback");
 
 const { device, relay } = registration.payload.registrationResult;
+const relayManifest = await call(
+  relayManifests,
+  post({
+    userId,
+    providerId: "reolink",
+    deviceId: device.id,
+    relayId: relay.relayId,
+    displayName: device.displayName,
+    redactedEndpoint: device.redactedEndpoint,
+    privacyMode: "private",
+    motionUploadsEnabled: true
+  })
+);
 const motionEventId = "motion-smoke";
 const relayUpload = await call(
   relayUploads,
@@ -85,6 +150,10 @@ const clipIngest = await call(
   post({ userId, providerId: "manual-upload", deviceId: device.id, cameraName: "Manual feeder", privacyMode: "league" })
 );
 
+assert(relayManifest.statusCode === 201, `expected relay manifest 201, got ${relayManifest.statusCode}`);
+assert(relayManifest.payload.relayManifest.cloudUpload.path === "/api/cameras/relay-uploads", "expected relay upload manifest path");
+assert(relayManifest.payload.relayManifest.localSecrets.boundary === "keep-inside-user-relay", "expected local-only relay secret boundary");
+assert(!JSON.stringify(relayManifest.payload.relayManifest).includes("admin:pass"), "expected manifest to avoid camera credentials");
 assert(relayUpload.statusCode === 202, `expected relay upload 202, got ${relayUpload.statusCode}`);
 assert(clipIngest.statusCode === 201, `expected clip ingest 201, got ${clipIngest.statusCode}`);
 
@@ -130,6 +199,7 @@ assert(account.payload.counts.syncSessions === 1, "expected one sync session");
 assert(account.payload.counts.connectionRequests === 1, "expected one connection request");
 assert(account.payload.counts.devices === 1, "expected one device");
 assert(account.payload.counts.relayEnrollments === 1, "expected one relay enrollment");
+assert(account.payload.counts.relayManifests === 1, "expected one relay manifest");
 assert(account.payload.counts.relayUploads === 1, "expected one relay upload");
 assert(account.payload.counts.clipIngests === 1, "expected one clip ingest");
 assert(account.payload.counts.reviewItems === 2, "expected two review items");
@@ -144,11 +214,20 @@ assert(deviceStatus.payload.device.status === "connected", "expected connected d
 
 const sensitive = await call(syncSessions, post({ userId, providerId: "birdfy", password: "nope" }));
 const endpoint = await call(devices, post({ userId, providerId: "reolink", redactedEndpoint: "rtsp://admin:pass@192.168.1.5/stream" }));
+const manifestEndpoint = await call(
+  relayManifests,
+  post({ userId, providerId: "reolink", deviceId: device.id, relayId: relay.relayId, redactedEndpoint: "rtsp://admin:pass@192.168.1.5/stream" })
+);
+const cloudManifest = await call(relayManifests, post({ userId, providerId: "ring", deviceId: device.id, relayId: relay.relayId }));
 const sensitiveAnalysis = await call(birdReviews, post({ userId, providerId: "reolink", reviewItemId: reviewItem.id, token: "nope" }));
+const sensitivePartner = await call(birdfyPartnerRequest, post({ userId, providerId: "birdfy", password: "nope" }));
 
 assert(sensitive.statusCode === 400, "expected sensitive field rejection");
 assert(endpoint.statusCode === 400, "expected unredacted endpoint rejection");
+assert(manifestEndpoint.statusCode === 400, "expected manifest unredacted endpoint rejection");
+assert(cloudManifest.statusCode === 400, "expected relay manifest to reject non-relay provider");
 assert(sensitiveAnalysis.statusCode === 400, "expected sensitive bird analysis rejection");
+assert(sensitivePartner.statusCode === 400, "expected sensitive partner request rejection");
 
 process.env.FLOCK_SESSION_SIGNING_SECRET = "test-session-secret";
 const missingHeader = await call(syncSessions, post({ userId: "signed-user", providerId: "birdfy" }));
@@ -167,6 +246,8 @@ console.log(
     {
       storeFile: process.env.FLOCK_CAMERA_STORE_FILE,
       counts: account.payload.counts,
+      adapterContracts: adapters.payload.adapters.length,
+      relayManifestStatus: relayManifest.payload.relayManifest.status,
       deviceStatus: deviceStatus.payload.device.status,
       birdAnalysisStatus: birdAnalysis.payload.analysis.status,
       birdCorrectionStatus: birdCorrection.payload.correction.reviewStatus,

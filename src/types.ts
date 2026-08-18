@@ -16,6 +16,13 @@ export type CameraConnectionMode = "partner-request" | "official-oauth" | "local
 
 export type CameraConnectionStatus = "queued" | "oauth-started" | "relay-required" | "partner-review" | "manual-ready";
 
+export type CameraProviderAdapterStatus =
+  | "available-now"
+  | "model-check-required"
+  | "partner-or-export"
+  | "relay-required"
+  | "vendor-setup-required";
+
 export type CameraClipIngestStatus = "received" | "processing" | "needs-review" | "ready";
 
 export type CameraSyncStatus = "not-started" | "needs-approval" | "waiting-on-provider" | "relay-required" | "synced";
@@ -164,6 +171,10 @@ export type CameraProvider = {
   supportsMotionClips: boolean;
   requiresOAuth: boolean;
   requiresLocalRelay: boolean;
+  adapterPath: string;
+  adapterStatus: CameraProviderAdapterStatus;
+  adapterStatusLabel: string;
+  setupGates: string[];
   docsUrl: string;
 };
 
@@ -203,6 +214,9 @@ export type CameraSyncSession = {
     credentialBoundary: string;
     transports: string[];
     launchStatus: string;
+    adapterPath?: string;
+    adapterStatus?: CameraProviderAdapterStatus;
+    adapterStatusLabel?: string;
     hardGates: string[];
     sourceUrl: string;
   };
@@ -240,6 +254,54 @@ export type CameraRelayEnrollment = {
   signatureFormat?: string;
   enrolledAt?: string;
   instructions: string[];
+  storage?: CameraPersistenceMetadata;
+};
+
+export type CameraRelayManifest = {
+  id: string;
+  version: number;
+  status: "ready-for-local-relay";
+  ownerId?: string;
+  providerId: CameraProviderId;
+  providerName: string;
+  deviceId: string;
+  relayId: string;
+  displayName: string;
+  privacyMode: CameraPrivacyMode;
+  motionUploadsEnabled: boolean;
+  generatedAt: string;
+  relayRuntime: {
+    supportedTransports: string[];
+    eventStrategy: string;
+    cameraCredentialsBoundary: "local-only";
+    clipPolicy: string;
+  };
+  cloudUpload: {
+    method: "POST";
+    path: "/api/cameras/relay-uploads";
+    signatureHeader: "x-flock-relay-signature";
+    signatureMode: string;
+    signatureFormat: string;
+    signaturePayload: string;
+    requiredJsonFields: string[];
+    optionalJsonFields: string[];
+  };
+  health: {
+    method: "GET";
+    path: string;
+    requiredQueryFields: string[];
+    expectedAfterUpload: string;
+  };
+  localSecrets: {
+    boundary: "keep-inside-user-relay";
+    requiredLocalFields: string[];
+    forbiddenCloudFields: string[];
+    redactedEndpoint: string;
+  };
+  samplePayload: Record<string, string | number | boolean>;
+  sampleSignature: string;
+  installSteps: string[];
+  hardGates: string[];
   storage?: CameraPersistenceMetadata;
 };
 
@@ -325,6 +387,7 @@ export type CameraAccountState = {
     connectionRequests: CameraConnectionRequest[];
     devices: CameraDevice[];
     relayEnrollments: CameraRelayEnrollment[];
+    relayManifests: CameraRelayManifest[];
     relayUploads: CameraRelayUploadResult[];
     clipIngests: CameraClipIngestResult[];
     reviewItems: CameraReviewRecord[];

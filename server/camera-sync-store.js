@@ -4,12 +4,13 @@ import { dirname, resolve } from "node:path";
 
 import { createId, getHeader } from "./camera-sync-architecture.js";
 
-const STORE_VERSION = 2;
+const STORE_VERSION = 3;
 const COLLECTIONS = [
   "syncSessions",
   "connectionRequests",
   "devices",
   "relayEnrollments",
+  "relayManifests",
   "relayUploads",
   "clipIngests",
   "reviewItems",
@@ -215,6 +216,22 @@ export async function persistCameraDeviceRegistration(request, body, registratio
   return { ...registrationResult, device, relay, storage };
 }
 
+export async function persistCameraRelayManifest(request, body, relayManifest) {
+  const account = getCameraAccountContext(request, body);
+  const storage = describeCameraPersistence("relayManifests", account);
+  const record = {
+    ...relayManifest,
+    ownerId: account.userId,
+    storage
+  };
+
+  await mutateAccount(account.userId, (accountState) => {
+    accountState.relayManifests[record.id] = record;
+  });
+
+  return record;
+}
+
 export async function persistCameraRelayUpload(request, body, relayUpload) {
   const account = getCameraAccountContext(request, body);
   const storage = describeCameraPersistence("relayUploads", account);
@@ -335,8 +352,8 @@ export async function getCameraAccountState(request, body = {}) {
   };
 }
 
-export async function getStoredCameraDevice(request, deviceId) {
-  const { account } = await getCameraAccountState(request);
+export async function getStoredCameraDevice(request, deviceId, body = {}) {
+  const { account } = await getCameraAccountState(request, body);
   const state = await loadState();
   const accountState = getOrCreateAccount(state, account.userId);
   return accountState.devices[deviceId] || null;

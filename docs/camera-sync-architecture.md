@@ -22,17 +22,21 @@ Flock should make camera sync feel simple to users while routing each camera thr
 The shared server architecture lives in:
 
 - `server/camera-sync-architecture.js`
+- `server/camera-provider-adapters.js`
 - `server/camera-sync-store.js`
 
 It centralizes:
 
 - common camera provider registry
+- provider-specific adapter contracts
+- Vercel environment variable checklist for hard camera integrations
 - common camera watchlist
 - sync session creation
 - device registration creation
 - sensitive-field rejection
 - private RTSP/ONVIF endpoint rejection
 - relay signature verification
+- account-owned relay manifest creation for local camera agents
 - demo-prefix signatures when no server secret is configured
 - HMAC relay signatures when `FLOCK_RELAY_SIGNING_SECRET` is configured
 - account ownership context for camera records
@@ -42,12 +46,21 @@ Routes using this core:
 
 - `GET /api/cameras/account-state`
 - `GET /api/cameras/providers`
+- `GET /api/cameras/provider-adapters`
 - `POST /api/cameras/sync-sessions`
 - `POST /api/cameras/connection-requests`
 - `POST /api/cameras/devices`
+- `POST /api/cameras/relay-manifests`
 - `POST /api/cameras/clip-ingests`
 - `POST /api/cameras/relay-uploads`
 - `GET /api/cameras/:deviceId/status`
+- `GET /api/cameras/ring/oauth/start`
+- `POST /api/cameras/ring/webhooks`
+- `GET /api/cameras/nest/oauth/start`
+- `POST /api/cameras/nest/events`
+- `POST /api/cameras/birdfy/partner-request`
+- `POST /api/cameras/bird-buddy/partner-request`
+- `POST /api/cameras/wyze/model-check`
 
 ## Common Camera Set
 
@@ -63,6 +76,21 @@ The first supported set is:
 | Ring | official cloud OAuth/webhook | Popular and technically challenging; requires official setup and review. |
 | Google Nest Cam | official Device Access | Popular and technically challenging; requires official setup and review. |
 | Manual upload | fallback | Always works while automation matures. |
+
+## Provider Adapter Layer
+
+The adapter layer turns the provider registry into stable cloud contracts:
+
+- official cloud adapters for Ring and Nest
+- partner/export adapters for Birdfy and Bird Buddy
+- local relay adapters for Reolink, Tapo, and supported Wyze models
+- relay manifest generation after device registration so local camera agents can upload without exposing camera credentials
+- a Wyze model-check route before relay setup
+- manual upload as the permanent fallback
+
+These routes are intentionally honest placeholders where provider credentials, certification, or partner access are missing. They return gated statuses and missing environment-variable details instead of pretending a private camera cloud is connected.
+
+See `docs/camera-provider-adapters.md` for the full contract.
 
 The watchlist is exposed by `GET /api/cameras/providers` and currently includes FeatherSnap, Green Feathers, Eufy, Arlo, and Blink. These should not be advertised as automatic sync until official access, export, RTSP/ONVIF, or another safe integration path is confirmed.
 
@@ -90,6 +118,7 @@ The routes now persist account-owned camera records through `server/camera-sync-
 - `CameraConnectionRequest`
 - `CameraDevice`
 - `CameraRelayEnrollment`
+- `CameraRelayManifest`
 - `CameraRelayUploadResult`
 - `CameraClipIngestResult`
 - `CameraReviewRecord`
@@ -119,9 +148,10 @@ See `docs/camera-sync-persistence.md` for deployment and verification details.
 
 ## Source Anchors
 
-- Birdfy app/support materials describe app-managed camera footage and cloud/local storage features, but no public developer API path is documented.
-- Bird Buddy terms require permission-aware use and rule out unauthorized automation.
-- Reolink documents CGI/RTSP/ONVIF support by camera model.
-- Tapo documents RTSP/ONVIF support for many wired models and model-specific caveats.
-- Ring publishes an official developer path for account authorization, events, webhooks, and video.
-- Google Nest Device Access documents official camera events and stream traits for supported cameras.
+- Birdfy app/support materials describe app-managed camera footage and cloud storage features, but no public developer API path is documented: https://support.birdfy.com/help/birdfy-app/Introduction-BirdfyApp/
+- Bird Buddy supports user-owned photo/video postcards and sharing/export-style workflows: https://support.mybirdbuddy.com/hc/en-us/articles/9175854254865-Postcards-Collecting-Photos-and-Videos
+- Reolink documents CGI/RTSP/ONVIF support by camera model: https://support.reolink.com/articles/900000617826-Which-Reolink-Products-Support-CGI-RTSP-ONVIF/
+- Tapo documents RTSP/ONVIF support for many wired models and model-specific caveats: https://www.tp-link.com/us/support/faq/2680/
+- Wyze documents model-specific RTSP support: https://support.wyze.com/hc/en-us/articles/360026245231-Wyze-Cam-RTSP
+- Ring publishes an official developer path for account authorization, events, webhooks, and video: https://developer.amazon.com/docs/ring/api-documentation.html
+- Google Nest Device Access documents official camera events and stream traits for supported cameras: https://developers.google.com/nest/device-access/api/camera-wired
