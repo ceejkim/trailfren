@@ -1,22 +1,15 @@
 import { createHmac } from "node:crypto";
+import { readdir, readFile } from "node:fs/promises";
 
 import birdCorrections from "../api/bird-intelligence/corrections.js";
 import birdReviews from "../api/bird-intelligence/reviews.js";
 import accountState from "../api/cameras/account-state.js";
-import birdBuddyPartnerRequest from "../api/cameras/bird-buddy/partner-request.js";
-import birdfyPartnerRequest from "../api/cameras/birdfy/partner-request.js";
+import cameraAdapters from "../api/cameras/adapters.js";
 import clipIngests from "../api/cameras/clip-ingests.js";
 import connectionRequests from "../api/cameras/connection-requests.js";
 import devices from "../api/cameras/devices.js";
-import nestEvents from "../api/cameras/nest/events.js";
-import nestOAuthStart from "../api/cameras/nest/oauth/start.js";
-import providerAdapters from "../api/cameras/provider-adapters.js";
-import relayManifests from "../api/cameras/relay-manifests.js";
 import relayUploads from "../api/cameras/relay-uploads.js";
-import ringOAuthStart from "../api/cameras/ring/oauth/start.js";
-import ringWebhooks from "../api/cameras/ring/webhooks.js";
 import syncSessions from "../api/cameras/sync-sessions.js";
-import wyzeModelCheck from "../api/cameras/wyze/model-check.js";
 import status from "../api/cameras/[deviceId]/status.js";
 
 process.env.FLOCK_CAMERA_STORE_FILE = process.env.FLOCK_CAMERA_STORE_FILE || `/tmp/flock-camera-store-${process.pid}.json`;
@@ -62,9 +55,41 @@ function get(query, url = "/api/cameras/test") {
   return { method: "GET", body: {}, headers: {}, query, url };
 }
 
+function adapterGet(path, query = {}) {
+  return get({ ...query, adapterPath: path }, `/api/cameras/${path}`);
+}
+
+function adapterPost(path, body) {
+  return { ...post(body), query: { adapterPath: path }, url: `/api/cameras/${path}` };
+}
+
 function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
+
+async function countApiFunctions(directory) {
+  const entries = await readdir(directory, { withFileTypes: true });
+  const counts = await Promise.all(
+    entries.map(async (entry) => {
+      const location = new URL(entry.name, directory);
+      if (entry.isDirectory()) return countApiFunctions(new URL(`${entry.name}/`, directory));
+      return entry.isFile() && entry.name.endsWith(".js") ? 1 : 0;
+    })
+  );
+  return counts.reduce((total, count) => total + count, 0);
+}
+
+const vercelConfig = JSON.parse(await readFile(new URL("../vercel.json", import.meta.url), "utf8"));
+const rewrites = new Map(vercelConfig.rewrites.map(({ source, destination }) => [source, destination]));
+assert(
+  rewrites.get("/api/cameras/ring/:path*") === "/api/cameras/adapters?adapterPath=ring/:path*",
+  "expected Ring adapter rewrite"
+);
+assert(
+  rewrites.get("/api/cameras/relay-manifests") === "/api/cameras/adapters?adapterPath=relay-manifests",
+  "expected relay manifest rewrite"
+);
+assert(await countApiFunctions(new URL("../api/", import.meta.url)) <= 12, "expected Vercel Hobby-compatible function count");
 
 const userId = `camera-smoke-${Date.now()}`;
 const sync = await call(syncSessions, post({ userId, providerId: "birdfy", privacyMode: "private" }));
@@ -73,18 +98,18 @@ const registration = await call(
   devices,
   post({ userId, providerId: "reolink", privacyMode: "private", redactedEndpoint: "rtsp://[redacted]@camera.local/stream" })
 );
-const adapters = await call(providerAdapters, get({}, "/api/cameras/provider-adapters"));
-const ringStart = await call(ringOAuthStart, get({ userId }, "/api/cameras/ring/oauth/start"));
-const ringWebhook = await call(ringWebhooks, post({ userId, providerId: "ring", eventType: "motion" }));
-const nestStart = await call(nestOAuthStart, get({ userId }, "/api/cameras/nest/oauth/start"));
-const nestEvent = await call(nestEvents, post({ userId, providerId: "nest", eventType: "cameraMotion" }));
-const birdfyPartner = await call(birdfyPartnerRequest, post({ userId, providerId: "birdfy", importMode: "share-import" }));
+const adapters = await call(cameraAdapters, adapterGet("provider-adapters"));
+const ringStart = await call(cameraAdapters, adapterGet("ring/oauth/start", { userId }));
+const ringWebhook = await call(cameraAdapters, adapterPost("ring/webhooks", { userId, providerId: "ring", eventType: "motion" }));
+const nestStart = await call(cameraAdapters, adapterGet("nest/oauth/start", { userId }));
+const nestEvent = await call(cameraAdapters, adapterPost("nest/events", { userId, providerId: "nest", eventType: "cameraMotion" }));
+const birdfyPartner = await call(cameraAdapters, adapterPost("birdfy/partner-request", { userId, providerId: "birdfy", importMode: "share-import" }));
 const birdBuddyPartner = await call(
-  birdBuddyPartnerRequest,
-  post({ userId, providerId: "bird-buddy", importMode: "postcard-export" })
+  cameraAdapters,
+  adapterPost("bird-buddy/partner-request", { userId, providerId: "bird-buddy", importMode: "postcard-export" })
 );
-const wyzeSupported = await call(wyzeModelCheck, post({ userId, model: "Wyze Cam v3" }));
-const wyzeUnsupported = await call(wyzeModelCheck, post({ userId, model: "Wyze Cam Outdoor" }));
+const wyzeSupported = await call(cameraAdapters, adapterPost("wyze/model-check", { userId, model: "Wyze Cam v3" }));
+const wyzeUnsupported = await call(cameraAdapters, adapterPost("wyze/model-check", { userId, model: "Wyze Cam Outdoor" }));
 
 assert(sync.statusCode === 202, `expected sync session 202, got ${sync.statusCode}`);
 assert(connection.statusCode === 201, `expected connection request 201, got ${connection.statusCode}`);
@@ -117,8 +142,8 @@ assert(wyzeUnsupported.payload.modelCheck.fallbackProviderId === "manual-upload"
 
 const { device, relay } = registration.payload.registrationResult;
 const relayManifest = await call(
-  relayManifests,
-  post({
+  cameraAdapters,
+  adapterPost("relay-manifests", {
     userId,
     providerId: "reolink",
     deviceId: device.id,
@@ -215,12 +240,12 @@ assert(deviceStatus.payload.device.status === "connected", "expected connected d
 const sensitive = await call(syncSessions, post({ userId, providerId: "birdfy", password: "nope" }));
 const endpoint = await call(devices, post({ userId, providerId: "reolink", redactedEndpoint: "rtsp://admin:pass@192.168.1.5/stream" }));
 const manifestEndpoint = await call(
-  relayManifests,
-  post({ userId, providerId: "reolink", deviceId: device.id, relayId: relay.relayId, redactedEndpoint: "rtsp://admin:pass@192.168.1.5/stream" })
+  cameraAdapters,
+  adapterPost("relay-manifests", { userId, providerId: "reolink", deviceId: device.id, relayId: relay.relayId, redactedEndpoint: "rtsp://admin:pass@192.168.1.5/stream" })
 );
-const cloudManifest = await call(relayManifests, post({ userId, providerId: "ring", deviceId: device.id, relayId: relay.relayId }));
+const cloudManifest = await call(cameraAdapters, adapterPost("relay-manifests", { userId, providerId: "ring", deviceId: device.id, relayId: relay.relayId }));
 const sensitiveAnalysis = await call(birdReviews, post({ userId, providerId: "reolink", reviewItemId: reviewItem.id, token: "nope" }));
-const sensitivePartner = await call(birdfyPartnerRequest, post({ userId, providerId: "birdfy", password: "nope" }));
+const sensitivePartner = await call(cameraAdapters, adapterPost("birdfy/partner-request", { userId, providerId: "birdfy", password: "nope" }));
 
 assert(sensitive.statusCode === 400, "expected sensitive field rejection");
 assert(endpoint.statusCode === 400, "expected unredacted endpoint rejection");
