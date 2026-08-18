@@ -188,8 +188,8 @@ export function CameraSyncWizard({
         <div className="section-heading">
           <RadioTower size={20} />
           <div>
-            <h2>Camera Sync</h2>
-            <p>{userName} can approve one camera path and send bird-triggered clips into private review.</p>
+            <h2>Connect a camera</h2>
+            <p>Choose a provider, approve its path, and send bird clips to private review.</p>
           </div>
         </div>
         <div className="wizard-account-stack">

@@ -873,12 +873,14 @@ function App() {
           </div>
         </header>
 
-        <section className="metric-grid" aria-label="Flock metrics">
-          <Metric icon={Camera} label="Motion clips" value={totalClips.toString()} tone="blue" />
-          <Metric icon={RadioTower} label="Synced cameras" value={connectedCameraCount.toString()} tone="green" />
-          <Metric icon={Sparkles} label="Rare hits" value={rareClips.toString()} tone="gold" />
-          <Metric icon={Zap} label="Weekly points" value={weeklyPoints.toString()} tone="coral" />
-        </section>
+        {activeTab === "feed" && (
+          <section className="metric-grid" aria-label="Flock metrics">
+            <Metric icon={Camera} label="Motion clips" value={totalClips.toString()} tone="blue" />
+            <Metric icon={RadioTower} label="Synced cameras" value={connectedCameraCount.toString()} tone="green" />
+            <Metric icon={Sparkles} label="Rare hits" value={rareClips.toString()} tone="gold" />
+            <Metric icon={Zap} label="Weekly points" value={weeklyPoints.toString()} tone="coral" />
+          </section>
+        )}
 
         {activeTab === "feed" && (
           <div className="dashboard-grid">
@@ -1056,15 +1058,15 @@ function App() {
               onPreviewRelayUpload={previewSignedRelayUpload}
             />
 
-            <section className="panel wide">
-              <div className="section-heading">
+            <details className="panel wide provider-details">
+              <summary>
                 <RadioTower size={20} />
-                <div>
-                  <h2>Provider Architecture</h2>
-                  <p>Every camera follows the simplest safe path available for that ecosystem.</p>
-                </div>
-              </div>
-              <div className="provider-grid">
+                <span>
+                  <strong>Connection options</strong>
+                  <small>Compare the available camera paths</small>
+                </span>
+              </summary>
+              <div className="provider-grid" aria-label="Camera connection options">
                 {cameraProviders.map((provider) => (
                   <button
                     className={provider.id === state.cameraSync.providerId ? "provider-card selected" : "provider-card"}
@@ -1082,7 +1084,7 @@ function App() {
                   </button>
                 ))}
               </div>
-            </section>
+            </details>
 
             <section className="panel sync-detail-panel">
               <div className="section-heading compact">

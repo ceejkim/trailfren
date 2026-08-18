@@ -47,7 +47,7 @@
 .provider-card {
   display: grid;
   gap: 10px;
-  min-height: 210px;
+  min-height: 178px;
   padding: 15px;
   border: 1px solid #dce4dd;
   border-radius: 8px;
@@ -55,6 +55,46 @@
   color: #17211d;
   text-align: left;
   box-shadow: none;
+}
+
+.provider-details {
+  gap: 14px;
+}
+
+.provider-details summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  list-style: none;
+  color: var(--ink);
+}
+
+.provider-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.provider-details summary::after {
+  content: "+";
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 1.25rem;
+  font-weight: 500;
+}
+
+.provider-details[open] summary::after {
+  content: "−";
+}
+
+.provider-details summary span {
+  display: grid;
+  gap: 2px;
+}
+
+.provider-details summary small {
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 500;
 }
 
 .provider-card:hover,
@@ -562,6 +602,10 @@
   .adapter-contract-strip code {
     justify-self: start;
     text-align: left;
+  }
+
+  .provider-details summary small {
+    font-size: 0.8rem;
   }
 
   .sync-flow article,
