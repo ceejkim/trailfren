@@ -22,6 +22,10 @@ The environment checklist includes shared account-safety requirements such as `F
 
 ## Adapter Routes
 
+The public endpoint paths below are preserved through Vercel rewrites to one
+internal camera-adapter function. This keeps the preview deployable within the
+Hobby plan's serverless-function limit without changing client contracts.
+
 | Provider | Route | Status Today | Why |
 |---|---|---|---|
 | Ring | `GET /api/cameras/ring/oauth/start` | `configuration-required` / `vendor-review-required` | Official Ring partner API setup, OAuth config, webhook validation, and review are required. |
