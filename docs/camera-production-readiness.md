@@ -23,6 +23,15 @@ The remaining production work is configuration and hard-gated integrations, not 
 
 ## Required Environment Variables
 
+Authentication variables:
+
+| Variable | Required For | Notes |
+|---|---|---|
+| `VITE_SUPABASE_URL` | browser auth | Supabase project URL exposed to the Vite client. |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | browser auth | Supabase publishable/anon key exposed to the Vite client. |
+| `SUPABASE_URL` | server auth | Supabase project URL used by Vercel functions to verify bearer tokens. Can match `VITE_SUPABASE_URL`. |
+| `SUPABASE_PUBLISHABLE_KEY` | server auth | Supabase publishable/anon key used by Vercel functions for `auth.getUser(jwt)`. Can match `VITE_SUPABASE_PUBLISHABLE_KEY`. |
+
 Core account/store variables:
 
 | Variable | Required For | Notes |
@@ -57,11 +66,13 @@ Vercel manages project environment variables outside source code and lets teams 
 Suggested production sequence:
 
 1. Choose the production account/auth provider.
-2. Add `FLOCK_SESSION_SIGNING_SECRET` only if the app is still using the server-signed seam before real auth.
-3. Choose a REST/Redis-compatible store and add `FLOCK_CAMERA_STORE_REST_URL` plus `FLOCK_CAMERA_STORE_REST_TOKEN`, or connect a provider that supplies compatible `KV_REST_API_URL` and `KV_REST_API_TOKEN`.
-4. Add `FLOCK_RELAY_SIGNING_SECRET`.
-5. Redeploy from GitHub/Vercel.
-6. Verify production returns `storage.durable: true` from `GET /api/cameras/account-state`.
+2. Configure Supabase Auth providers for Google/Gmail, Apple, and phone OTP. Phone OTP requires an SMS provider and rate-limit/CAPTCHA settings before public beta.
+3. Add the browser and server Supabase variables above in Vercel.
+4. Add `FLOCK_SESSION_SIGNING_SECRET` only if the app is still using the server-signed seam before real auth.
+5. Choose a REST/Redis-compatible store and add `FLOCK_CAMERA_STORE_REST_URL` plus `FLOCK_CAMERA_STORE_REST_TOKEN`, or connect a provider that supplies compatible `KV_REST_API_URL` and `KV_REST_API_TOKEN`.
+6. Add `FLOCK_RELAY_SIGNING_SECRET`.
+7. Redeploy from GitHub/Vercel.
+8. Verify production returns `account.authenticated: true` and `storage.durable: true` from `GET /api/cameras/account-state` when called with a signed-in user's bearer token.
 
 Official source anchors:
 
@@ -75,6 +86,11 @@ Before calling camera sync production-ready:
 
 - `npm run build`
 - `npm run smoke:camera`
+- Google/Gmail sign-in redirects back to the app and loads the signed-in profile.
+- Apple sign-in redirects back to the app and loads the signed-in profile.
+- Phone OTP sends and verifies a code.
+- Signed camera API requests derive account ownership from the verified Supabase user id.
+- Missing, expired, or mismatched signed auth does not create fallback success records.
 - `GET /api/cameras/provider-adapters` returns adapter contracts and the Vercel env checklist.
 - Live `GET /api/cameras/account-state?userId=<test>` returns `storage.durable: true`.
 - A sync session survives browser reload.

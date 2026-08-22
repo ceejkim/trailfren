@@ -1,4 +1,5 @@
 import { rarityPoints } from "./data";
+import { getAuthHeaders } from "./auth";
 import type {
   BirdIntelligenceAnalysis,
   BirdManualCorrection,
@@ -35,35 +36,64 @@ function createId(prefix: string) {
   return `${prefix}-${randomPart}`;
 }
 
+class CameraApiError extends Error {
+  constructor(
+    message: string,
+    readonly status: number
+  ) {
+    super(message);
+  }
+}
+
+async function getApiError(response: Response) {
+  try {
+    const payload = (await response.json()) as { error?: unknown };
+    if (typeof payload.error === "string" && payload.error.trim()) return payload.error;
+  } catch {
+    // Fall through to a generic status message.
+  }
+  return `Camera API request failed with HTTP ${response.status}.`;
+}
+
 async function postJson<T>(path: string, payload: unknown, headers: Record<string, string> = {}): Promise<T | null> {
   if (typeof fetch !== "function") return null;
+  const authHeaders = await getAuthHeaders();
 
   try {
     const response = await fetch(path, {
       method: "POST",
-      headers: { "content-type": "application/json", ...headers },
+      headers: { "content-type": "application/json", ...authHeaders, ...headers },
       body: JSON.stringify(payload)
     });
 
-    if (!response.ok) return null;
+    if (!response.ok) {
+      if (authHeaders.authorization) throw new CameraApiError(await getApiError(response), response.status);
+      return null;
+    }
     return (await response.json()) as T;
-  } catch {
+  } catch (error) {
+    if (error instanceof CameraApiError) throw error;
     return null;
   }
 }
 
 async function getJson<T>(path: string): Promise<T | null> {
   if (typeof fetch !== "function") return null;
+  const authHeaders = await getAuthHeaders();
 
   try {
     const response = await fetch(path, {
       method: "GET",
-      headers: { "content-type": "application/json" }
+      headers: { "content-type": "application/json", ...authHeaders }
     });
 
-    if (!response.ok) return null;
+    if (!response.ok) {
+      if (authHeaders.authorization) throw new CameraApiError(await getApiError(response), response.status);
+      return null;
+    }
     return (await response.json()) as T;
-  } catch {
+  } catch (error) {
+    if (error instanceof CameraApiError) throw error;
     return null;
   }
 }

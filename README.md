@@ -4,7 +4,8 @@ Flock is a bird-camera social MVP for watching motion-triggered clips, logging s
 
 ## MVP Scope
 
-- Local demo authentication and profile state
+- Supabase-backed login with Apple, phone OTP, and Google/Gmail
+- Local demo preview and profile state for unconfigured development
 - Friend requests, follow actions, and invite-code sharing
 - Motion-only camera feed with comments and reactions
 - Bird sighting logging with rarity-based points
@@ -37,6 +38,15 @@ Key planning docs:
 npm install
 npm run dev
 ```
+
+Create `.env.local` for live auth:
+
+```bash
+VITE_SUPABASE_URL=your-project-url
+VITE_SUPABASE_PUBLISHABLE_KEY=your-publishable-key-or-anon-key
+```
+
+Enable Google, Apple, and phone providers in Supabase Auth. Phone OTP requires an SMS provider such as Twilio, MessageBird, or Vonage.
 
 ## Build
 

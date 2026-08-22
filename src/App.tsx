@@ -12,6 +12,7 @@ import {
   Gamepad2,
   Heart,
   LockKeyhole,
+  LogOut,
   MessageCircle,
   Play,
   Plus,
@@ -31,7 +32,10 @@ import {
   Wifi,
   Zap
 } from "lucide-react";
+import type { Session } from "@supabase/supabase-js";
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { AuthScreen } from "./AuthScreen";
+import { getProfileFromAuthUser, supabase, supabaseAuthConfigured } from "./auth";
 import {
   challenges,
   demoProfile,
@@ -165,6 +169,10 @@ function getLatest<T>(items: T[], paths: string[]): T | undefined {
     .map((item, index) => ({ item, index, time: getTime(item, paths) }))
     .sort((left, right) => left.time - right.time || left.index - right.index);
   return sorted[sorted.length - 1]?.item;
+}
+
+function getActionError(error: unknown) {
+  return error instanceof Error ? error.message : "Something went wrong. Please try again.";
 }
 
 function mergeById<T extends { id: string }>(incoming: T[], existing: T[]) {
@@ -301,6 +309,9 @@ function reconcileCameraAccountState(current: AppState, accountState: CameraAcco
 
 function App() {
   const [state, setState] = useState<AppState>(() => loadState());
+  const [authSession, setAuthSession] = useState<Session | null>(null);
+  const [authReady, setAuthReady] = useState(!supabaseAuthConfigured);
+  const [demoPreview, setDemoPreview] = useState(false);
   const [activeTab, setActiveTab] = useState("feed");
   const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>({});
   const [logDraft, setLogDraft] = useState({
@@ -319,8 +330,61 @@ function App() {
   const [cameraAccountState, setCameraAccountState] = useState<CameraAccountState | null>(null);
   const [cameraAccountStatus, setCameraAccountStatus] = useState<CameraAccountLoadStatus>("loading");
   const [birdReviewStatus, setBirdReviewStatus] = useState<BirdReviewActionStatus>("idle");
+  const [cameraActionError, setCameraActionError] = useState("");
 
   const selectedProvider = getCameraProvider(state.cameraSync.providerId);
+  const accountUserId = authSession?.user.id ?? state.profile.id;
+
+  useEffect(() => {
+    if (!supabase) return;
+    let active = true;
+
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (!active) return;
+        setAuthSession(data.session);
+        setAuthReady(true);
+      })
+      .catch(() => {
+        if (active) setAuthReady(true);
+      });
+
+    const {
+      data: { subscription }
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAuthSession(session);
+      setAuthReady(true);
+      if (session) setDemoPreview(false);
+    });
+
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!authSession?.user) return;
+
+    const nextProfile = getProfileFromAuthUser(authSession.user, state.profile);
+    const changed =
+      nextProfile.id !== state.profile.id ||
+      nextProfile.name !== state.profile.name ||
+      nextProfile.handle !== state.profile.handle ||
+      nextProfile.avatar !== state.profile.avatar;
+
+    if (!changed) return;
+
+    const nextState = { ...state, profile: nextProfile };
+    setState(nextState);
+    saveState(nextState);
+    setProfileDraft({
+      name: nextProfile.name,
+      location: nextProfile.location,
+      favoriteBird: nextProfile.favoriteBird
+    });
+  }, [authSession?.user]);
 
   function commit(next: AppState) {
     setState(next);
@@ -338,7 +402,7 @@ function App() {
   }
 
   async function refreshCameraAccountState() {
-    const accountState = await fetchCameraAccountState(state.profile.id);
+    const accountState = await fetchCameraAccountState(accountUserId);
     if (!accountState) {
       setCameraAccountStatus("offline");
       return;
@@ -350,7 +414,7 @@ function App() {
     let cancelled = false;
     setCameraAccountStatus("loading");
 
-    fetchCameraAccountState(state.profile.id)
+    fetchCameraAccountState(accountUserId)
       .then((accountState) => {
         if (cancelled) return;
         if (!accountState) {
@@ -366,11 +430,11 @@ function App() {
     return () => {
       cancelled = true;
     };
-  }, [state.profile.id]);
+  }, [accountUserId]);
 
   const leaderboard = useMemo(() => {
     const currentUser = {
-      id: state.profile.id,
+      id: accountUserId,
       name: state.profile.name,
       handle: state.profile.handle,
       avatar: state.profile.avatar,
@@ -535,93 +599,119 @@ function App() {
   }
 
   async function startCameraSync() {
-    const input = {
-      userId: state.profile.id,
-      provider: selectedProvider,
-      privacyMode: state.cameraSync.privacyMode,
-      motionUploadsEnabled: state.cameraSync.motionUploadsEnabled
-    };
-    const [syncSession, connectionRequest] = await Promise.all([requestCameraSyncSession(input), requestCameraConnectionRequest(input)]);
-    const nextStatus = getSyncStatusForConnectionRequest(connectionRequest);
+    setCameraActionError("");
+    try {
+      const input = {
+        userId: accountUserId,
+        provider: selectedProvider,
+        privacyMode: state.cameraSync.privacyMode,
+        motionUploadsEnabled: state.cameraSync.motionUploadsEnabled
+      };
+      const [syncSession, connectionRequest] = await Promise.all([requestCameraSyncSession(input), requestCameraConnectionRequest(input)]);
+      const nextStatus = getSyncStatusForConnectionRequest(connectionRequest);
 
-    commit({
-      ...state,
-      cameraSync: {
-        ...state.cameraSync,
-        status: nextStatus,
-        approvalLabel: selectedProvider.primaryAction,
-        connectionRequestId: connectionRequest.id,
-        nextStep: connectionRequest.nextStep,
-        lastSyncedAt: nextStatus === "synced" ? "Just now" : state.cameraSync.lastSyncedAt
-      },
-      lastSyncSession: syncSession,
-      lastConnectionRequest: connectionRequest
-    });
-    setActiveTab("cameras");
-    void refreshCameraAccountState();
+      commit({
+        ...state,
+        cameraSync: {
+          ...state.cameraSync,
+          status: nextStatus,
+          approvalLabel: selectedProvider.primaryAction,
+          connectionRequestId: connectionRequest.id,
+          nextStep: connectionRequest.nextStep,
+          lastSyncedAt: nextStatus === "synced" ? "Just now" : state.cameraSync.lastSyncedAt
+        },
+        lastSyncSession: syncSession,
+        lastConnectionRequest: connectionRequest
+      });
+      setActiveTab("cameras");
+      void refreshCameraAccountState();
+    } catch (error) {
+      setCameraActionError(getActionError(error));
+      setActiveTab("cameras");
+    }
   }
 
   async function registerSelectedCameraDevice() {
-    const registration = await requestCameraDeviceRegistration({
-      userId: state.profile.id,
-      provider: selectedProvider,
-      privacyMode: state.cameraSync.privacyMode,
-      motionUploadsEnabled: state.cameraSync.motionUploadsEnabled,
-      locationLabel: state.profile.location
-    });
-    recordDeviceRegistration(registration);
-    void refreshCameraAccountState();
+    setCameraActionError("");
+    try {
+      const registration = await requestCameraDeviceRegistration({
+        userId: accountUserId,
+        provider: selectedProvider,
+        privacyMode: state.cameraSync.privacyMode,
+        motionUploadsEnabled: state.cameraSync.motionUploadsEnabled,
+        locationLabel: state.profile.location
+      });
+      recordDeviceRegistration(registration);
+      void refreshCameraAccountState();
+    } catch (error) {
+      setCameraActionError(getActionError(error));
+    }
   }
 
   async function createRelayManifestForRegisteredDevice() {
     if (!state.lastDeviceRegistration?.relay) return;
-    const relayManifest = await requestCameraRelayManifest({
-      userId: state.profile.id,
-      provider: selectedProvider,
-      registration: state.lastDeviceRegistration,
-      privacyMode: state.cameraSync.privacyMode,
-      motionUploadsEnabled: state.cameraSync.motionUploadsEnabled
-    });
-    recordRelayManifest(relayManifest);
-    void refreshCameraAccountState();
+    setCameraActionError("");
+    try {
+      const relayManifest = await requestCameraRelayManifest({
+        userId: accountUserId,
+        provider: selectedProvider,
+        registration: state.lastDeviceRegistration,
+        privacyMode: state.cameraSync.privacyMode,
+        motionUploadsEnabled: state.cameraSync.motionUploadsEnabled
+      });
+      recordRelayManifest(relayManifest);
+      void refreshCameraAccountState();
+    } catch (error) {
+      setCameraActionError(getActionError(error));
+    }
   }
 
   async function previewSignedRelayUpload() {
     if (!state.lastDeviceRegistration?.device) return;
-    const relayUpload = await requestDemoRelayUpload({
-      userId: state.profile.id,
-      provider: selectedProvider,
-      device: state.lastDeviceRegistration.device,
-      privacyMode: state.cameraSync.privacyMode
-    });
-    acceptRelayUpload(relayUpload);
-    void refreshCameraAccountState();
+    setCameraActionError("");
+    try {
+      const relayUpload = await requestDemoRelayUpload({
+        userId: accountUserId,
+        provider: selectedProvider,
+        device: state.lastDeviceRegistration.device,
+        privacyMode: state.cameraSync.privacyMode
+      });
+      acceptRelayUpload(relayUpload);
+      void refreshCameraAccountState();
+    } catch (error) {
+      setCameraActionError(getActionError(error));
+    }
   }
 
   async function previewMotionUpload() {
-    const ingestResult = await requestDemoCameraClipIngest({
-      userId: state.profile.id,
-      provider: selectedProvider,
-      privacyMode: state.cameraSync.privacyMode
-    });
+    setCameraActionError("");
+    try {
+      const ingestResult = await requestDemoCameraClipIngest({
+        userId: accountUserId,
+        provider: selectedProvider,
+        privacyMode: state.cameraSync.privacyMode
+      });
 
-    commit({
-      ...state,
-      clips: [ingestResult.clip, ...state.clips],
-      sightings: [ingestResult.sighting, ...state.sightings],
-      cameraSync: {
-        ...state.cameraSync,
-        status: "synced",
-        latestIngestId: ingestResult.ingestId,
-        latestIngestAt: "Just now",
-        lastSyncedAt: "Just now"
-      },
-      lastIngestResult: ingestResult,
-      lastBirdAnalysis: undefined,
-      lastBirdCorrection: undefined
-    });
-    setActiveTab("feed");
-    void refreshCameraAccountState();
+      commit({
+        ...state,
+        clips: [ingestResult.clip, ...state.clips],
+        sightings: [ingestResult.sighting, ...state.sightings],
+        cameraSync: {
+          ...state.cameraSync,
+          status: "synced",
+          latestIngestId: ingestResult.ingestId,
+          latestIngestAt: "Just now",
+          lastSyncedAt: "Just now"
+        },
+        lastIngestResult: ingestResult,
+        lastBirdAnalysis: undefined,
+        lastBirdCorrection: undefined
+      });
+      setActiveTab("feed");
+      void refreshCameraAccountState();
+    } catch (error) {
+      setCameraActionError(getActionError(error));
+    }
   }
 
   function recordDeviceRegistration(registration: CameraDeviceRegistrationResult) {
@@ -686,8 +776,9 @@ function App() {
 
     setBirdReviewStatus("analyzing");
     try {
+      setCameraActionError("");
       const analysis = await requestBirdIntelligenceAnalysis({
-        userId: state.profile.id,
+        userId: accountUserId,
         reviewItem: latestReviewItem,
         providerId: latestReviewItem.providerId,
         clip: latestReviewClip,
@@ -701,6 +792,8 @@ function App() {
         lastBirdAnalysis: analysis
       });
       void refreshCameraAccountState();
+    } catch (error) {
+      setCameraActionError(getActionError(error));
     } finally {
       setBirdReviewStatus("idle");
     }
@@ -711,8 +804,9 @@ function App() {
 
     setBirdReviewStatus("correcting");
     try {
+      setCameraActionError("");
       const correction = await requestBirdCorrection({
-        userId: state.profile.id,
+        userId: accountUserId,
         analysis: latestBirdAnalysis,
         action,
         species,
@@ -761,6 +855,8 @@ function App() {
         lastBirdCorrection: correction
       });
       void refreshCameraAccountState();
+    } catch (error) {
+      setCameraActionError(getActionError(error));
     } finally {
       setBirdReviewStatus("idle");
     }
@@ -778,6 +874,22 @@ function App() {
     await navigator.clipboard.writeText(state.profile.inviteCode);
     setCopiedInvite(true);
     window.setTimeout(() => setCopiedInvite(false), 1400);
+  }
+
+  async function signOut() {
+    await supabase?.auth.signOut();
+    setAuthSession(null);
+    setDemoPreview(false);
+  }
+
+  if (!authReady || (!authSession && !demoPreview)) {
+    return (
+      <AuthScreen
+        allowDemoPreview={!supabaseAuthConfigured || import.meta.env.DEV}
+        authReady={authReady}
+        onDemoPreview={() => setDemoPreview(true)}
+      />
+    );
   }
 
   const tabs = [
@@ -866,6 +978,11 @@ function App() {
             <button className="icon-button" title="Notifications" type="button">
               <Bell size={18} />
             </button>
+            {authSession && (
+              <button className="icon-button" onClick={signOut} title="Sign out" type="button">
+                <LogOut size={18} />
+              </button>
+            )}
             <button className="profile-chip" onClick={() => setActiveTab("friends")} type="button">
               <span>{state.profile.avatar}</span>
               <strong>{state.profile.handle}</strong>
@@ -1034,6 +1151,13 @@ function App() {
 
         {activeTab === "cameras" && (
           <div className="camera-sync-grid">
+            {cameraActionError && (
+              <div className="camera-action-error" role="alert">
+                <LockKeyhole size={17} />
+                <span>{cameraActionError}</span>
+              </div>
+            )}
+
             <CameraSyncWizard
               userName={state.profile.name}
               userHandle={state.profile.handle}
@@ -1156,7 +1280,7 @@ function App() {
             </section>
 
             <CameraRelayPanel
-              userId={state.profile.id}
+              userId={accountUserId}
               locationLabel={state.profile.location}
               provider={selectedProvider}
               privacyMode={state.cameraSync.privacyMode}
@@ -1167,6 +1291,7 @@ function App() {
               onDeviceRegistered={recordDeviceRegistration}
               onCreateRelayManifest={createRelayManifestForRegisteredDevice}
               onRelayUploadAccepted={acceptRelayUpload}
+              onError={setCameraActionError}
             />
 
             <section className="panel wide motion-pipeline-panel">
