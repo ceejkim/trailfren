@@ -1,4 +1,4 @@
-import type { Challenge, Clip, Friend, Recommendation, Sighting, UserProfile } from "./types";
+import type { Challenge, Clip, FeederRivalStats, Friend, Recommendation, Sighting, UserProfile } from "./types";
 
 export const rarityPoints = {
   Common: 10,
@@ -135,6 +135,33 @@ export const initialSightings: Sighting[] = [
     source: "Manual log",
     loggedAt: "Yesterday",
     points: 60
+  },
+  {
+    id: "sighting-3",
+    bird: "House finch",
+    rarity: "Common",
+    location: "Old Greenwich, CT",
+    source: "Maple Feeder Cam",
+    loggedAt: "Monday",
+    points: 10
+  },
+  {
+    id: "sighting-4",
+    bird: "Blue jay",
+    rarity: "Uncommon",
+    location: "Old Greenwich, CT",
+    source: "Maple Feeder Cam",
+    loggedAt: "Tuesday",
+    points: 25
+  },
+  {
+    id: "sighting-5",
+    bird: "Cooper's hawk",
+    rarity: "Rare",
+    location: "Old Greenwich, CT",
+    source: "Maple Feeder Cam",
+    loggedAt: "Wednesday",
+    points: 60
   }
 ];
 
@@ -144,7 +171,7 @@ export const challenges: Challenge[] = [
     name: "Migration Watch",
     metric: "Log 8 unique species this week",
     reward: 200,
-    progress: 5,
+    progress: 6,
     goal: 8
   },
   {
@@ -162,6 +189,49 @@ export const challenges: Challenge[] = [
     reward: 90,
     progress: 6,
     goal: 10
+  }
+];
+
+export const rivalFeederStats: FeederRivalStats[] = [
+  {
+    friendId: "friend-1",
+    feederName: "Birch Box",
+    visits: 17,
+    rarityYield: 185,
+    speciesCount: 9,
+    signatureBird: "Black-capped chickadee",
+    record: "2-0",
+    momentum: "heating-up"
+  },
+  {
+    friendId: "friend-2",
+    feederName: "Porch Rail",
+    visits: 14,
+    rarityYield: 150,
+    speciesCount: 7,
+    signatureBird: "Northern cardinal",
+    record: "1-1",
+    momentum: "holding"
+  },
+  {
+    friendId: "friend-3",
+    feederName: "Hudson Suet Line",
+    visits: 11,
+    rarityYield: 132,
+    speciesCount: 8,
+    signatureBird: "Red-bellied woodpecker",
+    record: "1-1",
+    momentum: "heating-up"
+  },
+  {
+    friendId: "friend-4",
+    feederName: "Madison Window Tray",
+    visits: 9,
+    rarityYield: 84,
+    speciesCount: 6,
+    signatureBird: "House finch",
+    record: "0-2",
+    momentum: "cooling"
   }
 ];
 
