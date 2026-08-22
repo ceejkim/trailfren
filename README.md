@@ -20,6 +20,7 @@ The BirdWatch project is managed with GitHub as the canonical source of truth. T
 Key planning docs:
 
 - [Autonomous build plan](docs/autonomous-build-plan.md)
+- [Brand guidelines](docs/brand-guidelines.md)
 - [Camera integration matrix](docs/camera-integrations.md)
 - [Camera ingestion design](docs/camera-ingestion-design.md)
 - [Camera sync UX](docs/camera-sync-ux.md)
