@@ -7,6 +7,7 @@ Updated: August 22, 2026
 - GitHub remote is `ceejkim/trailfren`.
 - The app now has a Supabase Auth login gate for Google/Gmail, Apple, and phone OTP.
 - Browser and server Supabase environment variables are documented.
+- Camera account APIs can now be put into Supabase-only mode with `FLOCK_REQUIRE_AUTH=true`, which rejects unsigned account reads/writes instead of falling back to demo `userId` claims.
 - Vercel/runtime Node target is `22.x` to match current Supabase client requirements.
 - Existing camera API contracts still pass `npm run smoke:camera`.
 - Dependency audit is clean after the Vite 8 upgrade.
@@ -21,8 +22,10 @@ Updated: August 22, 2026
 2. Add production environment variables in Vercel.
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_PUBLISHABLE_KEY`
+   - `VITE_AUTH_REDIRECT_URL`
    - `SUPABASE_URL`
    - `SUPABASE_PUBLISHABLE_KEY`
+   - `FLOCK_REQUIRE_AUTH=true`
    - durable camera store variables until the store is moved to Postgres records.
 
 3. Replace blob-style camera persistence with per-owner records.
@@ -42,7 +45,8 @@ Updated: August 22, 2026
 
 6. Expand authenticated API coverage.
    - Signed-in users now carry bearer tokens to camera routes.
-   - Next step is focused tests for missing/expired tokens, mismatched owners, and cross-account isolation.
+   - `FLOCK_REQUIRE_AUTH=true` prevents missing bearer tokens from creating demo fallback records.
+   - Next step is focused tests for expired tokens, mismatched owners, and cross-account isolation with real Supabase users.
 
 7. Finish deployment readiness.
    - Confirm Vercel runs Node 22 for the project.

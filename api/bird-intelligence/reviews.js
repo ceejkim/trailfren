@@ -1,6 +1,6 @@
 import { createBirdReviewAnalysis, getBirdIntelligencePlan } from "../../server/bird-intelligence-pipeline.js";
 import { getBody, rejectSecretFields } from "../../server/camera-sync-architecture.js";
-import { persistBirdAnalysis } from "../../server/camera-sync-store.js";
+import { getCameraAccountErrorStatus, persistBirdAnalysis } from "../../server/camera-sync-store.js";
 
 export default async function handler(request, response) {
   response.setHeader("cache-control", "no-store");
@@ -21,6 +21,6 @@ export default async function handler(request, response) {
     return response.status(202).json({ analysis });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to analyze bird review item.";
-    return response.status(400).json({ error: message });
+    return response.status(getCameraAccountErrorStatus(error)).json({ error: message });
   }
 }

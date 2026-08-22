@@ -17,9 +17,8 @@ function getHeader(request, name) {
 function getBearerToken(request) {
   const authorization = clean(getHeader(request, "authorization"));
   if (!authorization) return undefined;
-  const [scheme, token] = authorization.split(/\s+/);
-  if (scheme?.toLowerCase() !== "bearer") return undefined;
-  return clean(token);
+  const match = authorization.match(/^bearer\s+([^\s]+)$/i);
+  return clean(match?.[1]);
 }
 
 function getSupabaseConfig() {
@@ -31,7 +30,21 @@ function getSupabaseConfig() {
     clean(process.env.VITE_SUPABASE_ANON_KEY);
 
   if (!url || !key) return null;
+
+  try {
+    const parsedUrl = new URL(url);
+    if (parsedUrl.protocol !== "https:" && parsedUrl.hostname !== "localhost") {
+      throw new Error("Supabase URL must use https outside localhost.");
+    }
+  } catch {
+    throw new Error("Supabase Auth server URL is invalid.");
+  }
+
   return { url, key };
+}
+
+export function isSupabaseAuthConfigured() {
+  return Boolean(getSupabaseConfig());
 }
 
 function getSupabaseClient(config) {

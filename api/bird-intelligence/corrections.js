@@ -1,6 +1,6 @@
 import { createManualBirdCorrection } from "../../server/bird-intelligence-pipeline.js";
 import { getBody, rejectSecretFields } from "../../server/camera-sync-architecture.js";
-import { persistBirdCorrection } from "../../server/camera-sync-store.js";
+import { getCameraAccountErrorStatus, persistBirdCorrection } from "../../server/camera-sync-store.js";
 
 export default async function handler(request, response) {
   response.setHeader("cache-control", "no-store");
@@ -17,6 +17,6 @@ export default async function handler(request, response) {
     return response.status(200).json({ correction });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to save bird review correction.";
-    return response.status(400).json({ error: message });
+    return response.status(getCameraAccountErrorStatus(error)).json({ error: message });
   }
 }

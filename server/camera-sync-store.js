@@ -65,6 +65,22 @@ function clean(value) {
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }
 
+function envFlag(name) {
+  const value = clean(process.env[name]);
+  return value ? ["1", "true", "yes", "on"].includes(value.toLowerCase()) : false;
+}
+
+export function isCameraAuthRequired() {
+  return envFlag("FLOCK_REQUIRE_AUTH") || clean(process.env.FLOCK_AUTH_MODE)?.toLowerCase() === "supabase";
+}
+
+export function getCameraAccountErrorStatus(error) {
+  const message = error instanceof Error ? error.message : String(error);
+  if (/claim does not match|ownership claims do not match/i.test(message)) return 403;
+  if (/auth|authorization|bearer|session|signature/i.test(message)) return 401;
+  return 400;
+}
+
 function first(value) {
   return Array.isArray(value) ? value[0] : value;
 }
@@ -96,6 +112,10 @@ export async function getCameraAccountContext(request, body = {}) {
       authenticated: true,
       hardGate: null
     };
+  }
+
+  if (isCameraAuthRequired()) {
+    throw new Error("Supabase authentication is required for camera account access.");
   }
 
   const userId = headerUserId || bodyUserId || queryUserId || "demo-user";

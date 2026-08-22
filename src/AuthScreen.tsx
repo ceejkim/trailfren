@@ -1,6 +1,6 @@
 import { Apple, ArrowRight, Bird, Loader2, Mail, Phone, ShieldCheck } from "lucide-react";
 import { FormEvent, useState } from "react";
-import { sendPhoneOtp, signInWithProvider, supabaseAuthConfigured, verifyPhoneOtp } from "./auth";
+import { isValidOtpCode, isValidPhoneNumber, normalizeOtpCode, normalizePhoneNumber, sendPhoneOtp, signInWithProvider, supabaseAuthConfigured, verifyPhoneOtp } from "./auth";
 
 type AuthScreenProps = {
   allowDemoPreview: boolean;
@@ -42,11 +42,16 @@ export function AuthScreen({ allowDemoPreview, authReady, onDemoPreview }: AuthS
 
   function submitPhone(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const normalizedPhone = phone.trim();
-    const normalizedOtp = otp.trim();
+    const normalizedPhone = normalizePhoneNumber(phone);
+    const normalizedOtp = normalizeOtpCode(otp);
     if (!normalizedPhone) return;
 
     void runAuth(async () => {
+      if (!isValidPhoneNumber(normalizedPhone)) {
+        setError("Use international format, like +15551234567.");
+        return;
+      }
+
       if (!otpSent) {
         await sendPhoneOtp(normalizedPhone);
         setOtpSent(true);
@@ -54,7 +59,7 @@ export function AuthScreen({ allowDemoPreview, authReady, onDemoPreview }: AuthS
         return;
       }
 
-      if (!normalizedOtp) {
+      if (!isValidOtpCode(normalizedOtp)) {
         setError("Enter the code we sent.");
         return;
       }

@@ -45,9 +45,18 @@ Create `.env.local` for live auth:
 ```bash
 VITE_SUPABASE_URL=your-project-url
 VITE_SUPABASE_PUBLISHABLE_KEY=your-publishable-key-or-anon-key
+VITE_AUTH_REDIRECT_URL=http://localhost:5173
 ```
 
-Enable Google, Apple, and phone providers in Supabase Auth. Phone OTP requires an SMS provider such as Twilio, MessageBird, or Vonage.
+For deployed Vercel functions, also set:
+
+```bash
+SUPABASE_URL=your-project-url
+SUPABASE_PUBLISHABLE_KEY=your-publishable-key-or-anon-key
+FLOCK_REQUIRE_AUTH=true
+```
+
+Enable Google, Apple, and phone providers in Supabase Auth. Phone OTP requires an SMS provider such as Twilio, MessageBird, or Vonage, plus production rate-limit and CAPTCHA settings before beta.
 
 ## Build
 

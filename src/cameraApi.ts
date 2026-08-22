@@ -206,7 +206,9 @@ export function getSyncStatusForConnectionRequest(request: CameraConnectionReque
 }
 
 export function fetchCameraAccountState(userId: string): Promise<CameraAccountState | null> {
-  return getJson<CameraAccountState>(`/api/cameras/account-state?userId=${encodeURIComponent(userId)}`);
+  return getAuthHeaders().then((authHeaders) =>
+    getJson<CameraAccountState>(authHeaders.authorization ? "/api/cameras/account-state" : `/api/cameras/account-state?userId=${encodeURIComponent(userId)}`)
+  );
 }
 
 type SyncSessionInput = {
