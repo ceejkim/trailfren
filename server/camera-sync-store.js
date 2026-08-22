@@ -3,6 +3,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 
 import { createId, getHeader } from "./camera-sync-architecture.js";
+import { getVerifiedSupabaseUser } from "./supabase-auth.js";
 
 const STORE_VERSION = 3;
 const COLLECTIONS = [
@@ -75,12 +76,29 @@ function getQueryUserId(request) {
   return clean(new URLSearchParams(query).get("userId"));
 }
 
-export function getCameraAccountContext(request, body = {}) {
+export async function getCameraAccountContext(request, body = {}) {
   const headerUserId = clean(getHeader(request, "x-flock-user-id"));
   const bodyUserId = clean(body.userId);
   const queryUserId = getQueryUserId(request);
-  const userId = headerUserId || bodyUserId || queryUserId || "demo-user";
   const claimedIds = [headerUserId, bodyUserId, queryUserId].filter(Boolean);
+  const authenticatedUser = await getVerifiedSupabaseUser(request);
+
+  if (authenticatedUser) {
+    const mismatchedClaim = claimedIds.find((claim) => claim !== authenticatedUser.id);
+
+    if (mismatchedClaim) {
+      throw new Error("Authenticated camera account claim does not match the signed-in user.");
+    }
+
+    return {
+      userId: authenticatedUser.id,
+      authMode: "supabase-auth",
+      authenticated: true,
+      hardGate: null
+    };
+  }
+
+  const userId = headerUserId || bodyUserId || queryUserId || "demo-user";
   const mismatchedClaim = claimedIds.find((claim) => claim !== userId);
 
   if (mismatchedClaim) {
@@ -172,7 +190,7 @@ function getPersistenceNextStep(config, accountContext) {
 }
 
 export async function persistCameraSyncSession(request, body, syncSession) {
-  const account = getCameraAccountContext(request, body);
+  const account = await getCameraAccountContext(request, body);
   const storage = describeCameraPersistence("syncSessions", account);
   const record = { ...syncSession, userId: account.userId, storage };
 
@@ -184,7 +202,7 @@ export async function persistCameraSyncSession(request, body, syncSession) {
 }
 
 export async function persistCameraConnectionRequest(request, body, connectionRequest) {
-  const account = getCameraAccountContext(request, body);
+  const account = await getCameraAccountContext(request, body);
   const storage = describeCameraPersistence("connectionRequests", account);
   const record = { ...connectionRequest, userId: account.userId, storage };
 
@@ -196,7 +214,7 @@ export async function persistCameraConnectionRequest(request, body, connectionRe
 }
 
 export async function persistCameraDeviceRegistration(request, body, registrationResult) {
-  const account = getCameraAccountContext(request, body);
+  const account = await getCameraAccountContext(request, body);
   const storage = describeCameraPersistence("devices", account);
   const device = { ...registrationResult.device, ownerId: account.userId, storage };
   const relay = registrationResult.relay
@@ -217,7 +235,7 @@ export async function persistCameraDeviceRegistration(request, body, registratio
 }
 
 export async function persistCameraRelayManifest(request, body, relayManifest) {
-  const account = getCameraAccountContext(request, body);
+  const account = await getCameraAccountContext(request, body);
   const storage = describeCameraPersistence("relayManifests", account);
   const record = {
     ...relayManifest,
@@ -233,7 +251,7 @@ export async function persistCameraRelayManifest(request, body, relayManifest) {
 }
 
 export async function persistCameraRelayUpload(request, body, relayUpload) {
-  const account = getCameraAccountContext(request, body);
+  const account = await getCameraAccountContext(request, body);
   const storage = describeCameraPersistence("relayUploads", account);
   const reviewRecord = createReviewRecord({
     ownerId: account.userId,
@@ -263,7 +281,7 @@ export async function persistCameraRelayUpload(request, body, relayUpload) {
 }
 
 export async function persistCameraClipIngest(request, body, ingestResult) {
-  const account = getCameraAccountContext(request, body);
+  const account = await getCameraAccountContext(request, body);
   const storage = describeCameraPersistence("clipIngests", account);
   const reviewRecord = createReviewRecord({
     ownerId: account.userId,
@@ -288,7 +306,7 @@ export async function persistCameraClipIngest(request, body, ingestResult) {
 }
 
 export async function persistBirdAnalysis(request, body, analysis) {
-  const account = getCameraAccountContext(request, body);
+  const account = await getCameraAccountContext(request, body);
   const storage = describeCameraPersistence("birdAnalyses", account);
   const record = { ...analysis, ownerId: account.userId, storage };
 
@@ -308,7 +326,7 @@ export async function persistBirdAnalysis(request, body, analysis) {
 }
 
 export async function persistBirdCorrection(request, body, correction) {
-  const account = getCameraAccountContext(request, body);
+  const account = await getCameraAccountContext(request, body);
   const storage = describeCameraPersistence("birdCorrections", account);
   const record = { ...correction, ownerId: account.userId, storage };
 
@@ -341,7 +359,7 @@ export async function persistBirdCorrection(request, body, correction) {
 }
 
 export async function getCameraAccountState(request, body = {}) {
-  const account = getCameraAccountContext(request, body);
+  const account = await getCameraAccountContext(request, body);
   const state = await loadState();
   const accountState = getOrCreateAccount(state, account.userId);
 

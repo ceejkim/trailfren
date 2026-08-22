@@ -480,6 +480,17 @@ export type Challenge = {
   goal: number;
 };
 
+export type FeederRivalStats = {
+  friendId: string;
+  feederName: string;
+  visits: number;
+  rarityYield: number;
+  speciesCount: number;
+  signatureBird: string;
+  record: string;
+  momentum: "heating-up" | "holding" | "cooling";
+};
+
 export type Recommendation = {
   id: string;
   title: string;
