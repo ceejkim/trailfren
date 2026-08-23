@@ -1,4 +1,5 @@
 import {
+  AlertTriangle,
   CheckCircle2,
   Cloud,
   Database,
@@ -15,6 +16,7 @@ import type {
   CameraClipIngestResult,
   CameraConnectionRequest,
   CameraDeviceRegistrationResult,
+  CameraMvpReadiness,
   CameraPrivacyMode,
   CameraProvider,
   CameraProviderId,
@@ -67,6 +69,12 @@ function getPathLabel(provider: CameraProvider) {
   if (provider.requiresOAuth) return "Official account";
   if (provider.phase === "partner-export") return "Partner/export";
   return "Manual";
+}
+
+function getReadinessLabel(status: CameraMvpReadiness["status"]) {
+  if (status === "beta-infra-ready") return "Beta infra ready";
+  if (status === "field-test-ready") return "Field-test ready";
+  return "Blocked";
 }
 
 function getPrimaryAction({
@@ -181,6 +189,9 @@ export function CameraSyncWizard({
           ? "Durable"
           : "Preview"
         : "Offline";
+  const readiness = accountState?.readiness;
+  const ReadinessIcon = readiness?.status === "beta-infra-ready" ? CheckCircle2 : AlertTriangle;
+  const readinessItems = readiness ? (readiness.blockers.length > 0 ? readiness.blockers : readiness.attention).slice(0, 3) : [];
 
   return (
     <section className="panel wide camera-sync-wizard" aria-label="Camera sync setup">
@@ -273,6 +284,24 @@ export function CameraSyncWizard({
             <WizardStatus label="Manifest" value={relayManifest?.status ?? "Waiting"} complete={Boolean(relayManifest)} />
             <WizardStatus label="Upload" value={activeUpload?.status ?? "Waiting"} complete={Boolean(activeUpload)} />
           </div>
+
+          {readiness && (
+            <div className={`wizard-readiness ${readiness.status}`}>
+              <div>
+                <ReadinessIcon size={18} />
+                <span>MVP readiness</span>
+                <strong>{getReadinessLabel(readiness.status)}</strong>
+              </div>
+              <p>{readiness.summary}</p>
+              {readinessItems.length > 0 && (
+                <ul>
+                  {readinessItems.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

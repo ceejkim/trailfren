@@ -1,4 +1,4 @@
-import { getCameraAccountState } from "../../server/camera-sync-store.js";
+import { getCameraAccountErrorStatus, getCameraAccountState } from "../../server/camera-sync-store.js";
 
 export default async function handler(request, response) {
   response.setHeader("cache-control", "no-store");
@@ -9,7 +9,7 @@ export default async function handler(request, response) {
   }
 
   try {
-    const { account, records, storage } = await getCameraAccountState(request);
+    const { account, readiness, records, storage } = await getCameraAccountState(request);
     return response.status(200).json({
       account: {
         userId: account.userId,
@@ -18,11 +18,12 @@ export default async function handler(request, response) {
         hardGate: account.hardGate
       },
       storage,
+      readiness,
       counts: Object.fromEntries(Object.entries(records).map(([collection, items]) => [collection, items.length])),
       records
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to read camera account state.";
-    return response.status(400).json({ error: message });
+    return response.status(getCameraAccountErrorStatus(error)).json({ error: message });
   }
 }

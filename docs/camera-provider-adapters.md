@@ -1,6 +1,6 @@
 # Camera Provider Adapters
 
-Updated: August 17, 2026
+Updated: August 23, 2026
 
 ## Purpose
 
@@ -18,7 +18,7 @@ It returns:
 - official source audit
 - cloud policy for official cloud, local relay, partner/export, and manual fallback paths
 
-The environment checklist includes shared account-safety requirements such as `FLOCK_SESSION_SIGNING_SECRET` and durable camera-store variables, plus provider-specific OAuth, webhook, relay, and storage requirements.
+The environment checklist includes shared account-safety requirements such as Supabase auth enforcement, durable camera-store variables, relay signing, and private clip storage, plus provider-specific OAuth, webhook, relay, and storage requirements.
 
 ## Adapter Routes
 
@@ -48,7 +48,10 @@ Required before production cloud integrations:
 |---|---|---|
 | `FLOCK_CAMERA_STORE_REST_URL` | shared | Durable account-owned camera state. |
 | `FLOCK_CAMERA_STORE_REST_TOKEN` | shared | Server-only token for the camera state store. |
-| `FLOCK_SESSION_SIGNING_SECRET` | shared | Temporary server-signed account ownership seam until real auth is wired. |
+| `FLOCK_REQUIRE_AUTH` | shared | Requires verified Supabase bearer tokens for camera account routes. |
+| `SUPABASE_URL` | shared | Server Supabase project URL for bearer verification. |
+| `SUPABASE_PUBLISHABLE_KEY` | shared | Server Supabase publishable key for bearer verification. |
+| `FLOCK_SESSION_SIGNING_SECRET` | shared | Legacy fallback for non-Supabase test seams only. |
 | `FLOCK_RELAY_SIGNING_SECRET` | Reolink, Tapo, Wyze | Production HMAC verification for local relay uploads. |
 | `FLOCK_CLIP_STORAGE_BUCKET` | Reolink, Tapo, Wyze, future imports | Private clip asset storage. |
 | `FLOCK_RING_CLIENT_ID` | Ring | Official Ring OAuth client id. |

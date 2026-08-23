@@ -4,7 +4,8 @@ Flock is a bird-camera social MVP for watching motion-triggered clips, logging s
 
 ## MVP Scope
 
-- Local demo authentication and profile state
+- Supabase-backed login with Apple, phone OTP, and Google/Gmail
+- Local demo preview and profile state for unconfigured development
 - Friend requests, follow actions, and invite-code sharing
 - Motion-only camera feed with comments and reactions
 - Bird sighting logging with rarity-based points
@@ -19,6 +20,11 @@ The BirdWatch project is managed with GitHub as the canonical source of truth. T
 Key planning docs:
 
 - [Autonomous build plan](docs/autonomous-build-plan.md)
+- [Brand guidelines](docs/brand-guidelines.md)
+- [Auth production checklist](docs/auth-production-checklist.md)
+- [Beta data infrastructure](docs/beta-data-infrastructure.md)
+- [Privacy and sharing rules](docs/privacy-sharing-beta-rules.md)
+- [Camera field-test plan](docs/camera-field-test-plan.md)
 - [Camera integration matrix](docs/camera-integrations.md)
 - [Camera ingestion design](docs/camera-ingestion-design.md)
 - [Camera sync UX](docs/camera-sync-ux.md)
@@ -37,6 +43,24 @@ Key planning docs:
 npm install
 npm run dev
 ```
+
+Create `.env.local` for live auth:
+
+```bash
+VITE_SUPABASE_URL=your-project-url
+VITE_SUPABASE_PUBLISHABLE_KEY=your-publishable-key-or-anon-key
+VITE_AUTH_REDIRECT_URL=http://localhost:5173
+```
+
+For deployed Vercel functions, also set:
+
+```bash
+SUPABASE_URL=your-project-url
+SUPABASE_PUBLISHABLE_KEY=your-publishable-key-or-anon-key
+FLOCK_REQUIRE_AUTH=true
+```
+
+Enable Google, Apple, and phone providers in Supabase Auth. Phone OTP requires an SMS provider such as Twilio, MessageBird, or Vonage, plus production rate-limit and CAPTCHA settings before beta.
 
 ## Build
 

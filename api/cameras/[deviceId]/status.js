@@ -1,5 +1,5 @@
 import { getProvider, getProviderNextStep } from "../../../server/camera-sync-architecture.js";
-import { getStoredCameraDevice } from "../../../server/camera-sync-store.js";
+import { getCameraAccountErrorStatus, getStoredCameraDevice } from "../../../server/camera-sync-store.js";
 
 function first(value) {
   return Array.isArray(value) ? value[0] : value;
@@ -49,6 +49,6 @@ export default async function handler(request, response) {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to read camera device status.";
-    return response.status(400).json({ error: message });
+    return response.status(getCameraAccountErrorStatus(error)).json({ error: message });
   }
 }

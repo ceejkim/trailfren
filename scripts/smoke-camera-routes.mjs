@@ -21,6 +21,8 @@ delete process.env.UPSTASH_REDIS_REST_URL;
 delete process.env.UPSTASH_REDIS_REST_TOKEN;
 delete process.env.FLOCK_SESSION_SIGNING_SECRET;
 delete process.env.FLOCK_RELAY_SIGNING_SECRET;
+delete process.env.FLOCK_REQUIRE_AUTH;
+delete process.env.FLOCK_AUTH_MODE;
 
 function createResponse() {
   return {
@@ -121,12 +123,12 @@ assert(
   "expected Ring env checklist"
 );
 assert(
-  adapters.payload.envChecklist.requirements.some((requirement) => requirement.name === "FLOCK_SESSION_SIGNING_SECRET"),
-  "expected signed account ownership env checklist"
+  adapters.payload.envChecklist.requirements.some((requirement) => requirement.name === "FLOCK_REQUIRE_AUTH"),
+  "expected auth-required env checklist"
 );
 assert(
-  adapters.payload.envChecklist.missingRequired.includes("FLOCK_SESSION_SIGNING_SECRET"),
-  "expected unsigned preview mode to report account signing gate"
+  adapters.payload.envChecklist.missingRequired.includes("FLOCK_REQUIRE_AUTH"),
+  "expected unsigned preview mode to report auth-required gate"
 );
 assert(ringStart.statusCode === 501, `expected gated Ring OAuth 501, got ${ringStart.statusCode}`);
 assert(ringStart.payload.adapterAction.status.match(/configuration|required|vendor-review/), "expected gated Ring OAuth status");
@@ -220,6 +222,15 @@ const account = await call(accountState, get({ userId }, `/api/cameras/account-s
 const deviceStatus = await call(status, get({ userId, deviceId: device.id, providerId: "reolink" }, `/api/cameras/${device.id}/status?userId=${userId}`));
 
 assert(account.statusCode === 200, `expected account state 200, got ${account.statusCode}`);
+assert(account.payload.readiness.status === "mvp-blocked", "expected local smoke readiness to report MVP blockers");
+assert(
+  account.payload.readiness.blockers.includes("Supabase auth enforced"),
+  "expected local smoke readiness to report auth gate"
+);
+assert(
+  account.payload.readiness.checks.some((check) => check.id === "private-clip-storage"),
+  "expected account readiness to include private clip storage gate"
+);
 assert(account.payload.counts.syncSessions === 1, "expected one sync session");
 assert(account.payload.counts.connectionRequests === 1, "expected one connection request");
 assert(account.payload.counts.devices === 1, "expected one device");
@@ -262,9 +273,14 @@ const signed = await call(
   post({ providerId: "birdfy" }, { "x-flock-user-id": "signed-user", "x-flock-session-signature": signature })
 );
 
-assert(missingHeader.statusCode === 400, "expected signed mode to require x-flock-user-id");
+assert(missingHeader.statusCode === 401, "expected signed mode to require x-flock-user-id");
 assert(signed.statusCode === 202, `expected signed sync session 202, got ${signed.statusCode}`);
 assert(signed.payload.syncSession.storage.authMode === "server-signed", "expected server-signed storage metadata");
+
+process.env.FLOCK_REQUIRE_AUTH = "true";
+const authRequired = await call(syncSessions, post({ userId: "unsigned-prod-user", providerId: "birdfy" }));
+assert(authRequired.statusCode === 401, `expected auth-required mode to reject unsigned request, got ${authRequired.statusCode}`);
+delete process.env.FLOCK_REQUIRE_AUTH;
 
 console.log(
   JSON.stringify(
@@ -276,7 +292,8 @@ console.log(
       deviceStatus: deviceStatus.payload.device.status,
       birdAnalysisStatus: birdAnalysis.payload.analysis.status,
       birdCorrectionStatus: birdCorrection.payload.correction.reviewStatus,
-      signedAuthMode: signed.payload.syncSession.storage.authMode
+      signedAuthMode: signed.payload.syncSession.storage.authMode,
+      authRequiredStatus: authRequired.statusCode
     },
     null,
     2

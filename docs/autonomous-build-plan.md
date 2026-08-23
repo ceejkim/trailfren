@@ -90,8 +90,7 @@ The app is a compact Vite + React + TypeScript MVP with:
 
 The app does not yet have:
 
-- Real authentication
-- Production auth provider wiring
+- Configured production Supabase project/provider credentials
 - Configured production cloud store credentials
 - Production relay secret configuration
 - Ring/Nest OAuth credentials or webhooks
@@ -99,6 +98,13 @@ The app does not yet have:
 - Vercel environment variable documentation for vendor credentials
 - Production privacy controls for camera feeds
 - Real camera feed access or private clip storage
+
+Latest auth progress:
+
+- Added a Supabase Auth login gate for Google/Gmail, Apple, and phone OTP.
+- Added server-side Supabase bearer-token verification for camera account ownership.
+- Added Node 22 runtime targeting to match current Supabase client requirements.
+- See `docs/mvp-readiness-gaps.md` for the remaining MVP infrastructure blockers.
 
 ## Operating Rules For Unattended Work
 

@@ -12,6 +12,7 @@ import {
   Gamepad2,
   Heart,
   LockKeyhole,
+  LogOut,
   MessageCircle,
   Play,
   Plus,
@@ -31,7 +32,10 @@ import {
   Wifi,
   Zap
 } from "lucide-react";
+import type { Session } from "@supabase/supabase-js";
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { AuthScreen } from "./AuthScreen";
+import { getProfileFromAuthUser, supabase, supabaseAuthConfigured } from "./auth";
 import {
   challenges,
   demoProfile,
@@ -39,6 +43,7 @@ import {
   initialFriends,
   initialSightings,
   rarityPoints,
+  rivalFeederStats,
   recommendations
 } from "./data";
 import {
@@ -86,6 +91,33 @@ const storageKey = "flock-birdwatch-state";
 const rarityOptions: Rarity[] = ["Common", "Uncommon", "Rare", "Legendary"];
 type CameraAccountLoadStatus = "loading" | "ready" | "offline";
 type BirdReviewActionStatus = "idle" | "analyzing" | "correcting";
+type FeederMomentum = "heating-up" | "holding" | "cooling";
+
+type FeederGameCard = {
+  id: string;
+  name: string;
+  handle: string;
+  avatar: string;
+  location: string;
+  feederName: string;
+  visits: number;
+  rarityYield: number;
+  speciesCount: number;
+  signatureBird: string;
+  record: string;
+  momentum: FeederMomentum;
+  feederPower: number;
+  isCurrentUser: boolean;
+};
+
+type FeederMatchup = {
+  id: string;
+  label: string;
+  top: FeederGameCard;
+  bottom: FeederGameCard;
+  winner: FeederGameCard;
+  margin: number;
+};
 
 type AppState = {
   profile: UserProfile;
@@ -102,6 +134,64 @@ type AppState = {
   lastBirdAnalysis?: BirdIntelligenceAnalysis;
   lastBirdCorrection?: BirdManualCorrection;
 };
+
+const visitPowerMultiplier = 18;
+const speciesPowerMultiplier = 30;
+
+function getFirstName(name: string) {
+  return name.trim().split(/\s+/)[0] || "You";
+}
+
+function normalizeHandle(value: string) {
+  return value.replace("@", "").trim().toLowerCase();
+}
+
+function getFeederPower(visits: number, rarityYield: number, speciesCount: number) {
+  return visits * visitPowerMultiplier + rarityYield + speciesCount * speciesPowerMultiplier;
+}
+
+function getCurrentUserFeederCard(profile: UserProfile, accountUserId: string, clips: Clip[], sightings: Sighting[]): FeederGameCard {
+  const firstName = getFirstName(profile.name);
+  const ownerAliases = new Set([firstName.toLowerCase(), "charlie", normalizeHandle(profile.handle)]);
+  const ownedClips = clips.filter((clip) => ownerAliases.has(clip.owner.toLowerCase()));
+  const verifiedSpecies = new Set([...sightings.map((sighting) => sighting.bird), ...ownedClips.map((clip) => clip.bird)]);
+  const rarityYield = sightings.reduce((sum, sighting) => sum + sighting.points, 0);
+  const visits = Math.max(ownedClips.length, sightings.length);
+  const speciesCount = verifiedSpecies.size;
+  const signatureBird =
+    [...sightings].sort((left, right) => right.points - left.points)[0]?.bird ?? ownedClips[0]?.bird ?? profile.favoriteBird;
+  const feederName = ownedClips[0]?.cameraName ?? `${firstName}'s feeder`;
+  const legendaryOrRareHits = sightings.filter((sighting) => sighting.rarity === "Rare" || sighting.rarity === "Legendary").length;
+
+  return {
+    id: accountUserId,
+    name: profile.name,
+    handle: profile.handle,
+    avatar: profile.avatar,
+    location: profile.location,
+    feederName,
+    visits,
+    rarityYield,
+    speciesCount,
+    signatureBird,
+    record: `${Math.min(3, legendaryOrRareHits + 1)}-${Math.max(0, 3 - legendaryOrRareHits - 1)}`,
+    momentum: legendaryOrRareHits > 0 ? "heating-up" : visits >= 3 ? "holding" : "cooling",
+    feederPower: getFeederPower(visits, rarityYield, speciesCount),
+    isCurrentUser: true
+  };
+}
+
+function createFeederMatchup(label: string, top: FeederGameCard, bottom: FeederGameCard): FeederMatchup {
+  const winner = top.feederPower >= bottom.feederPower ? top : bottom;
+  return {
+    id: `${top.id}-${bottom.id}`,
+    label,
+    top,
+    bottom,
+    winner,
+    margin: Math.abs(top.feederPower - bottom.feederPower)
+  };
+}
 
 function getInitialState(): AppState {
   return {
@@ -165,6 +255,10 @@ function getLatest<T>(items: T[], paths: string[]): T | undefined {
     .map((item, index) => ({ item, index, time: getTime(item, paths) }))
     .sort((left, right) => left.time - right.time || left.index - right.index);
   return sorted[sorted.length - 1]?.item;
+}
+
+function getActionError(error: unknown) {
+  return error instanceof Error ? error.message : "Something went wrong. Please try again.";
 }
 
 function mergeById<T extends { id: string }>(incoming: T[], existing: T[]) {
@@ -301,6 +395,9 @@ function reconcileCameraAccountState(current: AppState, accountState: CameraAcco
 
 function App() {
   const [state, setState] = useState<AppState>(() => loadState());
+  const [authSession, setAuthSession] = useState<Session | null>(null);
+  const [authReady, setAuthReady] = useState(!supabaseAuthConfigured);
+  const [demoPreview, setDemoPreview] = useState(false);
   const [activeTab, setActiveTab] = useState("feed");
   const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>({});
   const [logDraft, setLogDraft] = useState({
@@ -319,8 +416,61 @@ function App() {
   const [cameraAccountState, setCameraAccountState] = useState<CameraAccountState | null>(null);
   const [cameraAccountStatus, setCameraAccountStatus] = useState<CameraAccountLoadStatus>("loading");
   const [birdReviewStatus, setBirdReviewStatus] = useState<BirdReviewActionStatus>("idle");
+  const [cameraActionError, setCameraActionError] = useState("");
 
   const selectedProvider = getCameraProvider(state.cameraSync.providerId);
+  const accountUserId = authSession?.user.id ?? state.profile.id;
+
+  useEffect(() => {
+    if (!supabase) return;
+    let active = true;
+
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (!active) return;
+        setAuthSession(data.session);
+        setAuthReady(true);
+      })
+      .catch(() => {
+        if (active) setAuthReady(true);
+      });
+
+    const {
+      data: { subscription }
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAuthSession(session);
+      setAuthReady(true);
+      if (session) setDemoPreview(false);
+    });
+
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!authSession?.user) return;
+
+    const nextProfile = getProfileFromAuthUser(authSession.user, state.profile);
+    const changed =
+      nextProfile.id !== state.profile.id ||
+      nextProfile.name !== state.profile.name ||
+      nextProfile.handle !== state.profile.handle ||
+      nextProfile.avatar !== state.profile.avatar;
+
+    if (!changed) return;
+
+    const nextState = { ...state, profile: nextProfile };
+    setState(nextState);
+    saveState(nextState);
+    setProfileDraft({
+      name: nextProfile.name,
+      location: nextProfile.location,
+      favoriteBird: nextProfile.favoriteBird
+    });
+  }, [authSession?.user]);
 
   function commit(next: AppState) {
     setState(next);
@@ -338,7 +488,7 @@ function App() {
   }
 
   async function refreshCameraAccountState() {
-    const accountState = await fetchCameraAccountState(state.profile.id);
+    const accountState = await fetchCameraAccountState(accountUserId);
     if (!accountState) {
       setCameraAccountStatus("offline");
       return;
@@ -350,7 +500,7 @@ function App() {
     let cancelled = false;
     setCameraAccountStatus("loading");
 
-    fetchCameraAccountState(state.profile.id)
+    fetchCameraAccountState(accountUserId)
       .then((accountState) => {
         if (cancelled) return;
         if (!accountState) {
@@ -366,26 +516,50 @@ function App() {
     return () => {
       cancelled = true;
     };
-  }, [state.profile.id]);
+  }, [accountUserId]);
 
-  const leaderboard = useMemo(() => {
-    const currentUser = {
-      id: state.profile.id,
-      name: state.profile.name,
-      handle: state.profile.handle,
-      avatar: state.profile.avatar,
-      location: state.profile.location,
-      status: "following" as const,
-      points: state.profile.points,
-      clips: state.clips.filter((clip) => clip.owner === "Charlie").length
-    };
-    return [currentUser, ...state.friends].sort((a, b) => b.points - a.points);
-  }, [state]);
+  const currentFeederCard = useMemo(
+    () => getCurrentUserFeederCard(state.profile, accountUserId, state.clips, state.sightings),
+    [accountUserId, state.clips, state.profile, state.sightings]
+  );
+  const feederStandings = useMemo(() => {
+    const rivals = rivalFeederStats
+      .map((stats) => {
+        const friend = state.friends.find((candidate) => candidate.id === stats.friendId);
+        if (!friend) return undefined;
+        return {
+          id: friend.id,
+          name: friend.name,
+          handle: friend.handle,
+          avatar: friend.avatar,
+          location: friend.location,
+          feederName: stats.feederName,
+          visits: stats.visits,
+          rarityYield: stats.rarityYield,
+          speciesCount: stats.speciesCount,
+          signatureBird: stats.signatureBird,
+          record: stats.record,
+          momentum: stats.momentum,
+          feederPower: getFeederPower(stats.visits, stats.rarityYield, stats.speciesCount),
+          isCurrentUser: false
+        } satisfies FeederGameCard;
+      })
+      .filter(Boolean) as FeederGameCard[];
+
+    return [currentFeederCard, ...rivals].sort((left, right) => right.feederPower - left.feederPower);
+  }, [currentFeederCard, state.friends]);
+  const bracketSeeds = feederStandings.slice(0, 4);
+  const feederMatchups =
+    bracketSeeds.length === 4
+      ? [createFeederMatchup("Seed 1 vs 4", bracketSeeds[0], bracketSeeds[3]), createFeederMatchup("Seed 2 vs 3", bracketSeeds[1], bracketSeeds[2])]
+      : [];
+  const bracketFinal = feederMatchups.length === 2 ? createFeederMatchup("Final", feederMatchups[0].winner, feederMatchups[1].winner) : undefined;
+  const currentFeederIndex = feederStandings.findIndex((member) => member.id === currentFeederCard.id);
+  const currentFeederRank = currentFeederIndex + 1;
+  const nextFeederTarget = currentFeederIndex > 0 ? feederStandings[currentFeederIndex - 1] : undefined;
 
   const totalClips = state.clips.length;
   const rareClips = state.clips.filter((clip) => clip.rarity === "Rare" || clip.rarity === "Legendary").length;
-  const followingCount = state.friends.filter((friend) => friend.status === "following").length;
-  const weeklyPoints = state.sightings.reduce((sum, sighting) => sum + sighting.points, 0);
   const connectedCameraCount = state.cameraSync.registeredDeviceId || state.cameraSync.status === "synced" ? 1 : 0;
   const fallbackReviewItems = [state.lastRelayUpload?.reviewRecord, state.lastIngestResult?.reviewRecord].filter(
     Boolean
@@ -535,93 +709,119 @@ function App() {
   }
 
   async function startCameraSync() {
-    const input = {
-      userId: state.profile.id,
-      provider: selectedProvider,
-      privacyMode: state.cameraSync.privacyMode,
-      motionUploadsEnabled: state.cameraSync.motionUploadsEnabled
-    };
-    const [syncSession, connectionRequest] = await Promise.all([requestCameraSyncSession(input), requestCameraConnectionRequest(input)]);
-    const nextStatus = getSyncStatusForConnectionRequest(connectionRequest);
+    setCameraActionError("");
+    try {
+      const input = {
+        userId: accountUserId,
+        provider: selectedProvider,
+        privacyMode: state.cameraSync.privacyMode,
+        motionUploadsEnabled: state.cameraSync.motionUploadsEnabled
+      };
+      const [syncSession, connectionRequest] = await Promise.all([requestCameraSyncSession(input), requestCameraConnectionRequest(input)]);
+      const nextStatus = getSyncStatusForConnectionRequest(connectionRequest);
 
-    commit({
-      ...state,
-      cameraSync: {
-        ...state.cameraSync,
-        status: nextStatus,
-        approvalLabel: selectedProvider.primaryAction,
-        connectionRequestId: connectionRequest.id,
-        nextStep: connectionRequest.nextStep,
-        lastSyncedAt: nextStatus === "synced" ? "Just now" : state.cameraSync.lastSyncedAt
-      },
-      lastSyncSession: syncSession,
-      lastConnectionRequest: connectionRequest
-    });
-    setActiveTab("cameras");
-    void refreshCameraAccountState();
+      commit({
+        ...state,
+        cameraSync: {
+          ...state.cameraSync,
+          status: nextStatus,
+          approvalLabel: selectedProvider.primaryAction,
+          connectionRequestId: connectionRequest.id,
+          nextStep: connectionRequest.nextStep,
+          lastSyncedAt: nextStatus === "synced" ? "Just now" : state.cameraSync.lastSyncedAt
+        },
+        lastSyncSession: syncSession,
+        lastConnectionRequest: connectionRequest
+      });
+      setActiveTab("cameras");
+      void refreshCameraAccountState();
+    } catch (error) {
+      setCameraActionError(getActionError(error));
+      setActiveTab("cameras");
+    }
   }
 
   async function registerSelectedCameraDevice() {
-    const registration = await requestCameraDeviceRegistration({
-      userId: state.profile.id,
-      provider: selectedProvider,
-      privacyMode: state.cameraSync.privacyMode,
-      motionUploadsEnabled: state.cameraSync.motionUploadsEnabled,
-      locationLabel: state.profile.location
-    });
-    recordDeviceRegistration(registration);
-    void refreshCameraAccountState();
+    setCameraActionError("");
+    try {
+      const registration = await requestCameraDeviceRegistration({
+        userId: accountUserId,
+        provider: selectedProvider,
+        privacyMode: state.cameraSync.privacyMode,
+        motionUploadsEnabled: state.cameraSync.motionUploadsEnabled,
+        locationLabel: state.profile.location
+      });
+      recordDeviceRegistration(registration);
+      void refreshCameraAccountState();
+    } catch (error) {
+      setCameraActionError(getActionError(error));
+    }
   }
 
   async function createRelayManifestForRegisteredDevice() {
     if (!state.lastDeviceRegistration?.relay) return;
-    const relayManifest = await requestCameraRelayManifest({
-      userId: state.profile.id,
-      provider: selectedProvider,
-      registration: state.lastDeviceRegistration,
-      privacyMode: state.cameraSync.privacyMode,
-      motionUploadsEnabled: state.cameraSync.motionUploadsEnabled
-    });
-    recordRelayManifest(relayManifest);
-    void refreshCameraAccountState();
+    setCameraActionError("");
+    try {
+      const relayManifest = await requestCameraRelayManifest({
+        userId: accountUserId,
+        provider: selectedProvider,
+        registration: state.lastDeviceRegistration,
+        privacyMode: state.cameraSync.privacyMode,
+        motionUploadsEnabled: state.cameraSync.motionUploadsEnabled
+      });
+      recordRelayManifest(relayManifest);
+      void refreshCameraAccountState();
+    } catch (error) {
+      setCameraActionError(getActionError(error));
+    }
   }
 
   async function previewSignedRelayUpload() {
     if (!state.lastDeviceRegistration?.device) return;
-    const relayUpload = await requestDemoRelayUpload({
-      userId: state.profile.id,
-      provider: selectedProvider,
-      device: state.lastDeviceRegistration.device,
-      privacyMode: state.cameraSync.privacyMode
-    });
-    acceptRelayUpload(relayUpload);
-    void refreshCameraAccountState();
+    setCameraActionError("");
+    try {
+      const relayUpload = await requestDemoRelayUpload({
+        userId: accountUserId,
+        provider: selectedProvider,
+        device: state.lastDeviceRegistration.device,
+        privacyMode: state.cameraSync.privacyMode
+      });
+      acceptRelayUpload(relayUpload);
+      void refreshCameraAccountState();
+    } catch (error) {
+      setCameraActionError(getActionError(error));
+    }
   }
 
   async function previewMotionUpload() {
-    const ingestResult = await requestDemoCameraClipIngest({
-      userId: state.profile.id,
-      provider: selectedProvider,
-      privacyMode: state.cameraSync.privacyMode
-    });
+    setCameraActionError("");
+    try {
+      const ingestResult = await requestDemoCameraClipIngest({
+        userId: accountUserId,
+        provider: selectedProvider,
+        privacyMode: state.cameraSync.privacyMode
+      });
 
-    commit({
-      ...state,
-      clips: [ingestResult.clip, ...state.clips],
-      sightings: [ingestResult.sighting, ...state.sightings],
-      cameraSync: {
-        ...state.cameraSync,
-        status: "synced",
-        latestIngestId: ingestResult.ingestId,
-        latestIngestAt: "Just now",
-        lastSyncedAt: "Just now"
-      },
-      lastIngestResult: ingestResult,
-      lastBirdAnalysis: undefined,
-      lastBirdCorrection: undefined
-    });
-    setActiveTab("feed");
-    void refreshCameraAccountState();
+      commit({
+        ...state,
+        clips: [ingestResult.clip, ...state.clips],
+        sightings: [ingestResult.sighting, ...state.sightings],
+        cameraSync: {
+          ...state.cameraSync,
+          status: "synced",
+          latestIngestId: ingestResult.ingestId,
+          latestIngestAt: "Just now",
+          lastSyncedAt: "Just now"
+        },
+        lastIngestResult: ingestResult,
+        lastBirdAnalysis: undefined,
+        lastBirdCorrection: undefined
+      });
+      setActiveTab("feed");
+      void refreshCameraAccountState();
+    } catch (error) {
+      setCameraActionError(getActionError(error));
+    }
   }
 
   function recordDeviceRegistration(registration: CameraDeviceRegistrationResult) {
@@ -686,8 +886,9 @@ function App() {
 
     setBirdReviewStatus("analyzing");
     try {
+      setCameraActionError("");
       const analysis = await requestBirdIntelligenceAnalysis({
-        userId: state.profile.id,
+        userId: accountUserId,
         reviewItem: latestReviewItem,
         providerId: latestReviewItem.providerId,
         clip: latestReviewClip,
@@ -701,6 +902,8 @@ function App() {
         lastBirdAnalysis: analysis
       });
       void refreshCameraAccountState();
+    } catch (error) {
+      setCameraActionError(getActionError(error));
     } finally {
       setBirdReviewStatus("idle");
     }
@@ -711,8 +914,9 @@ function App() {
 
     setBirdReviewStatus("correcting");
     try {
+      setCameraActionError("");
       const correction = await requestBirdCorrection({
-        userId: state.profile.id,
+        userId: accountUserId,
         analysis: latestBirdAnalysis,
         action,
         species,
@@ -761,6 +965,8 @@ function App() {
         lastBirdCorrection: correction
       });
       void refreshCameraAccountState();
+    } catch (error) {
+      setCameraActionError(getActionError(error));
     } finally {
       setBirdReviewStatus("idle");
     }
@@ -778,6 +984,22 @@ function App() {
     await navigator.clipboard.writeText(state.profile.inviteCode);
     setCopiedInvite(true);
     window.setTimeout(() => setCopiedInvite(false), 1400);
+  }
+
+  async function signOut() {
+    await supabase?.auth.signOut();
+    setAuthSession(null);
+    setDemoPreview(false);
+  }
+
+  if (!authReady || (!authSession && !demoPreview)) {
+    return (
+      <AuthScreen
+        allowDemoPreview={!supabaseAuthConfigured || import.meta.env.DEV}
+        authReady={authReady}
+        onDemoPreview={() => setDemoPreview(true)}
+      />
+    );
   }
 
   const tabs = [
@@ -866,6 +1088,11 @@ function App() {
             <button className="icon-button" title="Notifications" type="button">
               <Bell size={18} />
             </button>
+            {authSession && (
+              <button className="icon-button" onClick={signOut} title="Sign out" type="button">
+                <LogOut size={18} />
+              </button>
+            )}
             <button className="profile-chip" onClick={() => setActiveTab("friends")} type="button">
               <span>{state.profile.avatar}</span>
               <strong>{state.profile.handle}</strong>
@@ -878,7 +1105,7 @@ function App() {
             <Metric icon={Camera} label="Motion clips" value={totalClips.toString()} tone="blue" />
             <Metric icon={RadioTower} label="Synced cameras" value={connectedCameraCount.toString()} tone="green" />
             <Metric icon={Sparkles} label="Rare hits" value={rareClips.toString()} tone="gold" />
-            <Metric icon={Zap} label="Weekly points" value={weeklyPoints.toString()} tone="coral" />
+            <Metric icon={Zap} label="Feeder power" value={currentFeederCard.feederPower.toString()} tone="coral" />
           </section>
         )}
 
@@ -916,6 +1143,20 @@ function App() {
                         <span>{clip.capturedAt}</span>
                         <span>{clip.confidence}% ID confidence</span>
                         <span>+{clip.points} pts</span>
+                      </div>
+                      <div className="clip-power-strip" aria-label={`${clip.bird} feeder power contribution`}>
+                        <span>
+                          <Zap size={14} />
+                          Visit +{visitPowerMultiplier}
+                        </span>
+                        <span>
+                          <Sparkles size={14} />
+                          Rarity +{clip.points}
+                        </span>
+                        <span>
+                          <Bird size={14} />
+                          Species bank
+                        </span>
                       </div>
                       <div className="clip-actions">
                         <button onClick={() => reactToClip(clip.id)} type="button">
@@ -1034,6 +1275,13 @@ function App() {
 
         {activeTab === "cameras" && (
           <div className="camera-sync-grid">
+            {cameraActionError && (
+              <div className="camera-action-error" role="alert">
+                <LockKeyhole size={17} />
+                <span>{cameraActionError}</span>
+              </div>
+            )}
+
             <CameraSyncWizard
               userName={state.profile.name}
               userHandle={state.profile.handle}
@@ -1156,7 +1404,7 @@ function App() {
             </section>
 
             <CameraRelayPanel
-              userId={state.profile.id}
+              userId={accountUserId}
               locationLabel={state.profile.location}
               provider={selectedProvider}
               privacyMode={state.cameraSync.privacyMode}
@@ -1167,6 +1415,7 @@ function App() {
               onDeviceRegistered={recordDeviceRegistration}
               onCreateRelayManifest={createRelayManifestForRegisteredDevice}
               onRelayUploadAccepted={acceptRelayUpload}
+              onError={setCameraActionError}
             />
 
             <section className="panel wide motion-pipeline-panel">
@@ -1299,27 +1548,86 @@ function App() {
         )}
 
         {activeTab === "league" && (
-          <div className="league-grid">
+          <div className="league-grid game-grid">
+            <section className="feeder-power-hero game-wide" aria-label="Weekly feeder power">
+              <div className="feeder-hero-copy">
+                <p className="eyebrow">Weekly feeder power</p>
+                <h2>{currentFeederCard.feederName} is seed #{currentFeederRank}</h2>
+                <p>
+                  Power comes from three visible signals: visit frequency, rarity yield, and verified species variety. Camera clips and reviewed
+                  sightings move the board immediately.
+                </p>
+              </div>
+              <div className="power-dial" aria-label={`${currentFeederCard.feederPower} feeder power`}>
+                <span>Feeder power</span>
+                <strong>{currentFeederCard.feederPower}</strong>
+                <small>
+                  {nextFeederTarget
+                    ? `${nextFeederTarget.feederPower - currentFeederCard.feederPower} to catch ${getFirstName(nextFeederTarget.name)}`
+                    : "Top seed this week"}
+                </small>
+              </div>
+              <div className="power-breakdown" aria-label="Feeder power formula">
+                <div>
+                  <span>Visits</span>
+                  <strong>{currentFeederCard.visits}</strong>
+                  <em>x {visitPowerMultiplier}</em>
+                </div>
+                <div>
+                  <span>Rarity yield</span>
+                  <strong>{currentFeederCard.rarityYield}</strong>
+                  <em>reviewed points</em>
+                </div>
+                <div>
+                  <span>Species bank</span>
+                  <strong>{currentFeederCard.speciesCount}</strong>
+                  <em>x {speciesPowerMultiplier}</em>
+                </div>
+              </div>
+            </section>
+
+            <section className="panel wide game-wide bracket-panel">
+              <div className="section-heading">
+                <Gamepad2 size={20} />
+                <div>
+                  <h2>Feeder Bracket</h2>
+                  <p>Top four feeders enter a weekly faceoff. Higher feeder power advances.</p>
+                </div>
+              </div>
+              <div className="bracket-board" aria-label="Weekly feeder bracket">
+                <div className="matchup-lane">
+                  {feederMatchups.map((matchup) => (
+                    <MatchupCard key={matchup.id} matchup={matchup} />
+                  ))}
+                </div>
+                {bracketFinal && (
+                  <div className="final-lane">
+                    <MatchupCard isFinal matchup={bracketFinal} />
+                  </div>
+                )}
+              </div>
+            </section>
+
             <section className="panel wide">
               <div className="section-heading">
                 <Trophy size={20} />
                 <div>
-                  <h2>Fantasy Flock League</h2>
-                  <p>Points are weighted by rarity, verified motion clips, and streaks.</p>
+                  <h2>Power Standings</h2>
+                  <p>Ranked by this week's feeder power formula.</p>
                 </div>
               </div>
-              <div className="leaderboard">
-                {leaderboard.map((member, index) => (
-                  <div className="leader-row" key={member.id}>
+              <div className="leaderboard power-leaderboard">
+                {feederStandings.map((member, index) => (
+                  <div className={member.isCurrentUser ? "leader-row current-feeder" : "leader-row"} key={member.id}>
                     <span className="rank">{index + 1}</span>
                     <span className="avatar">{member.avatar}</span>
                     <div>
                       <strong>{member.name}</strong>
                       <span>
-                        {member.handle} - {member.location}
+                        {member.feederName} - {member.signatureBird}
                       </span>
                     </div>
-                    <em>{member.points.toLocaleString()} pts</em>
+                    <em>{member.feederPower.toLocaleString()} power</em>
                   </div>
                 ))}
               </div>
@@ -1328,7 +1636,13 @@ function App() {
             <section className="panel">
               <div className="section-heading compact">
                 <Gamepad2 size={18} />
-                <span>Challenges</span>
+                <span>Power Quests</span>
+              </div>
+              <div className="scoring-rule">
+                <strong>Formula</strong>
+                <p>
+                  visits x {visitPowerMultiplier} + rarity yield + species x {speciesPowerMultiplier}
+                </p>
               </div>
               <div className="challenge-list">
                 {challenges.map((challenge) => (
@@ -1499,6 +1813,36 @@ function Metric({ icon: Icon, label, value, tone }: MetricProps) {
         <p>{label}</p>
       </div>
     </article>
+  );
+}
+
+function MatchupCard({ matchup, isFinal = false }: { matchup: FeederMatchup; isFinal?: boolean }) {
+  return (
+    <article className={isFinal ? "matchup-card final-matchup" : "matchup-card"}>
+      <header>
+        <span>{matchup.label}</span>
+        <strong>{isFinal ? "Crown match" : `Margin ${matchup.margin}`}</strong>
+      </header>
+      <FeederCompetitor member={matchup.top} winnerId={matchup.winner.id} />
+      <FeederCompetitor member={matchup.bottom} winnerId={matchup.winner.id} />
+    </article>
+  );
+}
+
+function FeederCompetitor({ member, winnerId }: { member: FeederGameCard; winnerId: string }) {
+  const isWinner = member.id === winnerId;
+
+  return (
+    <div className={isWinner ? "competitor-row winner" : "competitor-row"}>
+      <span className="avatar">{member.avatar}</span>
+      <div>
+        <strong>{member.feederName}</strong>
+        <small>
+          {member.record} / {member.momentum.replace("-", " ")}
+        </small>
+      </div>
+      <em>{member.feederPower}</em>
+    </div>
   );
 }
 

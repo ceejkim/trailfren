@@ -23,6 +23,17 @@ The remaining production work is configuration and hard-gated integrations, not 
 
 ## Required Environment Variables
 
+Authentication variables:
+
+| Variable | Required For | Notes |
+|---|---|---|
+| `VITE_SUPABASE_URL` | browser auth | Supabase project URL exposed to the Vite client. |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | browser auth | Supabase publishable/anon key exposed to the Vite client. |
+| `VITE_AUTH_REDIRECT_URL` | browser auth redirect | Canonical app URL used for OAuth redirects. Must be allowlisted in Supabase. |
+| `SUPABASE_URL` | server auth | Supabase project URL used by Vercel functions to verify bearer tokens. Can match `VITE_SUPABASE_URL`. |
+| `SUPABASE_PUBLISHABLE_KEY` | server auth | Supabase publishable/anon key used by Vercel functions for `auth.getUser(jwt)`. Can match `VITE_SUPABASE_PUBLISHABLE_KEY`. |
+| `FLOCK_REQUIRE_AUTH` | camera account auth gate | Set to `true` for preview and production once Supabase variables are present. Missing bearer tokens then return `401` instead of demo fallback records. |
+
 Core account/store variables:
 
 | Variable | Required For | Notes |
@@ -32,7 +43,7 @@ Core account/store variables:
 | `FLOCK_CAMERA_STORE_NAMESPACE` | optional storage namespace | Defaults to `flock:camera-sync-state:v1`. |
 | `KV_REST_API_URL` | compatible durable store fallback | Supported for Vercel/Redis-style stores when project integration provides this name. |
 | `KV_REST_API_TOKEN` | compatible durable store fallback | Supported for Vercel/Redis-style stores when project integration provides this name. |
-| `FLOCK_SESSION_SIGNING_SECRET` | signed account ownership | Demo mode works without it, but production account data should require real auth or this server-side seam. |
+| `FLOCK_SESSION_SIGNING_SECRET` | signed account ownership fallback | Use only for non-Supabase server-signed test seams. Do not rely on it for the 50-user beta when Supabase auth is configured. |
 | `FLOCK_RELAY_SIGNING_SECRET` | production relay HMAC upload verification | Replaces demo relay signatures. |
 
 Future gated variables:
@@ -56,18 +67,38 @@ Vercel manages project environment variables outside source code and lets teams 
 
 Suggested production sequence:
 
-1. Choose the production account/auth provider.
-2. Add `FLOCK_SESSION_SIGNING_SECRET` only if the app is still using the server-signed seam before real auth.
-3. Choose a REST/Redis-compatible store and add `FLOCK_CAMERA_STORE_REST_URL` plus `FLOCK_CAMERA_STORE_REST_TOKEN`, or connect a provider that supplies compatible `KV_REST_API_URL` and `KV_REST_API_TOKEN`.
-4. Add `FLOCK_RELAY_SIGNING_SECRET`.
-5. Redeploy from GitHub/Vercel.
-6. Verify production returns `storage.durable: true` from `GET /api/cameras/account-state`.
+1. Configure Supabase Auth providers for Google/Gmail, Apple, and phone OTP. Phone OTP requires an SMS provider and rate-limit/CAPTCHA settings before public beta.
+2. In Supabase URL Configuration, set the production Site URL and allowlist local, preview, and production redirect URLs. Use exact production URLs; reserve wildcard patterns for local and Vercel previews.
+3. Add the browser and server Supabase variables above in Vercel.
+4. Set `FLOCK_REQUIRE_AUTH=true` in Vercel preview and production after the Supabase variables are present.
+5. Choose a REST/Redis-compatible store and add `FLOCK_CAMERA_STORE_REST_URL` plus `FLOCK_CAMERA_STORE_REST_TOKEN`, or connect a provider that supplies compatible `KV_REST_API_URL` and `KV_REST_API_TOKEN`.
+6. Add `FLOCK_RELAY_SIGNING_SECRET`.
+7. Redeploy from GitHub/Vercel.
+8. Verify production returns `account.authenticated: true`, `authMode: supabase-auth`, and `storage.durable: true` from `GET /api/cameras/account-state` when called with a signed-in user's bearer token.
+9. Verify unsigned requests to camera account routes return `401` when `FLOCK_REQUIRE_AUTH=true`.
 
 Official source anchors:
 
 - Vercel environment variables: https://vercel.com/docs/environment-variables
 - Vercel environment variable CLI: https://vercel.com/docs/cli/env
 - Redis on Vercel: https://vercel.com/docs/redis
+- Supabase `auth.getUser(jwt)` server verification: https://supabase.com/docs/reference/javascript/auth-getuser
+- Supabase redirect URLs: https://supabase.com/docs/guides/auth/redirect-urls
+- Supabase phone login: https://supabase.com/docs/guides/auth/phone-login
+- Supabase auth rate limits: https://supabase.com/docs/guides/auth/rate-limits
+
+## Readiness Response
+
+`GET /api/cameras/account-state` returns a `readiness` object with:
+
+- `status`: `mvp-blocked`, `field-test-ready`, or `beta-infra-ready`
+- `summary`: plain-language release state
+- `blockers`: hard configuration or infrastructure blockers
+- `attention`: important non-blocking gates
+- `checks`: auth, storage, owner-scoped records, relay signing, private clip storage, and field-test checks
+
+This is intentionally conservative. A preview can work while still reporting
+that MVP beta is blocked.
 
 ## Verification Checklist
 
@@ -75,8 +106,16 @@ Before calling camera sync production-ready:
 
 - `npm run build`
 - `npm run smoke:camera`
+- Google/Gmail sign-in redirects back to the app and loads the signed-in profile.
+- Apple sign-in redirects back to the app and loads the signed-in profile.
+- Phone OTP sends and verifies a code.
+- Signed camera API requests derive account ownership from the verified Supabase user id.
+- With `FLOCK_REQUIRE_AUTH=true`, missing bearer tokens return `401` and do not create fallback success records.
+- Expired or invalid bearer tokens return an auth error and do not create fallback success records.
+- Mismatched body/query user claims return `403` when they disagree with the verified Supabase user.
 - `GET /api/cameras/provider-adapters` returns adapter contracts and the Vercel env checklist.
-- Live `GET /api/cameras/account-state?userId=<test>` returns `storage.durable: true`.
+- Live `GET /api/cameras/account-state` with the signed-in user's bearer token returns `authMode: supabase-auth` and `storage.durable: true`.
+- Live `GET /api/cameras/account-state` returns a `readiness` object with no unexpected blockers.
 - A sync session survives browser reload.
 - A device record survives browser reload.
 - A relay manifest is created for local relay providers and survives browser reload.

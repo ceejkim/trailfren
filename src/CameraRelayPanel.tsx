@@ -21,7 +21,12 @@ type CameraRelayPanelProps = {
   onDeviceRegistered: (registration: CameraDeviceRegistrationResult) => void;
   onCreateRelayManifest: () => Promise<void> | void;
   onRelayUploadAccepted: (relayUpload: CameraRelayUploadResult) => void;
+  onError: (message: string) => void;
 };
+
+function getActionError(error: unknown) {
+  return error instanceof Error ? error.message : "Camera relay action failed.";
+}
 
 export function CameraRelayPanel({
   userId,
@@ -34,12 +39,14 @@ export function CameraRelayPanel({
   relayUpload,
   onDeviceRegistered,
   onCreateRelayManifest,
-  onRelayUploadAccepted
+  onRelayUploadAccepted,
+  onError
 }: CameraRelayPanelProps) {
   const [busyAction, setBusyAction] = useState<"device" | "manifest" | "upload" | null>(null);
 
   async function registerDevice() {
     setBusyAction("device");
+    onError("");
     try {
       const nextRegistration = await requestCameraDeviceRegistration({
         userId,
@@ -49,6 +56,8 @@ export function CameraRelayPanel({
         locationLabel
       });
       onDeviceRegistered(nextRegistration);
+    } catch (error) {
+      onError(getActionError(error));
     } finally {
       setBusyAction(null);
     }
@@ -57,6 +66,7 @@ export function CameraRelayPanel({
   async function previewSignedRelayUpload() {
     if (!registration?.device) return;
     setBusyAction("upload");
+    onError("");
     try {
       const nextRelayUpload = await requestDemoRelayUpload({
         userId,
@@ -65,6 +75,8 @@ export function CameraRelayPanel({
         privacyMode
       });
       onRelayUploadAccepted(nextRelayUpload);
+    } catch (error) {
+      onError(getActionError(error));
     } finally {
       setBusyAction(null);
     }
@@ -73,8 +85,11 @@ export function CameraRelayPanel({
   async function createRelayManifest() {
     if (!registration?.relay) return;
     setBusyAction("manifest");
+    onError("");
     try {
       await onCreateRelayManifest();
+    } catch (error) {
+      onError(getActionError(error));
     } finally {
       setBusyAction(null);
     }

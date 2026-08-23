@@ -6,7 +6,7 @@ import {
   listCameraProviderAdapters
 } from "../../server/camera-provider-adapters.js";
 import { createRelayManifest, getBody, rejectSecretFields } from "../../server/camera-sync-architecture.js";
-import { getStoredCameraDevice, persistCameraRelayManifest } from "../../server/camera-sync-store.js";
+import { getCameraAccountErrorStatus, getStoredCameraDevice, persistCameraRelayManifest } from "../../server/camera-sync-store.js";
 
 function adapterPath(request) {
   const path = request.query?.adapterPath;
@@ -103,6 +103,7 @@ export default async function handler(request, response) {
         return response.status(404).json({ error: "Camera adapter route not found" });
     }
   } catch (error) {
-    return response.status(400).json({ error: error instanceof Error ? error.message : "Unable to process camera adapter request." });
+    const message = error instanceof Error ? error.message : "Unable to process camera adapter request.";
+    return response.status(getCameraAccountErrorStatus(error)).json({ error: message });
   }
 }
