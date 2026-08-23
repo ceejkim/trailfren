@@ -1,6 +1,6 @@
 # Camera Sync Persistence
 
-Updated: August 17, 2026
+Updated: August 23, 2026
 
 ## Purpose
 
@@ -28,6 +28,7 @@ The store owns these account-scoped collections:
 - `connectionRequests`
 - `devices`
 - `relayEnrollments`
+- `relayManifests`
 - `relayUploads`
 - `clipIngests`
 - `reviewItems`
@@ -62,6 +63,14 @@ Demo mode:
 - Labels responses with `authMode: demo-unsigned`.
 - Suitable for local demos and preview testing only.
 
+Supabase auth mode:
+
+- Enabled for production by Supabase env vars plus `FLOCK_REQUIRE_AUTH=true`.
+- Requires a valid bearer token.
+- Labels responses with `authMode: supabase-auth`.
+- Rejects mismatched user claims with `403`.
+- This is the required auth mode for beta camera account data.
+
 Signed server mode:
 
 - Enabled by `FLOCK_SESSION_SIGNING_SECRET`.
@@ -70,7 +79,20 @@ Signed server mode:
 - Signature format: HMAC-SHA256 of the user id using `FLOCK_SESSION_SIGNING_SECRET`.
 - Intended as the server-side seam that a real auth provider can replace or wrap.
 
-Production auth should come from the app's real session provider before private clips, OAuth tokens, vendor webhooks, or paid services are attached.
+Production auth should use Supabase sessions before private clips, OAuth tokens,
+vendor webhooks, or paid services are attached.
+
+## Readiness Metadata
+
+`GET /api/cameras/account-state` includes `readiness`, which reports whether the
+current deployment has:
+
+- Supabase auth enforcement
+- durable camera state
+- owner-scoped record-store readiness
+- production relay signing
+- private clip storage
+- real camera field-test proof
 
 ## Store Modes
 
@@ -108,8 +130,9 @@ A durable setup should prove:
 
 ## Still Gated
 
-- Real app auth provider selection and session minting.
+- Production Supabase provider configuration and deployed login verification.
 - Cloud store credentials in Vercel.
+- Owner-scoped Supabase Postgres records with RLS.
 - `FLOCK_RELAY_SIGNING_SECRET` for production relay HMAC verification.
 - Private clip object storage.
 - Ring/Nest OAuth credentials and webhook secrets.

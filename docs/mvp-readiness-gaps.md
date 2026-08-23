@@ -1,6 +1,6 @@
 # MVP Readiness Gaps
 
-Updated: August 22, 2026
+Updated: August 23, 2026
 
 ## Current Progress
 
@@ -11,6 +11,12 @@ Updated: August 22, 2026
 - Vercel/runtime Node target is `22.x` to match current Supabase client requirements.
 - Existing camera API contracts still pass `npm run smoke:camera`.
 - Dependency audit is clean after the Vite 8 upgrade.
+- `GET /api/cameras/account-state` now returns an explicit `readiness` summary for auth, durable storage, owner-scoped records, relay signing, private clip storage, and field-test gates.
+- Production auth, data infrastructure, privacy, and camera field-test checklists now live in:
+  - `docs/auth-production-checklist.md`
+  - `docs/beta-data-infrastructure.md`
+  - `docs/privacy-sharing-beta-rules.md`
+  - `docs/camera-field-test-plan.md`
 
 ## Core Gaps Before MVP Beta
 
@@ -32,11 +38,13 @@ Updated: August 22, 2026
    - Current cloud REST storage writes one namespaced JSON document.
    - MVP should use owner-scoped records with row-level security and atomic writes.
    - Keep `GET /api/cameras/account-state` as the frontend aggregation boundary.
+   - Use `docs/beta-data-infrastructure.md` as the target Supabase table/RLS plan.
 
 4. Add private clip media storage.
    - Use private object storage keyed by owner, device, and motion event.
    - Store object keys instead of public clip URLs.
    - Add signed URL access, file size/MIME validation, retention, and deletion.
+   - Accept no real beta clips until storage and deletion behavior are explicit.
 
 5. Harden relay ingestion before real cameras.
    - Replace global relay signing with per-relay revocable secrets.
@@ -52,7 +60,12 @@ Updated: August 22, 2026
    - Confirm Vercel runs Node 22 for the project.
    - Configure Supabase and storage env vars for preview and production.
    - Verify a production login round trip and `GET /api/cameras/account-state` with a real bearer token.
+   - Confirm the account-state `readiness` response has no hard blockers except real camera field-test outcomes.
 
 8. Keep vendor integrations gated.
    - Ring and Nest OAuth/webhooks still require official setup, credentials, and review.
    - Birdfy and Bird Buddy should stay on partner/export/share/import paths until official access exists.
+
+9. Run real camera field tests.
+   - Follow `docs/camera-field-test-plan.md`.
+   - Capture provider, model, app/firmware version, what worked, what failed, battery/privacy concerns, and MVP decision.

@@ -9,7 +9,7 @@ export default async function handler(request, response) {
   }
 
   try {
-    const { account, records, storage } = await getCameraAccountState(request);
+    const { account, readiness, records, storage } = await getCameraAccountState(request);
     return response.status(200).json({
       account: {
         userId: account.userId,
@@ -18,6 +18,7 @@ export default async function handler(request, response) {
         hardGate: account.hardGate
       },
       storage,
+      readiness,
       counts: Object.fromEntries(Object.entries(records).map(([collection, items]) => [collection, items.length])),
       records
     });

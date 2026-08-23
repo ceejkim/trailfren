@@ -135,6 +135,22 @@ export type CameraPersistenceMetadata = {
   next: string;
 };
 
+export type CameraReadinessCheck = {
+  id: string;
+  label: string;
+  status: "pass" | "attention" | "blocked";
+  detail: string;
+  next: string;
+};
+
+export type CameraMvpReadiness = {
+  status: "mvp-blocked" | "field-test-ready" | "beta-infra-ready";
+  summary: string;
+  blockers: string[];
+  attention: string[];
+  checks: CameraReadinessCheck[];
+};
+
 export type CameraReviewRecord = {
   id: string;
   ownerId: string;
@@ -381,6 +397,7 @@ export type CameraAccountState = {
     hardGate: string | null;
   };
   storage: CameraPersistenceMetadata;
+  readiness: CameraMvpReadiness;
   counts: Record<string, number>;
   records: {
     syncSessions: CameraSyncSession[];

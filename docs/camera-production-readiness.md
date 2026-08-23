@@ -87,6 +87,19 @@ Official source anchors:
 - Supabase phone login: https://supabase.com/docs/guides/auth/phone-login
 - Supabase auth rate limits: https://supabase.com/docs/guides/auth/rate-limits
 
+## Readiness Response
+
+`GET /api/cameras/account-state` returns a `readiness` object with:
+
+- `status`: `mvp-blocked`, `field-test-ready`, or `beta-infra-ready`
+- `summary`: plain-language release state
+- `blockers`: hard configuration or infrastructure blockers
+- `attention`: important non-blocking gates
+- `checks`: auth, storage, owner-scoped records, relay signing, private clip storage, and field-test checks
+
+This is intentionally conservative. A preview can work while still reporting
+that MVP beta is blocked.
+
 ## Verification Checklist
 
 Before calling camera sync production-ready:
@@ -102,6 +115,7 @@ Before calling camera sync production-ready:
 - Mismatched body/query user claims return `403` when they disagree with the verified Supabase user.
 - `GET /api/cameras/provider-adapters` returns adapter contracts and the Vercel env checklist.
 - Live `GET /api/cameras/account-state` with the signed-in user's bearer token returns `authMode: supabase-auth` and `storage.durable: true`.
+- Live `GET /api/cameras/account-state` returns a `readiness` object with no unexpected blockers.
 - A sync session survives browser reload.
 - A device record survives browser reload.
 - A relay manifest is created for local relay providers and survives browser reload.

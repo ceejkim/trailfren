@@ -16,7 +16,9 @@ export const cameraSyncCoreEnvRequirements = [
   env("FLOCK_REQUIRE_AUTH", "Require verified Supabase bearer tokens for camera account routes"),
   env("FLOCK_SESSION_SIGNING_SECRET", "Legacy signed account ownership fallback", "optional-until-production"),
   env("FLOCK_CAMERA_STORE_REST_URL", "Durable camera account store endpoint"),
-  env("FLOCK_CAMERA_STORE_REST_TOKEN", "Durable camera account store server token")
+  env("FLOCK_CAMERA_STORE_REST_TOKEN", "Durable camera account store server token"),
+  env("FLOCK_RELAY_SIGNING_SECRET", "Production HMAC verification for local relay uploads"),
+  env("FLOCK_CLIP_STORAGE_BUCKET", "Private camera clip asset storage")
 ];
 
 export const cameraProviderSourceAudit = [

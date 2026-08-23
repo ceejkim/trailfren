@@ -3,7 +3,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 
 import { createId, getHeader } from "./camera-sync-architecture.js";
-import { getVerifiedSupabaseUser } from "./supabase-auth.js";
+import { getVerifiedSupabaseUser, isSupabaseAuthConfigured } from "./supabase-auth.js";
 
 const STORE_VERSION = 3;
 const COLLECTIONS = [
@@ -199,6 +199,86 @@ export function describeCameraPersistence(collection, accountContext) {
   };
 }
 
+export function getCameraMvpReadiness(accountContext) {
+  const config = getCameraStoreConfig();
+  const authEnforced = isCameraAuthRequired();
+  const supabaseConfigured = isSupabaseAuthConfigured();
+  const relaySigningConfigured = Boolean(clean(process.env.FLOCK_RELAY_SIGNING_SECRET));
+  const privateClipStorageConfigured = Boolean(clean(process.env.FLOCK_CLIP_STORAGE_BUCKET));
+  const checks = [
+    {
+      id: "supabase-auth",
+      label: "Supabase auth enforced",
+      status: supabaseConfigured && authEnforced && accountContext.authMode === "supabase-auth" ? "pass" : "blocked",
+      detail:
+        supabaseConfigured && authEnforced
+          ? "Camera account routes require verified bearer tokens."
+          : "Configure Supabase env vars and FLOCK_REQUIRE_AUTH=true.",
+      next: "Verify Google, Apple, and phone OTP round trips against the deployed Vercel URL."
+    },
+    {
+      id: "durable-camera-store",
+      label: "Durable camera state",
+      status: config.durable ? "pass" : "blocked",
+      detail: config.durable
+        ? `Camera state is using ${config.mode}.`
+        : "Production functions are using volatile memory.",
+      next: "Set REST/KV store env vars, then migrate the beta store to owner-scoped records."
+    },
+    {
+      id: "owner-scoped-records",
+      label: "Owner-scoped record store",
+      status: "attention",
+      detail: "The current durable path stores one namespaced camera JSON document.",
+      next: "Move camera records into Supabase Postgres with owner_id columns and row-level security before broad beta."
+    },
+    {
+      id: "relay-signing",
+      label: "Production relay signing",
+      status: relaySigningConfigured ? "pass" : "attention",
+      detail: relaySigningConfigured
+        ? "Relay uploads require server HMAC signatures."
+        : "Relay uploads can still use demo-prefix signatures.",
+      next: "Set FLOCK_RELAY_SIGNING_SECRET before accepting real local relay uploads."
+    },
+    {
+      id: "private-clip-storage",
+      label: "Private clip storage",
+      status: privateClipStorageConfigured ? "pass" : "blocked",
+      detail: privateClipStorageConfigured
+        ? "A private clip storage bucket is configured."
+        : "Clip media storage is not configured yet.",
+      next: "Choose the storage bucket, signed URL policy, retention window, and deletion behavior."
+    },
+    {
+      id: "vendor-field-tests",
+      label: "Real camera field tests",
+      status: "attention",
+      detail: "Birdfy, Bird Buddy, Reolink, Tapo, Wyze, Ring, and Nest paths still need real-device proof.",
+      next: "Run the camera field-test plan and attach outcomes to the MVP readiness gaps doc."
+    }
+  ];
+  const blockers = checks.filter((check) => check.status === "blocked").map((check) => check.label);
+  const attention = checks.filter((check) => check.status === "attention").map((check) => check.label);
+  const fieldTestReady =
+    supabaseConfigured && authEnforced && accountContext.authMode === "supabase-auth" && config.durable && relaySigningConfigured;
+  const betaInfraReady = blockers.length === 0 && attention.length === 0;
+  const status = betaInfraReady ? "beta-infra-ready" : fieldTestReady ? "field-test-ready" : "mvp-blocked";
+
+  return {
+    status,
+    summary:
+      status === "beta-infra-ready"
+        ? "Auth, durable state, relay signing, and private clip storage are configured; real camera proof is the next gate."
+        : status === "field-test-ready"
+          ? "Core auth, state, and relay signing are ready for controlled field tests; review the remaining beta gates before inviting users."
+          : "MVP beta is still blocked by configuration or infrastructure gaps.",
+    blockers,
+    attention,
+    checks
+  };
+}
+
 function getPersistenceNextStep(config, accountContext) {
   if (!config.durable) {
     return "Configure FLOCK_CAMERA_STORE_REST_URL and FLOCK_CAMERA_STORE_REST_TOKEN before relying on Vercel function persistence.";
@@ -206,7 +286,7 @@ function getPersistenceNextStep(config, accountContext) {
   if (!accountContext.authenticated) {
     return "Attach real auth or set FLOCK_SESSION_SIGNING_SECRET before storing production user camera data.";
   }
-  return "Ready for production relay secrets, OAuth token storage, and clip asset storage after those gates are approved.";
+  return "Durable account state is available; migrate to owner-scoped records with RLS before broad beta.";
 }
 
 export async function persistCameraSyncSession(request, body, syncSession) {
@@ -386,6 +466,7 @@ export async function getCameraAccountState(request, body = {}) {
   return {
     account,
     storage: describeCameraPersistence("accountState", account),
+    readiness: getCameraMvpReadiness(account),
     records: snapshotAccount(accountState)
   };
 }

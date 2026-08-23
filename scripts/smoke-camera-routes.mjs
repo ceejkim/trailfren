@@ -222,6 +222,15 @@ const account = await call(accountState, get({ userId }, `/api/cameras/account-s
 const deviceStatus = await call(status, get({ userId, deviceId: device.id, providerId: "reolink" }, `/api/cameras/${device.id}/status?userId=${userId}`));
 
 assert(account.statusCode === 200, `expected account state 200, got ${account.statusCode}`);
+assert(account.payload.readiness.status === "mvp-blocked", "expected local smoke readiness to report MVP blockers");
+assert(
+  account.payload.readiness.blockers.includes("Supabase auth enforced"),
+  "expected local smoke readiness to report auth gate"
+);
+assert(
+  account.payload.readiness.checks.some((check) => check.id === "private-clip-storage"),
+  "expected account readiness to include private clip storage gate"
+);
 assert(account.payload.counts.syncSessions === 1, "expected one sync session");
 assert(account.payload.counts.connectionRequests === 1, "expected one connection request");
 assert(account.payload.counts.devices === 1, "expected one device");

@@ -123,7 +123,7 @@ The routes now persist account-owned camera records through `server/camera-sync-
 - `CameraClipIngestResult`
 - `CameraReviewRecord`
 
-Each record is stored under the resolved account owner. In demo mode, the owner comes from `userId`, `x-flock-user-id`, or `?userId=` and the response marks `authMode: demo-unsigned`. When `FLOCK_SESSION_SIGNING_SECRET` is configured, write/read requests must include `x-flock-user-id` and `x-flock-session-signature`, where the signature is an HMAC of the user id. This is the server-side auth seam; production should replace or wrap it with the real app auth provider before private camera data is stored.
+Each record is stored under the resolved account owner. In production, the owner should come from a verified Supabase bearer token and responses should mark `authMode: supabase-auth`. In demo mode, the owner comes from `userId`, `x-flock-user-id`, or `?userId=` and the response marks `authMode: demo-unsigned`. When `FLOCK_SESSION_SIGNING_SECRET` is configured, write/read requests can use `x-flock-user-id` and `x-flock-session-signature` as a non-Supabase test seam only.
 
 Storage modes:
 
@@ -132,6 +132,10 @@ Storage modes:
 - `volatile-memory`: production fallback when no cloud store is configured. Responses label this as non-durable so it cannot be confused with production persistence.
 
 `GET /api/cameras/account-state` returns the account-owned sync sessions, requests, devices, relay enrollments, relay uploads, clip ingests, and review queue items for the resolved account.
+
+It also returns a conservative `readiness` summary for auth, durable storage,
+owner-scoped records, relay signing, private clip storage, and real-device field
+tests.
 
 See `docs/camera-sync-persistence.md` for deployment and verification details.
 
