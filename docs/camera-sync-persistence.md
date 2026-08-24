@@ -37,6 +37,8 @@ The store owns these account-scoped collections:
 
 Relay and clip uploads also create review records, so bird-triggered camera events land in a private review queue before they become scored sightings or shareable items.
 
+Relay uploads validate that the account owns the registered `deviceId` and matching `relayId`. Repeated `(deviceId, relayId, motionEventId)` submissions return the original upload with `idempotent: true` and do not create another review record. This is a store-level duplicate safeguard; the planned Supabase record migration still needs a database uniqueness constraint for concurrent production requests.
+
 Bird analysis and correction records now attach to those review items. They keep the machine suggestion, bird/no-bird result, confidence, rarity score, and reviewer override in account-owned storage.
 
 ## Frontend Reconciliation

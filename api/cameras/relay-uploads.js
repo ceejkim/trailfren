@@ -28,8 +28,12 @@ export default async function handler(request, response) {
       return response.status(401).json({ error: signatureError, status: "signature-required" });
     }
 
-    const relayUpload = await persistCameraRelayUpload(request, body, createRelayUploadResult({ ...body, deviceId, relayId, motionEventId }));
-    return response.status(202).json({ relayUpload });
+    const { record: relayUpload, idempotent } = await persistCameraRelayUpload(
+      request,
+      body,
+      createRelayUploadResult({ ...body, deviceId, relayId, motionEventId })
+    );
+    return response.status(idempotent ? 200 : 202).json({ relayUpload, idempotent });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to accept relay upload.";
     return response.status(getCameraAccountErrorStatus(error)).json({ error: message });

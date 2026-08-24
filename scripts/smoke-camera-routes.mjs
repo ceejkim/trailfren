@@ -184,6 +184,41 @@ assert(!JSON.stringify(relayManifest.payload.relayManifest).includes("admin:pass
 assert(relayUpload.statusCode === 202, `expected relay upload 202, got ${relayUpload.statusCode}`);
 assert(clipIngest.statusCode === 201, `expected clip ingest 201, got ${clipIngest.statusCode}`);
 
+const replayedRelayUpload = await call(
+  relayUploads,
+  post(
+    {
+      userId,
+      providerId: "reolink",
+      deviceId: device.id,
+      relayId: relay.relayId,
+      motionEventId,
+      privacyMode: "private",
+      durationSeconds: 12
+    },
+    { "x-flock-relay-signature": `demo-${device.id}-${motionEventId}` }
+  )
+);
+const unregisteredRelayUpload = await call(
+  relayUploads,
+  post(
+    {
+      userId,
+      providerId: "reolink",
+      deviceId: "device-not-registered",
+      relayId: relay.relayId,
+      motionEventId: "motion-unregistered",
+      privacyMode: "private"
+    },
+    { "x-flock-relay-signature": "demo-device-not-registered-motion-unregistered" }
+  )
+);
+
+assert(replayedRelayUpload.statusCode === 200, `expected replayed relay upload 200, got ${replayedRelayUpload.statusCode}`);
+assert(replayedRelayUpload.payload.idempotent === true, "expected replayed relay upload to be idempotent");
+assert(replayedRelayUpload.payload.relayUpload.uploadId === relayUpload.payload.relayUpload.uploadId, "expected replay to return original upload");
+assert(unregisteredRelayUpload.statusCode === 400, "expected unregistered relay upload rejection");
+
 const reviewItem = relayUpload.payload.relayUpload.reviewRecord;
 const birdPlan = await call(birdReviews, get({}, "/api/bird-intelligence/reviews"));
 const birdAnalysis = await call(

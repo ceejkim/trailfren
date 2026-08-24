@@ -353,31 +353,43 @@ export async function persistCameraRelayManifest(request, body, relayManifest) {
 export async function persistCameraRelayUpload(request, body, relayUpload) {
   const account = await getCameraAccountContext(request, body);
   const storage = describeCameraPersistence("relayUploads", account);
-  const reviewRecord = createReviewRecord({
-    ownerId: account.userId,
-    source: "relay-upload",
-    providerId: body.providerId,
-    deviceId: relayUpload.deviceId,
-    relayId: relayUpload.relayId,
-    uploadId: relayUpload.uploadId,
-    clipId: relayUpload.clip.id,
-    sightingId: relayUpload.sighting.id,
-    privacyMode: body.privacyMode,
-    reviewMessage: relayUpload.reviewMessage
-  });
-  const record = { ...relayUpload, userId: account.userId, storage, reviewRecord };
+  const result = await mutateAccount(account.userId, (accountState) => {
+    const device = accountState.devices[relayUpload.deviceId];
+    if (!device) throw new Error("Register this camera device before accepting relay uploads.");
+    if (device.providerId !== body.providerId) throw new Error("Relay upload provider must match the registered device.");
+    if (!device.relayId || device.relayId !== relayUpload.relayId) {
+      throw new Error("Relay upload relayId must match the registered device relay.");
+    }
 
-  await mutateAccount(account.userId, (accountState) => {
+    const existing = Object.values(accountState.relayUploads).find(
+      (upload) =>
+        upload.deviceId === relayUpload.deviceId &&
+        upload.relayId === relayUpload.relayId &&
+        upload.motionEventId === relayUpload.motionEventId
+    );
+    if (existing) return { record: existing, idempotent: true };
+
+    const reviewRecord = createReviewRecord({
+      ownerId: account.userId,
+      source: "relay-upload",
+      providerId: body.providerId,
+      deviceId: relayUpload.deviceId,
+      relayId: relayUpload.relayId,
+      uploadId: relayUpload.uploadId,
+      clipId: relayUpload.clip.id,
+      sightingId: relayUpload.sighting.id,
+      privacyMode: body.privacyMode,
+      reviewMessage: relayUpload.reviewMessage
+    });
+    const record = { ...relayUpload, userId: account.userId, storage, reviewRecord };
     accountState.relayUploads[record.uploadId] = record;
     accountState.reviewItems[reviewRecord.id] = reviewRecord;
-    const device = accountState.devices[record.deviceId];
-    if (device) {
-      device.lastSeenAt = record.acceptedAt;
-      device.connectionStatus = "connected";
-    }
+    device.lastSeenAt = record.acceptedAt;
+    device.connectionStatus = "connected";
+    return { record, idempotent: false };
   });
 
-  return record;
+  return result;
 }
 
 export async function persistCameraClipIngest(request, body, ingestResult) {
@@ -503,9 +515,10 @@ function snapshotAccount(accountState) {
 async function mutateAccount(userId, mutator) {
   const state = await loadState();
   const accountState = getOrCreateAccount(state, userId);
-  mutator(accountState);
+  const result = mutator(accountState);
   state.updatedAt = new Date().toISOString();
   await saveState(state);
+  return result;
 }
 
 async function loadState() {
