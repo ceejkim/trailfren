@@ -10,7 +10,8 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "smoke:camera": "node scripts/smoke-camera-routes.mjs"
+    "smoke:camera": "node scripts/smoke-camera-routes.mjs",
+    "smoke:camera-schema": "node scripts/smoke-camera-schema.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",

@@ -86,9 +86,25 @@ Repeat the policy pattern across the camera and bird review tables.
 deployment checks whether auth, durable storage, relay signing, private clip
 storage, and owner-scoped records are ready.
 
+## Migration Artifact
+
+The first schema migration is now checked in at
+[`supabase/migrations/20260825090000_owner_scoped_camera_records.sql`](../supabase/migrations/20260825090000_owner_scoped_camera_records.sql).
+It creates the ten owner-scoped record tables, enables owner-only RLS for each,
+maintains `updated_at`, and makes relay events unique per
+`(owner_id, deviceId, relayId, motionEventId)`. The database uniqueness rule is
+the durable counterpart to the current store-level replay response.
+
+This migration deliberately does not create a public clip-media bucket or store
+vendor credentials. It should be applied only through the approved Supabase
+migration workflow, after production Auth is configured and before the Postgres
+store adapter is enabled.
+
+Run `npm run smoke:camera-schema` to validate the checked-in migration contract.
+
 ## Not Yet Done
 
-- The Supabase tables and RLS policies have not been created.
+- The checked-in Supabase migration has not been applied to a project yet.
 - The server store adapter has not been switched from JSON/KV to Postgres
   records.
 - Private clip object storage has not been wired into uploads.
