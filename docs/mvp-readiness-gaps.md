@@ -54,7 +54,8 @@ Updated: August 23, 2026
 6. Expand authenticated API coverage.
    - Signed-in users now carry bearer tokens to camera routes.
    - `FLOCK_REQUIRE_AUTH=true` prevents missing bearer tokens from creating demo fallback records.
-   - Next step is focused tests for expired tokens, mismatched owners, and cross-account isolation with real Supabase users.
+   - Local camera smoke coverage verifies valid bearer ownership, expired-token rejection, mismatched-owner claims, and cross-account isolation through the camera API boundary.
+   - Next step is a deployed Supabase bearer-token round trip using real beta accounts.
 
 7. Finish deployment readiness.
    - Confirm Vercel runs Node 22 for the project.
