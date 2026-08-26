@@ -1,5 +1,6 @@
 import { createHmac } from "node:crypto";
 import { readdir, readFile } from "node:fs/promises";
+import { createServer } from "node:http";
 
 import birdCorrections from "../api/bird-intelligence/corrections.js";
 import birdReviews from "../api/bird-intelligence/reviews.js";
@@ -65,8 +66,42 @@ function adapterPost(path, body) {
   return { ...post(body), query: { adapterPath: path }, url: `/api/cameras/${path}` };
 }
 
+function withBearerToken(token) {
+  return { authorization: `Bearer ${token}` };
+}
+
 function assert(condition, message) {
   if (!condition) throw new Error(message);
+}
+
+async function startSupabaseAuthStub(usersByToken) {
+  const server = createServer((request, response) => {
+    if (request.method !== "GET" || request.url !== "/auth/v1/user") {
+      response.writeHead(404).end();
+      return;
+    }
+
+    const token = request.headers.authorization?.replace(/^Bearer\s+/i, "");
+    const user = token ? usersByToken[token] : undefined;
+    response.setHeader("content-type", "application/json");
+    if (!user) {
+      response.writeHead(401).end(JSON.stringify({ message: "JWT expired" }));
+      return;
+    }
+    response.writeHead(200).end(JSON.stringify(user));
+  });
+
+  await new Promise((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", resolve);
+  });
+  const address = server.address();
+  if (!address || typeof address === "string") throw new Error("Unable to start Supabase Auth smoke stub.");
+
+  return {
+    url: `http://localhost:${address.port}`,
+    close: () => new Promise((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())))
+  };
 }
 
 async function countApiFunctions(directory) {
@@ -315,6 +350,54 @@ assert(signed.payload.syncSession.storage.authMode === "server-signed", "expecte
 process.env.FLOCK_REQUIRE_AUTH = "true";
 const authRequired = await call(syncSessions, post({ userId: "unsigned-prod-user", providerId: "birdfy" }));
 assert(authRequired.statusCode === 401, `expected auth-required mode to reject unsigned request, got ${authRequired.statusCode}`);
+
+const authStub = await startSupabaseAuthStub({
+  "token-owner-a": { id: "supabase-owner-a", email: "owner-a@example.test" },
+  "token-owner-b": { id: "supabase-owner-b", email: "owner-b@example.test" }
+});
+process.env.SUPABASE_URL = authStub.url;
+process.env.SUPABASE_PUBLISHABLE_KEY = "smoke-publishable-key";
+
+try {
+  const bearerOwnerA = withBearerToken("token-owner-a");
+  const bearerOwnerB = withBearerToken("token-owner-b");
+  const verifiedRegistration = await call(
+    devices,
+    post({ providerId: "reolink", privacyMode: "private", redactedEndpoint: "rtsp://[redacted]@camera.local/verified" }, bearerOwnerA)
+  );
+  const mismatchedClaim = await call(syncSessions, post({ userId: "supabase-owner-b", providerId: "birdfy" }, bearerOwnerA));
+  const expiredSession = await call(syncSessions, post({ providerId: "birdfy" }, withBearerToken("expired-token")));
+  const verifiedOwnerAState = await call(accountState, { ...get({}, "/api/cameras/account-state"), headers: bearerOwnerA });
+  const ownerBState = await call(accountState, { ...get({}, "/api/cameras/account-state"), headers: bearerOwnerB });
+  const ownerBRelayUpload = await call(
+    relayUploads,
+    post(
+      {
+        providerId: "reolink",
+        deviceId: verifiedRegistration.payload.registrationResult.device.id,
+        relayId: verifiedRegistration.payload.registrationResult.relay.relayId,
+        motionEventId: "cross-account-motion",
+        privacyMode: "private"
+      },
+      { ...bearerOwnerB, "x-flock-relay-signature": `demo-${verifiedRegistration.payload.registrationResult.device.id}-cross-account-motion` }
+    )
+  );
+
+  assert(verifiedRegistration.statusCode === 201, `expected verified bearer registration 201, got ${verifiedRegistration.statusCode}`);
+  assert(verifiedRegistration.payload.registrationResult.device.ownerId === "supabase-owner-a", "expected verified owner ID on device");
+  assert(mismatchedClaim.statusCode === 403, `expected mismatched claim rejection 403, got ${mismatchedClaim.statusCode}`);
+  assert(expiredSession.statusCode === 401, `expected expired bearer rejection 401, got ${expiredSession.statusCode}`);
+  assert(verifiedOwnerAState.statusCode === 200, `expected verified owner state 200, got ${verifiedOwnerAState.statusCode}`);
+  assert(verifiedOwnerAState.payload.counts.devices === 1, "expected verified owner to see their device");
+  assert(ownerBState.statusCode === 200, `expected second verified owner state 200, got ${ownerBState.statusCode}`);
+  assert(ownerBState.payload.counts.devices === 0, "expected cross-account device isolation");
+  assert(ownerBRelayUpload.statusCode === 400, "expected cross-account relay upload rejection");
+} finally {
+  await authStub.close();
+  delete process.env.SUPABASE_URL;
+  delete process.env.SUPABASE_PUBLISHABLE_KEY;
+}
+
 delete process.env.FLOCK_REQUIRE_AUTH;
 
 console.log(
@@ -328,7 +411,8 @@ console.log(
       birdAnalysisStatus: birdAnalysis.payload.analysis.status,
       birdCorrectionStatus: birdCorrection.payload.correction.reviewStatus,
       signedAuthMode: signed.payload.syncSession.storage.authMode,
-      authRequiredStatus: authRequired.statusCode
+      authRequiredStatus: authRequired.statusCode,
+      bearerAuthCoverage: "valid, expired, mismatched-claim, cross-account"
     },
     null,
     2
