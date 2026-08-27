@@ -427,7 +427,7 @@ function buildCameraRelayManifest(input: RelayManifestInput): CameraRelayManifes
       signatureFormat: "demo-<deviceId>-<motionEventId>",
       signaturePayload: "deviceId.relayId.motionEventId",
       requiredJsonFields: ["providerId", "deviceId", "relayId", "motionEventId", "cameraName", "capturedAt", "durationSeconds"],
-      optionalJsonFields: ["thumbnailUrl", "clipUrl", "privacyMode"]
+      optionalJsonFields: ["thumbnailObjectKey", "clipObjectKey", "privacyMode"]
     },
     health: {
       method: "GET",
@@ -536,7 +536,6 @@ function buildDemoCameraClipIngest(input: DemoClipIngestInput) {
     capturedAt: "Just now",
     durationSeconds: 18,
     motionEventId: createId("motion"),
-    thumbnailUrl: "https://images.unsplash.com/photo-1516233758813-a38d024919c5?auto=format&fit=crop&w=1000&q=80",
     privacyMode: input.privacyMode
   };
 
@@ -553,7 +552,7 @@ function buildDemoCameraClipIngest(input: DemoClipIngestInput) {
       rarity,
       location: "Private backyard",
       capturedAt: ingestRequest.capturedAt,
-      imageUrl: ingestRequest.thumbnailUrl ?? "https://images.unsplash.com/photo-1486365227551-f3f90034a57c?auto=format&fit=crop&w=1000&q=80",
+      imageUrl: "https://images.unsplash.com/photo-1486365227551-f3f90034a57c?auto=format&fit=crop&w=1000&q=80",
       duration: formatDuration(ingestRequest.durationSeconds),
       confidence: 82,
       motionOnly: true,
@@ -598,7 +597,8 @@ function getClipIngestPayload(ingestRequest: CameraClipIngestRequest) {
     capturedAt: ingestRequest.capturedAt,
     durationSeconds: ingestRequest.durationSeconds,
     motionEventId: ingestRequest.motionEventId,
-    thumbnailUrl: ingestRequest.thumbnailUrl,
+    thumbnailObjectKey: ingestRequest.thumbnailObjectKey,
+    clipObjectKey: ingestRequest.clipObjectKey,
     privacyMode: ingestRequest.privacyMode
   };
 }
@@ -637,7 +637,6 @@ function buildDemoRelayUpload(input: DemoRelayUploadInput) {
     capturedAt: "Just now",
     durationSeconds: 14,
     cameraName: input.device.displayName,
-    thumbnailUrl: "https://images.unsplash.com/photo-1549608276-5786777e6587?auto=format&fit=crop&w=1000&q=80",
     privacyMode: input.privacyMode
   } satisfies CameraRelayUploadRequest;
   const uploadId = createId("upload");
@@ -658,7 +657,7 @@ function buildDemoRelayUpload(input: DemoRelayUploadInput) {
       rarity,
       location: input.device.locationLabel,
       capturedAt: relayUploadRequest.capturedAt,
-      imageUrl: relayUploadRequest.thumbnailUrl ?? "https://images.unsplash.com/photo-1516233758813-a38d024919c5?auto=format&fit=crop&w=1000&q=80",
+      imageUrl: "https://images.unsplash.com/photo-1516233758813-a38d024919c5?auto=format&fit=crop&w=1000&q=80",
       duration: formatDuration(relayUploadRequest.durationSeconds),
       confidence: 79,
       motionOnly: true,

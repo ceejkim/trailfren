@@ -65,6 +65,16 @@ function clean(value) {
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }
 
+function assertPrivateMediaOwnership(body, account) {
+  const prefix = `owners/${account.userId}/devices/`;
+  for (const field of ["clipObjectKey", "thumbnailObjectKey"]) {
+    const key = clean(body[field]);
+    if (key && !key.startsWith(prefix)) {
+      throw new Error(`${field} must belong to the verified camera account.`);
+    }
+  }
+}
+
 function envFlag(name) {
   const value = clean(process.env[name]);
   return value ? ["1", "true", "yes", "on"].includes(value.toLowerCase()) : false;
@@ -352,6 +362,7 @@ export async function persistCameraRelayManifest(request, body, relayManifest) {
 
 export async function persistCameraRelayUpload(request, body, relayUpload) {
   const account = await getCameraAccountContext(request, body);
+  assertPrivateMediaOwnership(body, account);
   const storage = describeCameraPersistence("relayUploads", account);
   const result = await mutateAccount(account.userId, (accountState) => {
     const device = accountState.devices[relayUpload.deviceId];
@@ -394,6 +405,7 @@ export async function persistCameraRelayUpload(request, body, relayUpload) {
 
 export async function persistCameraClipIngest(request, body, ingestResult) {
   const account = await getCameraAccountContext(request, body);
+  assertPrivateMediaOwnership(body, account);
   const storage = describeCameraPersistence("clipIngests", account);
   const reviewRecord = createReviewRecord({
     ownerId: account.userId,

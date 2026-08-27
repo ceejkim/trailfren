@@ -2,6 +2,7 @@ import {
   createRelayUploadResult,
   getBody,
   getRelaySignatureError,
+  rejectPublicClipMedia,
   rejectSecretFields
 } from "../../server/camera-sync-architecture.js";
 import { getCameraAccountErrorStatus, persistCameraRelayUpload } from "../../server/camera-sync-store.js";
@@ -17,6 +18,7 @@ export default async function handler(request, response) {
   try {
     const body = getBody(request);
     rejectSecretFields(body);
+    rejectPublicClipMedia(body);
 
     const deviceId = typeof body.deviceId === "string" && body.deviceId.trim() ? body.deviceId : "device-demo";
     const relayId = typeof body.relayId === "string" && body.relayId.trim() ? body.relayId : "relay-demo";

@@ -1,4 +1,4 @@
-import { createClipIngestResult, getBody, rejectSecretFields } from "../../server/camera-sync-architecture.js";
+import { createClipIngestResult, getBody, rejectPublicClipMedia, rejectSecretFields } from "../../server/camera-sync-architecture.js";
 import { getCameraAccountErrorStatus, persistCameraClipIngest } from "../../server/camera-sync-store.js";
 
 export default async function handler(request, response) {
@@ -12,6 +12,7 @@ export default async function handler(request, response) {
   try {
     const body = getBody(request);
     rejectSecretFields(body);
+    rejectPublicClipMedia(body);
     const ingestResult = await persistCameraClipIngest(request, body, createClipIngestResult(body));
     return response.status(201).json({ ingestResult });
   } catch (error) {

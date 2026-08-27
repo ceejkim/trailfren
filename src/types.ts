@@ -338,8 +338,8 @@ export type CameraClipIngestRequest = {
   capturedAt: string;
   durationSeconds: number;
   motionEventId?: string;
-  thumbnailUrl?: string;
-  clipUrl?: string;
+  thumbnailObjectKey?: string;
+  clipObjectKey?: string;
   privacyMode: CameraPrivacyMode;
 };
 
@@ -348,6 +348,7 @@ export type CameraClipIngestResult = {
   userId?: string;
   status: CameraClipIngestStatus;
   clip: Clip;
+  media?: CameraPrivateClipMedia;
   sighting: Sighting;
   reviewMessage: string;
   storage?: CameraPersistenceMetadata;
@@ -363,8 +364,8 @@ export type CameraRelayUploadRequest = {
   capturedAt: string;
   durationSeconds: number;
   cameraName: string;
-  thumbnailUrl?: string;
-  clipUrl?: string;
+  thumbnailObjectKey?: string;
+  clipObjectKey?: string;
   privacyMode: CameraPrivacyMode;
 };
 
@@ -383,10 +384,17 @@ export type CameraRelayUploadResult = {
     signatureMode: string;
   };
   clip: Clip;
+  media?: CameraPrivateClipMedia;
   sighting: Sighting;
   reviewMessage: string;
   storage?: CameraPersistenceMetadata;
   reviewRecord?: CameraReviewRecord;
+};
+
+export type CameraPrivateClipMedia = {
+  clipObjectKey?: string;
+  thumbnailObjectKey?: string;
+  access: "signed-url-required";
 };
 
 export type CameraAccountState = {

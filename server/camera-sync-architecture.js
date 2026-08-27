@@ -543,7 +543,7 @@ export function createRelayManifest(body) {
       signatureFormat,
       signaturePayload: "deviceId.relayId.motionEventId",
       requiredJsonFields: ["providerId", "deviceId", "relayId", "motionEventId", "cameraName", "capturedAt", "durationSeconds"],
-      optionalJsonFields: ["thumbnailUrl", "clipUrl", "privacyMode"]
+      optionalJsonFields: ["thumbnailObjectKey", "clipObjectKey", "privacyMode"]
     },
     health: {
       method: "GET",
@@ -593,6 +593,33 @@ export function getRegistrationMessage(provider) {
   return "Prepared manual upload source for private review and scoring.";
 }
 
+function getPrivateObjectKey(body, field) {
+  const value = body[field];
+  if (value === undefined || value === null || value === "") return undefined;
+  if (typeof value !== "string") throw new Error(`${field} must be a private storage object key.`);
+  const key = value.trim();
+  if (!/^owners\/[A-Za-z0-9_-]+\/devices\/[A-Za-z0-9_-]+\/clips\/[A-Za-z0-9_./-]+$/.test(key) || key.includes("..")) {
+    throw new Error(`${field} must use the owner-scoped private object-key format.`);
+  }
+  return key;
+}
+
+export function rejectPublicClipMedia(body) {
+  for (const field of ["clipUrl", "thumbnailUrl", "frameSampleUrls"]) {
+    if (body[field] !== undefined && body[field] !== null && body[field] !== "") {
+      throw new Error(`${field} is not accepted. Send private storage object keys only.`);
+    }
+  }
+  getPrivateObjectKey(body, "clipObjectKey");
+  getPrivateObjectKey(body, "thumbnailObjectKey");
+}
+
+function getPrivateClipMedia(body) {
+  const clipObjectKey = getPrivateObjectKey(body, "clipObjectKey");
+  const thumbnailObjectKey = getPrivateObjectKey(body, "thumbnailObjectKey");
+  return clipObjectKey || thumbnailObjectKey ? { clipObjectKey, thumbnailObjectKey, access: "signed-url-required" } : undefined;
+}
+
 export function formatDuration(seconds) {
   const minutes = Math.floor(seconds / 60).toString().padStart(2, "0");
   const remainingSeconds = Math.floor(seconds % 60).toString().padStart(2, "0");
@@ -631,6 +658,7 @@ export function createClipIngestResult(body) {
       reactions: 0,
       comments: []
     },
+    media: getPrivateClipMedia(body),
     sighting: {
       id: createId("sighting"),
       bird,
@@ -690,6 +718,7 @@ export function createRelayUploadResult(body) {
       reactions: 0,
       comments: []
     },
+    media: getPrivateClipMedia(body),
     sighting: {
       id: createId("sighting"),
       bird,

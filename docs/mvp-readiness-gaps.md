@@ -1,6 +1,6 @@
 # MVP Readiness Gaps
 
-Updated: August 23, 2026
+Updated: August 27, 2026
 
 ## Current Progress
 
@@ -45,6 +45,9 @@ Updated: August 23, 2026
    - Store object keys instead of public clip URLs.
    - Add signed URL access, file size/MIME validation, retention, and deletion.
    - Accept no real beta clips until storage and deletion behavior are explicit.
+   - Routes now reject public media URLs and retain only validated owner-scoped
+     object keys marked `signed-url-required`; actual storage upload, signed URL,
+     validation, retention, and deletion work is still blocked.
 
 5. Harden relay ingestion before real cameras.
    - Replace global relay signing with per-relay revocable secrets.

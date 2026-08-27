@@ -108,3 +108,14 @@ Run `npm run smoke:camera-schema` to validate the checked-in migration contract.
 - The server store adapter has not been switched from JSON/KV to Postgres
   records.
 - Private clip object storage has not been wired into uploads.
+
+## Private Clip Contract
+
+The ingest and relay routes now reject `clipUrl`, `thumbnailUrl`, and frame URL
+fields. They accept only optional owner-scoped keys such as
+`owners/<owner-id>/devices/<device-id>/clips/<event-id>.mp4`; persisted media
+metadata is marked `signed-url-required`. Routes verify that the key prefix
+matches the resolved account before writing it. This is an interface and safety
+gate, not an object-storage implementation: uploads, signed-URL issuance,
+MIME/size validation, retention, and deletion remain required before beta media
+is accepted.

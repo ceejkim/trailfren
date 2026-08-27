@@ -202,7 +202,9 @@ const relayUpload = await call(
       relayId: relay.relayId,
       motionEventId,
       privacyMode: "private",
-      durationSeconds: 12
+      durationSeconds: 12,
+      clipObjectKey: `owners/${userId}/devices/${device.id}/clips/${motionEventId}.mp4`,
+      thumbnailObjectKey: `owners/${userId}/devices/${device.id}/clips/${motionEventId}.jpg`
     },
     { "x-flock-relay-signature": `demo-${device.id}-${motionEventId}` }
   )
@@ -214,9 +216,11 @@ const clipIngest = await call(
 
 assert(relayManifest.statusCode === 201, `expected relay manifest 201, got ${relayManifest.statusCode}`);
 assert(relayManifest.payload.relayManifest.cloudUpload.path === "/api/cameras/relay-uploads", "expected relay upload manifest path");
+assert(relayManifest.payload.relayManifest.cloudUpload.optionalJsonFields.includes("clipObjectKey"), "expected private clip object-key contract");
 assert(relayManifest.payload.relayManifest.localSecrets.boundary === "keep-inside-user-relay", "expected local-only relay secret boundary");
 assert(!JSON.stringify(relayManifest.payload.relayManifest).includes("admin:pass"), "expected manifest to avoid camera credentials");
 assert(relayUpload.statusCode === 202, `expected relay upload 202, got ${relayUpload.statusCode}`);
+assert(relayUpload.payload.relayUpload.media.access === "signed-url-required", "expected signed-only media access contract");
 assert(clipIngest.statusCode === 201, `expected clip ingest 201, got ${clipIngest.statusCode}`);
 
 const replayedRelayUpload = await call(
@@ -327,6 +331,7 @@ const manifestEndpoint = await call(
 const cloudManifest = await call(cameraAdapters, adapterPost("relay-manifests", { userId, providerId: "ring", deviceId: device.id, relayId: relay.relayId }));
 const sensitiveAnalysis = await call(birdReviews, post({ userId, providerId: "reolink", reviewItemId: reviewItem.id, token: "nope" }));
 const sensitivePartner = await call(cameraAdapters, adapterPost("birdfy/partner-request", { userId, providerId: "birdfy", password: "nope" }));
+const publicClipUrl = await call(clipIngests, post({ userId, providerId: "manual-upload", deviceId: device.id, cameraName: "Manual feeder", clipUrl: "https://example.test/private.mp4", privacyMode: "private" }));
 
 assert(sensitive.statusCode === 400, "expected sensitive field rejection");
 assert(endpoint.statusCode === 400, "expected unredacted endpoint rejection");
@@ -334,6 +339,7 @@ assert(manifestEndpoint.statusCode === 400, "expected manifest unredacted endpoi
 assert(cloudManifest.statusCode === 400, "expected relay manifest to reject non-relay provider");
 assert(sensitiveAnalysis.statusCode === 400, "expected sensitive bird analysis rejection");
 assert(sensitivePartner.statusCode === 400, "expected sensitive partner request rejection");
+assert(publicClipUrl.statusCode === 400, "expected public clip URL rejection");
 
 process.env.FLOCK_SESSION_SIGNING_SECRET = "test-session-secret";
 const missingHeader = await call(syncSessions, post({ userId: "signed-user", providerId: "birdfy" }));
