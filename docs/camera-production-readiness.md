@@ -44,7 +44,7 @@ Core account/store variables:
 | `KV_REST_API_URL` | compatible durable store fallback | Supported for Vercel/Redis-style stores when project integration provides this name. |
 | `KV_REST_API_TOKEN` | compatible durable store fallback | Supported for Vercel/Redis-style stores when project integration provides this name. |
 | `FLOCK_SESSION_SIGNING_SECRET` | signed account ownership fallback | Use only for non-Supabase server-signed test seams. Do not rely on it for the 50-user beta when Supabase auth is configured. |
-| `FLOCK_RELAY_SIGNING_SECRET` | production relay HMAC upload verification | Replaces demo relay signatures. |
+| `FLOCK_RELAY_SIGNING_SECRET` | per-relay key derivation and upload verification | Server-only root material. It derives a distinct relay key at enrollment; the displayed relay key is never persisted or returned by manifests. |
 
 Future gated variables:
 
@@ -72,7 +72,7 @@ Suggested production sequence:
 3. Add the browser and server Supabase variables above in Vercel.
 4. Set `FLOCK_REQUIRE_AUTH=true` in Vercel preview and production after the Supabase variables are present.
 5. Choose a REST/Redis-compatible store and add `FLOCK_CAMERA_STORE_REST_URL` plus `FLOCK_CAMERA_STORE_REST_TOKEN`, or connect a provider that supplies compatible `KV_REST_API_URL` and `KV_REST_API_TOKEN`.
-6. Add `FLOCK_RELAY_SIGNING_SECRET`.
+6. Add `FLOCK_RELAY_SIGNING_SECRET`, then enroll each relay and store its one-time displayed signing key only in that local relay.
 7. Redeploy from GitHub/Vercel.
 8. Verify production returns `account.authenticated: true`, `authMode: supabase-auth`, and `storage.durable: true` from `GET /api/cameras/account-state` when called with a signed-in user's bearer token.
 9. Verify unsigned requests to camera account routes return `401` when `FLOCK_REQUIRE_AUTH=true`.
@@ -125,6 +125,7 @@ Before calling camera sync production-ready:
 - Sensitive fields are rejected.
 - Unredacted RTSP/ONVIF URLs are rejected.
 - Demo relay signatures are disabled when `FLOCK_RELAY_SIGNING_SECRET` is set.
+- A production relay upload uses a per-relay HMAC key, not the root secret. An authenticated device owner can rotate `/api/cameras/relay-credentials/rotate`; confirm it invalidates the prior key before a field test.
 
 ## Current Known Production Gap
 

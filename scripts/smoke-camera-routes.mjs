@@ -12,6 +12,7 @@ import devices from "../api/cameras/devices.js";
 import relayUploads from "../api/cameras/relay-uploads.js";
 import syncSessions from "../api/cameras/sync-sessions.js";
 import status from "../api/cameras/[deviceId]/status.js";
+import { createPerRelaySignature } from "../server/camera-sync-architecture.js";
 
 process.env.FLOCK_CAMERA_STORE_FILE = process.env.FLOCK_CAMERA_STORE_FILE || `/tmp/flock-camera-store-${process.pid}.json`;
 delete process.env.FLOCK_CAMERA_STORE_REST_URL;
@@ -125,6 +126,10 @@ assert(
 assert(
   rewrites.get("/api/cameras/relay-manifests") === "/api/cameras/adapters?adapterPath=relay-manifests",
   "expected relay manifest rewrite"
+);
+assert(
+  rewrites.get("/api/cameras/relay-credentials/rotate") === "/api/cameras/adapters?adapterPath=relay-credentials/rotate",
+  "expected relay credential rotation rewrite"
 );
 assert(await countApiFunctions(new URL("../api/", import.meta.url)) <= 12, "expected Vercel Hobby-compatible function count");
 
@@ -367,6 +372,7 @@ process.env.SUPABASE_PUBLISHABLE_KEY = "smoke-publishable-key";
 try {
   const bearerOwnerA = withBearerToken("token-owner-a");
   const bearerOwnerB = withBearerToken("token-owner-b");
+  process.env.FLOCK_RELAY_SIGNING_SECRET = "smoke-relay-root-secret";
   const verifiedRegistration = await call(
     devices,
     post({ providerId: "reolink", privacyMode: "private", redactedEndpoint: "rtsp://[redacted]@camera.local/verified" }, bearerOwnerA)
@@ -388,6 +394,56 @@ try {
       { ...bearerOwnerB, "x-flock-relay-signature": `demo-${verifiedRegistration.payload.registrationResult.device.id}-cross-account-motion` }
     )
   );
+  const verifiedRelayCredential = verifiedRegistration.payload.registrationResult.relayCredential;
+  const verifiedMotionEventId = "verified-per-relay-motion";
+  const verifiedRelayUpload = await call(
+    relayUploads,
+    post(
+      {
+        providerId: "reolink",
+        deviceId: verifiedRegistration.payload.registrationResult.device.id,
+        relayId: verifiedRegistration.payload.registrationResult.relay.relayId,
+        motionEventId: verifiedMotionEventId,
+        privacyMode: "private"
+      },
+      {
+        "x-flock-relay-signature": createPerRelaySignature(verifiedRelayCredential.signingKey, {
+          deviceId: verifiedRegistration.payload.registrationResult.device.id,
+          relayId: verifiedRegistration.payload.registrationResult.relay.relayId,
+          motionEventId: verifiedMotionEventId
+        })
+      }
+    )
+  );
+  const rotation = await call(
+    cameraAdapters,
+    {
+      ...adapterPost("relay-credentials/rotate", {
+        deviceId: verifiedRegistration.payload.registrationResult.device.id,
+        relayId: verifiedRegistration.payload.registrationResult.relay.relayId
+      }),
+      headers: bearerOwnerA
+    }
+  );
+  const staleRelayKey = await call(
+    relayUploads,
+    post(
+      {
+        providerId: "reolink",
+        deviceId: verifiedRegistration.payload.registrationResult.device.id,
+        relayId: verifiedRegistration.payload.registrationResult.relay.relayId,
+        motionEventId: "stale-key-motion",
+        privacyMode: "private"
+      },
+      {
+        "x-flock-relay-signature": createPerRelaySignature(verifiedRelayCredential.signingKey, {
+          deviceId: verifiedRegistration.payload.registrationResult.device.id,
+          relayId: verifiedRegistration.payload.registrationResult.relay.relayId,
+          motionEventId: "stale-key-motion"
+        })
+      }
+    )
+  );
 
   assert(verifiedRegistration.statusCode === 201, `expected verified bearer registration 201, got ${verifiedRegistration.statusCode}`);
   assert(verifiedRegistration.payload.registrationResult.device.ownerId === "supabase-owner-a", "expected verified owner ID on device");
@@ -397,11 +453,17 @@ try {
   assert(verifiedOwnerAState.payload.counts.devices === 1, "expected verified owner to see their device");
   assert(ownerBState.statusCode === 200, `expected second verified owner state 200, got ${ownerBState.statusCode}`);
   assert(ownerBState.payload.counts.devices === 0, "expected cross-account device isolation");
-  assert(ownerBRelayUpload.statusCode === 400, "expected cross-account relay upload rejection");
+  assert(ownerBRelayUpload.statusCode === 401, "expected invalid cross-account relay signature rejection");
+  assert(verifiedRelayCredential?.signingKey, "expected one-time per-relay enrollment key");
+  assert(verifiedRelayUpload.statusCode === 202, `expected per-relay upload 202, got ${verifiedRelayUpload.statusCode}`);
+  assert(rotation.statusCode === 200, `expected relay key rotation 200, got ${rotation.statusCode}`);
+  assert(rotation.payload.relayCredential.version === 2, "expected relay key version increment after rotation");
+  assert(staleRelayKey.statusCode === 401, "expected rotated relay key to reject the prior key");
 } finally {
   await authStub.close();
   delete process.env.SUPABASE_URL;
   delete process.env.SUPABASE_PUBLISHABLE_KEY;
+  delete process.env.FLOCK_RELAY_SIGNING_SECRET;
 }
 
 delete process.env.FLOCK_REQUIRE_AUTH;

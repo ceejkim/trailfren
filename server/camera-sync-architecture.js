@@ -1,4 +1,4 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac } from "node:crypto";
 
 export const cameraProviderRegistry = {
   birdfy: {
@@ -467,9 +467,9 @@ export function createDeviceRegistration(body) {
         uploadUrl: "/api/cameras/relay-uploads",
         healthUrl: `/api/cameras/${deviceId}/status`,
         signatureHeader: "x-flock-relay-signature",
-        signingKeyStatus: process.env.FLOCK_RELAY_SIGNING_SECRET ? "server-secret-required" : "demo-required",
+        signingKeyStatus: process.env.FLOCK_RELAY_SIGNING_SECRET ? "per-relay-key-issued" : "demo-required",
         signatureFormat: process.env.FLOCK_RELAY_SIGNING_SECRET
-          ? "sha256=<hmac(deviceId.relayId.motionEventId)>"
+          ? "sha256=<hmac(per-relay-key, deviceId.relayId.motionEventId)>"
           : "demo-<deviceId>-<motionEventId>",
         instructions: provider.checklist
       }
@@ -514,7 +514,7 @@ export function createRelayManifest(body) {
   const sampleMotionEventId = "motion-<event-id>";
   const signatureMode = process.env.FLOCK_RELAY_SIGNING_SECRET ? "server-hmac" : "demo-prefix";
   const signatureFormat = process.env.FLOCK_RELAY_SIGNING_SECRET
-    ? "sha256=<hmac(deviceId.relayId.motionEventId)>"
+    ? "sha256=<hmac(per-relay-key, deviceId.relayId.motionEventId)>"
     : "demo-<deviceId>-<motionEventId>";
 
   return {
@@ -568,7 +568,7 @@ export function createRelayManifest(body) {
       privacyMode
     },
     sampleSignature: process.env.FLOCK_RELAY_SIGNING_SECRET
-      ? "sha256=<server-generated-hmac>"
+      ? "sha256=<hmac-from-the-one-time-relay-key>"
       : `demo-${deviceId}-${sampleMotionEventId}`,
     installSteps: [
       "Register the device in BirdWatch.",
@@ -732,32 +732,21 @@ export function createRelayUploadResult(body) {
   };
 }
 
-export function getRelaySignatureError(request, body) {
+export function getRelaySignature(request) {
   const signature = getHeader(request, "x-flock-relay-signature");
-  if (typeof signature !== "string" || !signature.trim()) {
-    return "Relay upload signature is required.";
-  }
+  return typeof signature === "string" && signature.trim() ? signature.trim() : undefined;
+}
 
-  if (process.env.FLOCK_RELAY_SIGNING_SECRET) {
-    const payload = `${body.deviceId}.${body.relayId}.${body.motionEventId}`;
-    const expected = `sha256=${createHmac("sha256", process.env.FLOCK_RELAY_SIGNING_SECRET).update(payload).digest("hex")}`;
-    if (!safeEqual(signature, expected)) {
-      return "Relay upload signature did not match the server-held relay signing secret.";
-    }
-    return null;
-  }
-
+export function getDemoRelaySignatureError(signature, body) {
+  if (!signature) return "Relay upload signature is required.";
   const expectedPrefix = `demo-${body.deviceId}-${body.motionEventId}`;
   if (!signature.startsWith(expectedPrefix)) {
     return "Relay upload signature did not match the demo device and motion event.";
   }
-
   return null;
 }
 
-function safeEqual(left, right) {
-  const leftBuffer = Buffer.from(left);
-  const rightBuffer = Buffer.from(right);
-  if (leftBuffer.length !== rightBuffer.length) return false;
-  return timingSafeEqual(leftBuffer, rightBuffer);
+export function createPerRelaySignature(secret, body) {
+  const payload = `${body.deviceId}.${body.relayId}.${body.motionEventId}`;
+  return `sha256=${createHmac("sha256", secret).update(payload).digest("hex")}`;
 }

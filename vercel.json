@@ -10,6 +10,7 @@
     { "source": "/api/cameras/birdfy/partner-request", "destination": "/api/cameras/adapters?adapterPath=birdfy/partner-request" },
     { "source": "/api/cameras/bird-buddy/partner-request", "destination": "/api/cameras/adapters?adapterPath=bird-buddy/partner-request" },
     { "source": "/api/cameras/wyze/model-check", "destination": "/api/cameras/adapters?adapterPath=wyze/model-check" },
-    { "source": "/api/cameras/relay-manifests", "destination": "/api/cameras/adapters?adapterPath=relay-manifests" }
+    { "source": "/api/cameras/relay-manifests", "destination": "/api/cameras/adapters?adapterPath=relay-manifests" },
+    { "source": "/api/cameras/relay-credentials/rotate", "destination": "/api/cameras/adapters?adapterPath=relay-credentials/rotate" }
   ]
 }

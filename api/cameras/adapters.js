@@ -6,7 +6,7 @@ import {
   listCameraProviderAdapters
 } from "../../server/camera-provider-adapters.js";
 import { createRelayManifest, getBody, rejectSecretFields } from "../../server/camera-sync-architecture.js";
-import { getCameraAccountErrorStatus, getStoredCameraDevice, persistCameraRelayManifest } from "../../server/camera-sync-store.js";
+import { getCameraAccountErrorStatus, getStoredCameraDevice, persistCameraRelayManifest, rotateCameraRelayCredential } from "../../server/camera-sync-store.js";
 
 function adapterPath(request) {
   const path = request.query?.adapterPath;
@@ -61,6 +61,13 @@ async function relayManifest(request, response) {
   return response.status(201).json({ relayManifest: manifest });
 }
 
+async function rotateRelayCredential(request, response) {
+  const body = getBody(request);
+  rejectSecretFields(body);
+  const result = await rotateCameraRelayCredential(request, body);
+  return response.status(200).json(result);
+}
+
 export default async function handler(request, response) {
   response.setHeader("cache-control", "no-store");
 
@@ -99,6 +106,8 @@ export default async function handler(request, response) {
       }
       case "relay-manifests":
         return request.method === "POST" ? await relayManifest(request, response) : methodNotAllowed(response, "POST");
+      case "relay-credentials/rotate":
+        return request.method === "POST" ? await rotateRelayCredential(request, response) : methodNotAllowed(response, "POST");
       default:
         return response.status(404).json({ error: "Camera adapter route not found" });
     }

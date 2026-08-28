@@ -1,11 +1,12 @@
 import {
   createRelayUploadResult,
+  getDemoRelaySignatureError,
   getBody,
-  getRelaySignatureError,
+  getRelaySignature,
   rejectPublicClipMedia,
   rejectSecretFields
 } from "../../server/camera-sync-architecture.js";
-import { getCameraAccountErrorStatus, persistCameraRelayUpload } from "../../server/camera-sync-store.js";
+import { getCameraAccountErrorStatus, persistCameraRelayUpload, verifyRelayUploadSignature } from "../../server/camera-sync-store.js";
 
 export default async function handler(request, response) {
   response.setHeader("cache-control", "no-store");
@@ -24,16 +25,25 @@ export default async function handler(request, response) {
     const relayId = typeof body.relayId === "string" && body.relayId.trim() ? body.relayId : "relay-demo";
     const motionEventId =
       typeof body.motionEventId === "string" && body.motionEventId.trim() ? body.motionEventId : `motion-${Date.now()}`;
-    const signatureError = getRelaySignatureError(request, { deviceId, relayId, motionEventId });
+    const signatureBody = { ...body, deviceId, relayId, motionEventId };
+    const signature = getRelaySignature(request);
+    const signatureError = process.env.FLOCK_RELAY_SIGNING_SECRET
+      ? null
+      : getDemoRelaySignatureError(signature, signatureBody);
 
     if (signatureError) {
       return response.status(401).json({ error: signatureError, status: "signature-required" });
     }
 
+    const verifiedRelayAccount = process.env.FLOCK_RELAY_SIGNING_SECRET
+      ? await verifyRelayUploadSignature(signatureBody, signature)
+      : undefined;
+    const relayUploadBody = verifiedRelayAccount ? { ...signatureBody, userId: verifiedRelayAccount.userId } : signatureBody;
     const { record: relayUpload, idempotent } = await persistCameraRelayUpload(
       request,
       body,
-      createRelayUploadResult({ ...body, deviceId, relayId, motionEventId })
+      createRelayUploadResult(relayUploadBody),
+      verifiedRelayAccount
     );
     return response.status(idempotent ? 200 : 202).json({ relayUpload, idempotent });
   } catch (error) {

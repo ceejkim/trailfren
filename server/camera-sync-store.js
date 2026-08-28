@@ -2,7 +2,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 
-import { createId, getHeader } from "./camera-sync-architecture.js";
+import { createId, createPerRelaySignature, getHeader } from "./camera-sync-architecture.js";
 import { getVerifiedSupabaseUser, isSupabaseAuthConfigured } from "./supabase-auth.js";
 
 const STORE_VERSION = 3;
@@ -332,6 +332,8 @@ export async function persistCameraDeviceRegistration(request, body, registratio
         ...registrationResult.relay,
         ownerId: account.userId,
         enrolledAt: registrationResult.relay.enrolledAt || new Date().toISOString(),
+        credentialVersion: 1,
+        credentialIssuedAt: new Date().toISOString(),
         storage: describeCameraPersistence("relayEnrollments", account)
       }
     : undefined;
@@ -341,7 +343,13 @@ export async function persistCameraDeviceRegistration(request, body, registratio
     if (relay) accountState.relayEnrollments[relay.relayId] = relay;
   });
 
-  return { ...registrationResult, device, relay, storage };
+  return {
+    ...registrationResult,
+    device,
+    relay,
+    storage,
+    relayCredential: relay && process.env.FLOCK_RELAY_SIGNING_SECRET ? createRelayCredential(relay) : undefined
+  };
 }
 
 export async function persistCameraRelayManifest(request, body, relayManifest) {
@@ -360,8 +368,8 @@ export async function persistCameraRelayManifest(request, body, relayManifest) {
   return record;
 }
 
-export async function persistCameraRelayUpload(request, body, relayUpload) {
-  const account = await getCameraAccountContext(request, body);
+export async function persistCameraRelayUpload(request, body, relayUpload, verifiedRelayAccount) {
+  const account = verifiedRelayAccount || (await getCameraAccountContext(request, body));
   assertPrivateMediaOwnership(body, account);
   const storage = describeCameraPersistence("relayUploads", account);
   const result = await mutateAccount(account.userId, (accountState) => {
@@ -401,6 +409,61 @@ export async function persistCameraRelayUpload(request, body, relayUpload) {
   });
 
   return result;
+}
+
+function createRelayCredential(relay) {
+  return {
+    relayId: relay.relayId,
+    version: relay.credentialVersion,
+    signingKey: deriveRelaySigningKey(relay.relayId, relay.credentialVersion),
+    delivery: "shown-once-at-enrollment-or-rotation",
+    storage: "keep-inside-user-relay"
+  };
+}
+
+function deriveRelaySigningKey(relayId, version) {
+  const rootSecret = clean(process.env.FLOCK_RELAY_SIGNING_SECRET);
+  if (!rootSecret) throw new Error("FLOCK_RELAY_SIGNING_SECRET is required to issue per-relay credentials.");
+  return createHmac("sha256", rootSecret).update(`relay-key.${relayId}.${version}`).digest("base64url");
+}
+
+export async function verifyRelayUploadSignature(body, signature) {
+  if (!signature) throw new Error("Relay upload signature is required.");
+  const state = await loadState();
+  for (const accountState of Object.values(state.accounts)) {
+    const device = accountState.devices[body.deviceId];
+    const relay = accountState.relayEnrollments[body.relayId];
+    if (!device || !relay || device.relayId !== body.relayId || relay.deviceId !== body.deviceId) continue;
+    if (device.providerId !== body.providerId) throw new Error("Relay upload provider must match the registered device.");
+    if (relay.revokedAt) throw new Error("Relay enrollment is revoked. Rotate or re-enroll this local relay.");
+
+    const expected = createPerRelaySignature(deriveRelaySigningKey(relay.relayId, relay.credentialVersion || 1), body);
+    if (!safeEqual(signature, expected)) throw new Error("Relay upload signature did not match this enrolled relay key.");
+    return { userId: accountState.userId, authMode: "relay-key", authenticated: true, hardGate: null };
+  }
+  throw new Error("Register this camera device and relay before accepting relay uploads.");
+}
+
+export async function rotateCameraRelayCredential(request, body) {
+  const account = await getCameraAccountContext(request, body);
+  const relayId = clean(body.relayId);
+  const deviceId = clean(body.deviceId);
+  if (!relayId || !deviceId) throw new Error("deviceId and relayId are required to rotate a relay credential.");
+
+  return mutateAccount(account.userId, (accountState) => {
+    const device = accountState.devices[deviceId];
+    const relay = accountState.relayEnrollments[relayId];
+    if (!device || !relay || device.relayId !== relayId || relay.deviceId !== deviceId) {
+      throw new Error("Relay credential rotation requires the account-owned registered device and relay.");
+    }
+    if (!clean(process.env.FLOCK_RELAY_SIGNING_SECRET)) {
+      throw new Error("FLOCK_RELAY_SIGNING_SECRET is required before relay credentials can be rotated.");
+    }
+    relay.credentialVersion = (relay.credentialVersion || 1) + 1;
+    relay.credentialIssuedAt = new Date().toISOString();
+    relay.rotatedAt = relay.credentialIssuedAt;
+    return { relayCredential: createRelayCredential(relay), rotation: "previous-key-revoked" };
+  });
 }
 
 export async function persistCameraClipIngest(request, body, ingestResult) {
