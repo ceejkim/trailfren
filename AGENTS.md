@@ -82,6 +82,9 @@ The index is `docs/agents/README.md`.
   deletion decisions before real beta use.
 - Paid services, vendor credentials, production secrets, and security-sensitive
   integrations require Charles's approval.
+- For any Supabase Postgres, schema, migration, RLS, index, or query work, load
+  `supabase-postgres-best-practices` first and read only the specific reference
+  files needed for the current change.
 
 ## Key References
 
