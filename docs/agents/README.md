@@ -24,3 +24,4 @@ Source-of-truth docs:
 - `docs/autonomous-build-plan.md`
 - `docs/camera-integrations.md`
 - `docs/camera-ingestion-design.md`
+- `docs/agents/repo-context-packing.md`

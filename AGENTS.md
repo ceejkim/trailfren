@@ -41,6 +41,9 @@ auth, API, or persistence changes.
 - Do not commit project-local skill files such as `.agents/` or
   `skills-lock.json` unless Charles explicitly asks.
 - Keep this file compact; if it grows, move detail into a purpose-specific doc.
+- Use `docs/agents/repo-context-packing.md` only for broad architecture,
+  security, onboarding, or release-readiness reviews; narrow edits should stay
+  on direct file reads.
 
 ## Specialist Docs
 
@@ -66,6 +69,10 @@ The index is `docs/agents/README.md`.
 
 - Follow `docs/brand-guidelines.md` for palette, tone, layout, and component
   feel.
+- For substantial UI changes, use `frontend-design` while shaping the interface
+  and `web-design-guidelines` for a post-implementation audit when available.
+  Treat Vercel guideline findings as advisory when they conflict with Trailfren's
+  brand guidelines or product workflow.
 - Keep operational UI dense, clear, and usable; avoid landing-page composition
   when building app workflows.
 - Preserve intuitive defaults: privacy-first camera sharing, clear provider
