@@ -57,6 +57,8 @@ Consult one specialist brief only when it materially helps:
   coherence.
 - `docs/agents/partnerships-research-scout.md` for vendor programs, official
   API paths, and partner/export workflows.
+- `docs/agents/agent-improvement-steward.md` for explicit or weekly review of
+  agent guidance, prompt drift, and token discipline.
 
 The index is `docs/agents/README.md`.
 
